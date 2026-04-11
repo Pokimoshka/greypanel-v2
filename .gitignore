@@ -1,0 +1,31 @@
+# Composer
+/vendor/
+
+# Node
+/node_modules/
+
+# Environment
+.env
+.env.local
+
+# Cache & logs
+/var/cache/
+/var/logs/
+/var/lock/
+
+# Uploads
+/public/uploads/
+
+# Compiled assets
+/public/assets/
+!/public/assets/manifest.json
+
+# Installer lock (папка удаляется после установки)
+/install/
+
+# IDE / OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
