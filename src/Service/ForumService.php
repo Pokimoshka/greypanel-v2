@@ -11,6 +11,7 @@ use GreyPanel\Repository\ForumPostRepositoryInterface;
 use GreyPanel\Repository\ForumLikeRepositoryInterface;
 use GreyPanel\Repository\ForumReadRepositoryInterface;
 use GreyPanel\Repository\UserRepositoryInterface;
+use Psr\Log\LoggerInterface;
 
 final class ForumService implements ForumServiceInterface
 {
@@ -22,8 +23,9 @@ final class ForumService implements ForumServiceInterface
         private ForumLikeRepositoryInterface $likeRepo,
         private ForumReadRepositoryInterface $readRepo,
         private UserRepositoryInterface $userRepo,
-        private BbcodeService $bbcode,
-        private Database $db
+        private MarkdownServiceInterface $markdown,
+        private Database $db,
+        private LoggerInterface $logger
     ) {}
 
     public function getCategoriesWithForums(): array
@@ -67,7 +69,7 @@ final class ForumService implements ForumServiceInterface
         $thread['posts'] = $this->postRepo->findByThreadId($threadId, $page, $perPage);
         foreach ($thread['posts'] as &$post) {
             $post['author'] = $this->userRepo->findById($post['user_id']);
-            $post['content_html'] = $this->bbcode->parse($post['content']);
+            $post['content_html'] = $this->markdown->parse($post['content']);
         }
         $thread['posts_count'] = $this->postRepo->countByThreadId($threadId);
         return $thread;
@@ -75,13 +77,24 @@ final class ForumService implements ForumServiceInterface
 
     public function createThread(int $forumId, int $userId, string $title, string $content): int
     {
-        $threadId = $this->threadRepo->create($forumId, $userId, $title, $content);
-        $user = $this->userRepo->findById($userId);
-        if ($user) {
-            $user->setCountTheard($user->getCountTheard() + 1);
-            $this->userRepo->update($user);
+        $this->db->getPdo()->beginTransaction();
+        try {
+            $threadId = $this->threadRepo->create($forumId, $userId, $title, $content);
+            
+            // Увеличиваем счётчик тем пользователя
+            $user = $this->userRepo->findById($userId);
+            if ($user) {
+                $user->setCountTheard($user->getCountTheard() + 1);
+                $this->userRepo->update($user);
+            }
+            
+            $this->db->getPdo()->commit();
+            return $threadId;
+        } catch (\Throwable $e) {
+            $this->db->getPdo()->rollBack();
+            $this->logger?->error('Failed to create thread: ' . $e->getMessage());
+            throw $e;
         }
-        return $threadId;
     }
 
     public function createPost(int $threadId, int $userId, string $content): int

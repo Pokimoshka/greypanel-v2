@@ -198,7 +198,59 @@ final class App
             throw new \RuntimeException("Method not found: {$method} in {$controllerClass}");
         }
 
-        return $controller->$method($request, ...array_values($vars));
+        // Приводим параметры маршрута к ожидаемым типам метода контроллера
+        $args = $this->resolveMethodArguments($controllerClass, $method, $request, $vars);
+
+        return $controller->$method(...$args);
+    }
+
+    /**
+     * Преобразует параметры маршрута в соответствии с сигнатурой метода контроллера.
+     */
+    private function resolveMethodArguments(string $controllerClass, string $method, Request $request, array $routeVars): array
+    {
+        $reflectionMethod = new \ReflectionMethod($controllerClass, $method);
+        $parameters = $reflectionMethod->getParameters();
+        $args = [];
+        $routeValues = array_values($routeVars);
+        $routeIndex = 0;
+
+        foreach ($parameters as $param) {
+            $paramType = $param->getType();
+            $paramName = $param->getName();
+
+            // Если параметр — Request
+            if ($paramType && $paramType->getName() === Request::class) {
+                $args[] = $request;
+                continue;
+            }
+
+            // Если ещё есть неиспользованные параметры маршрута
+            if ($routeIndex < count($routeValues)) {
+                $value = $routeValues[$routeIndex++];
+                // Приводим к ожидаемому типу
+                if ($paramType instanceof \ReflectionNamedType) {
+                    $typeName = $paramType->getName();
+                    if ($typeName === 'int') {
+                        $value = (int)$value;
+                    } elseif ($typeName === 'float') {
+                        $value = (float)$value;
+                    } elseif ($typeName === 'bool') {
+                        $value = (bool)$value;
+                    } elseif ($typeName === 'string') {
+                        $value = (string)$value;
+                    }
+                    // Для других типов (объекты) пока не поддерживаем
+                }
+                $args[] = $value;
+            } elseif ($param->isDefaultValueAvailable()) {
+                $args[] = $param->getDefaultValue();
+            } else {
+                throw new \RuntimeException("Cannot resolve parameter '{$paramName}' for {$controllerClass}::{$method}");
+            }
+        }
+
+        return $args;
     }
 
     private function renderError(int $statusCode, ?Throwable $exception = null): Response

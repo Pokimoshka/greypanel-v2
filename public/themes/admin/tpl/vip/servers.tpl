@@ -41,9 +41,10 @@
                 <a href="/admin/vip/servers/{{ server.id }}/privileges" class="btn btn-sm btn-success">
                     <i class="fas fa-star"></i> Прив.
                 </a>
-                <a href="/admin/vip/servers/delete/{{ server.id }}" class="btn btn-sm btn-danger" onclick="return confirm('Удалить сервер?');">
-                    <i class="fas fa-trash"></i>
-                </a>
+                <form method="post" action="/admin/vip/servers/delete/{{ server.id }}" style="display:inline;" onsubmit="return confirm('Удалить сервер?');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <button type="submit" class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
+                </form>
             </td>
         </tr>
         {% else %}

@@ -14,9 +14,9 @@ export default defineConfig({
         vendor_style: path.resolve(__dirname, 'resources/scss/style.scss')
       },
       output: {
-        assetFileNames: 'css/[name].css',
-        chunkFileNames: 'js/[name].js',
-        entryFileNames: 'js/[name].js'
+        assetFileNames: 'css/[name].[hash].[ext]',
+        chunkFileNames: 'js/[name].[hash].js',
+        entryFileNames: 'js/[name].[hash].js'
       }
     }
   },

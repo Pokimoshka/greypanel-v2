@@ -29,6 +29,7 @@ final class ChatController
         }
 
         $message = trim($request->post('message') ?? '');
+        $message = strip_tags($message);
         if (empty($message)) {
             return new JsonResponse(['error' => 'Message is empty'], 400);
         }

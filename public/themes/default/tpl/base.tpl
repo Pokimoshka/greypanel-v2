@@ -50,10 +50,10 @@
         <main class="flex-grow-1">
             <div class="container-fluid px-4 py-3">
                 {% if app.flash.success %}
-                    <div class="alert alert-success alert-dismissible fade show">{{ app.flash.success }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+                    <div class="alert alert-success alert-dismissible fade show">{{ app.flash.success|e }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
                 {% endif %}
                 {% if app.flash.error %}
-                    <div class="alert alert-danger alert-dismissible fade show">{{ app.flash.error }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+                    <div class="alert alert-danger alert-dismissible fade show">{{ app.flash.error|e }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
                 {% endif %}
                 {% block content %}{% endblock %}
             </div>

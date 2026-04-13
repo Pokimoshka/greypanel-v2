@@ -9,9 +9,12 @@
   "dependencies": {
     "alpinejs": "^3.14.0",
     "bootstrap": "^5.3.8",
-    "jquery": "^4.0.0",
-    "sortablejs": "^1.15.2",
-    "trumbowyg": "^2.27.3"
+    "easymde": "^2.20.0",
+    "highlight.js": "^11.11.1",
+    "marked": "^18.0.0",
+    "marked-emoji": "^2.0.3",
+    "marked-highlight": "^2.2.4",
+    "sortablejs": "^1.15.2"
   },
   "devDependencies": {
     "sass": "^1.77.6",

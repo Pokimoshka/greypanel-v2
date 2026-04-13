@@ -15,8 +15,8 @@ use GreyPanel\Repository\VipPrivilegeRepository;
 use GreyPanel\Repository\VipPrivilegeRepositoryInterface;
 use GreyPanel\Repository\VipUserRepository;
 use GreyPanel\Repository\VipUserRepositoryInterface;
-use GreyPanel\Repository\BanRepository;
-use GreyPanel\Repository\BanRepositoryInterface;
+use GreyPanel\Service\BanService;
+use GreyPanel\Service\BanServiceInterface;
 use GreyPanel\Repository\MonitorServerRepository;
 use GreyPanel\Repository\MonitorServerRepositoryInterface;
 use GreyPanel\Repository\ForumCategoryRepository;
@@ -45,8 +45,8 @@ use GreyPanel\Service\VipActivationService;
 use GreyPanel\Service\VipActivationServiceInterface;
 use GreyPanel\Service\MonitorService;
 use GreyPanel\Service\MonitorServiceInterface;
-use GreyPanel\Service\BbcodeService;
-use GreyPanel\Service\BbcodeServiceInterface;
+use GreyPanel\Service\MarkdownService;
+use GreyPanel\Service\MarkdownServiceInterface;
 use GreyPanel\Service\ForumService;
 use GreyPanel\Service\ForumServiceInterface;
 use GreyPanel\Service\ThemeService;
@@ -67,7 +67,7 @@ use GreyPanel\Controller\HomeController;
 use GreyPanel\Controller\ForumController;
 use GreyPanel\Controller\AdminController;
 use GreyPanel\Controller\AdminVipController;
-use GreyPanel\Controller\AdminMonitorController;
+use GreyPanel\Controller\AdminServerSettingsController;
 use GreyPanel\Controller\AdminForumController;
 use GreyPanel\Controller\BanController;
 use GreyPanel\Controller\BalanceController;
@@ -89,6 +89,12 @@ use Monolog\Handler\RotatingFileHandler;
 use Psr\Log\LoggerInterface;
 use GreyPanel\Middleware\CsrfMiddleware;
 use GreyPanel\Command\CronCommand;
+use GreyPanel\Repository\NewsRepository;
+use GreyPanel\Repository\NewsRepositoryInterface;
+use GreyPanel\Service\NewsService;
+use GreyPanel\Service\NewsServiceInterface;
+use GreyPanel\Controller\NewsController;
+use GreyPanel\Controller\AdminNewsController;
 
 return function (Container $container) {
     $container->singleton(Database::class, function () {
@@ -101,7 +107,7 @@ return function (Container $container) {
     $container->bind(VipServerRepositoryInterface::class, VipServerRepository::class);
     $container->bind(VipPrivilegeRepositoryInterface::class, VipPrivilegeRepository::class);
     $container->bind(VipUserRepositoryInterface::class, VipUserRepository::class);
-    $container->bind(BanRepositoryInterface::class, BanRepository::class);
+    $container->bind(BanServiceInterface::class, BanService::class);
     $container->bind(MonitorServerRepositoryInterface::class, MonitorServerRepository::class);
     $container->bind(ForumCategoryRepositoryInterface::class, ForumCategoryRepository::class);
     $container->bind(ForumForumRepositoryInterface::class, ForumForumRepository::class);
@@ -112,6 +118,7 @@ return function (Container $container) {
     $container->bind(PaymentRepositoryInterface::class, PaymentRepository::class);
     $container->bind(OnlineRepositoryInterface::class, OnlineRepository::class);
     $container->bind(ChatRepositoryInterface::class, ChatRepository::class);
+    $container->bind(NewsRepositoryInterface::class, NewsRepository::class);
 
     $container->bind(AuthServiceInterface::class, AuthService::class);
     $container->bind(MonitorServiceInterface::class, MonitorService::class);
@@ -123,7 +130,7 @@ return function (Container $container) {
     $container->bind(ForumServiceInterface::class, ForumService::class);
     $container->bind(ThemeServiceInterface::class, ThemeService::class);
     $container->bind(AvatarServiceInterface::class, AvatarService::class);
-    $container->bind(BbcodeServiceInterface::class, BbcodeService::class);
+    $container->bind(MarkdownServiceInterface::class, MarkdownService::class);
     $container->bind(CronServiceInterface::class, CronService::class);
     $container->bind(SessionServiceInterface::class, SessionService::class);
     $container->bind(CsrfMiddleware::class, function ($c) {
@@ -132,6 +139,7 @@ return function (Container $container) {
     $container->singleton(ModuleServiceInterface::class, ModuleService::class);
     $container->bind(SeoServiceInterface::class, SeoService::class);
     $container->bind(ChatServiceInterface::class, ChatService::class);
+    $container->bind(NewsServiceInterface::class, NewsService::class);
 
     $container->bind(UserController::class);
     $container->bind(AuthController::class);
@@ -139,7 +147,7 @@ return function (Container $container) {
     $container->bind(ForumController::class);
     $container->bind(AdminController::class);
     $container->bind(AdminVipController::class);
-    $container->bind(AdminMonitorController::class);
+    $container->bind(AdminServerSettingsController::class);
     $container->bind(AdminForumController::class);
     $container->bind(BanController::class);
     $container->bind(BalanceController::class);
@@ -152,6 +160,8 @@ return function (Container $container) {
     $container->bind(AdminSeoController::class);
     $container->bind(SitemapController::class);
     $container->bind(ChatController::class);
+    $container->bind(NewsController::class);
+    $container->bind(AdminNewsController::class);
 
     $container->bind(CronCommand::class);
 

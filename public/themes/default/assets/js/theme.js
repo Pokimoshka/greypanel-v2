@@ -69,10 +69,10 @@ Alpine.data('likeButton', () => ({
         }
     }
 }));
-Alpine.data('modal', () =>{
+Alpine.data('modal', () => ({
     open: false,
-    close(); { this.open = false; }
-});
+    close() { this.open = false; }
+}));
 Alpine.data('sortableList', () =>({
     init() {
         const el = this.$refs.sortableList;

@@ -25,13 +25,12 @@
                     <li class="nav-item"><a href="{{ url('admin/users') }}" class="nav-link"><i class="fas fa-users"></i> <span>Пользователи</span></a></li>
                     <li class="nav-item"><a href="{{ url('admin/logs') }}" class="nav-link"><i class="fas fa-history"></i> <span>Логи</span></a></li>
                     <li class="nav-item"><a href="{{ url('admin/forum/categories') }}" class="nav-link"><i class="fas fa-comments"></i> <span>Форум</span></a></li>
-                    <li class="nav-item"><a href="{{ url('admin/vip/servers') }}" class="nav-link"><i class="fas fa-crown "></i> <span>VIP серверы</span></a></li>
-                    <li class="nav-item"><a href="{{ url('admin/monitor/servers') }}" class="nav-link"><i class="fas fa-server"></i> <span>Мониторинг</span></a></li>
+                    <li class="nav-item"><a href="{{ url('admin/server-settings') }}" class="nav-link"><i class="fas fa-server"></i> <span>Настройка серверов</span></a></li>
+                    <li class="nav-item"><a href="{{ url('admin/news') }}" class="nav-link"><i class="fas fa-newspaper"></i> <span>Новости</span></a></li>
                     <li class="nav-item"><a href="{{ url('admin/themes') }}" class="nav-link"><i class="fas fa-palette"></i> <span>Темы</span></a></li>
                     <li class="nav-item"><a href="{{ url('admin/modules') }}" class="nav-link"><i class="fas fa-puzzle-piece"></i> <span>Модули</span></a></li>
                     <li class="nav-item"><a href="{{ url('admin/seo') }}" class="nav-link"><i class="fas fa-search"></i> <span>SEO</span></a></li>
                     <li class="nav-item"><a href="{{ url('admin/payments') }}" class="nav-link"><i class="fas fa-credit-card"></i> <span>Платежи</span></a></li>
-                    <li class="nav-item"><a href="{{ url('admin/bans/settings') }}" class="nav-link"><i class="fas fa-gavel"></i> <span>Бан-лист</span></a></li>
                 </ul>
             </div>
         </aside>
@@ -67,10 +66,10 @@
             <main class="admin-content">
                 <div class="container-fluid">
                     {% if app.flash.success %}
-                        <div class="alert alert-success alert-dismissible fade show">{{ app.flash.success }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+                        <div class="alert alert-success alert-dismissible fade show">{{ app.flash.success|e }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
                     {% endif %}
                     {% if app.flash.error %}
-                        <div class="alert alert-danger alert-dismissible fade show">{{ app.flash.error }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+                        <div class="alert alert-danger alert-dismissible fade show">{{ app.flash.error|e }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
                     {% endif %}
                     {% block content %}{% endblock %}
                 </div>

@@ -20,7 +20,10 @@
             <td class="sort-order">{{ forum.sort_order }}</td>
             <td>
                 <a href="/admin/forum/categories/{{ category.id }}/forums/edit/{{ forum.id }}" class="btn btn-sm btn-primary">Ред.</a>
-                <a href="/admin/forum/categories/{{ category.id }}/forums/delete/{{ forum.id }}" class="btn btn-sm btn-danger" onclick="return confirm('Удалить?')">Удалить</a>
+                <form method="post" action="/admin/forum/categories/{{ category.id }}/forums/delete/{{ forum.id }}" style="display:inline;" onsubmit="return confirm('Удалить?');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <button type="submit" class="btn btn-sm btn-danger">Удалить</button>
+                </form>
             </td>
         </tr>
         {% endfor %}
@@ -39,7 +42,7 @@ document.getElementById('save-order')?.addEventListener('click', function() {
     fetch('/admin/forum/forums/sort', {
         method: 'POST',
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: 'order=' + JSON.stringify(order)
+        body: 'order=' + JSON.stringify(order) + '&csrf_token=' + encodeURIComponent('{{ csrf_token }}')
     }).then(() => location.reload());
 });
 </script>

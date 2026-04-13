@@ -234,4 +234,28 @@ class AdminController
         $data = $this->userRepo->getRegistrationsLastDays(7);
         return new JsonResponse($data);
     }
+
+    public function uploadImage(Request $request): JsonResponse
+    {
+        try {
+            $file = $request->files()['image'] ?? null;
+            if (!$file || $file->getError() !== UPLOAD_ERR_OK) {
+                return new JsonResponse(['error' => 'Файл не загружен'], 400);
+            }
+
+            $uploadDir = __DIR__ . '/../../public/uploads/';
+            if (!is_dir($uploadDir) && !mkdir($uploadDir, 0755, true)) {
+                throw new \RuntimeException('Не удалось создать директорию для загрузок');
+            }
+
+            $ext = $file->guessExtension() ?? 'bin';
+            $filename = uniqid() . '.' . $ext;
+            $file->move($uploadDir, $filename);
+
+            return new JsonResponse(['url' => '/uploads/' . $filename]);
+        } catch (\Throwable $e) {
+            error_log('Upload error: ' . $e->getMessage());
+            return new JsonResponse(['error' => 'Ошибка сервера: ' . $e->getMessage()], 500);
+        }
+    }
 }

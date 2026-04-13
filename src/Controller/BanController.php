@@ -7,23 +7,21 @@ use GreyPanel\Core\Request;
 use GreyPanel\Core\Response;
 use GreyPanel\Core\View;
 use GreyPanel\Core\JsonResponse;
-use GreyPanel\Repository\BanRepositoryInterface;
+use GreyPanel\Service\BanServiceInterface;
 use GreyPanel\Repository\ForumThreadRepositoryInterface;
 use GreyPanel\Repository\UserRepositoryInterface;
 use GreyPanel\Repository\MoneyLogRepositoryInterface;
 use GreyPanel\Repository\LogRepositoryInterface;
-use GreyPanel\Service\SettingsServiceInterface;
 use GreyPanel\Service\SessionService;
 
 class BanController
 {
     public function __construct(
-        private BanRepositoryInterface $banRepo,
+        private BanServiceInterface $banService,
         private ForumThreadRepositoryInterface $threadRepo,
         private UserRepositoryInterface $userRepo,
         private MoneyLogRepositoryInterface $moneyLogRepo,
         private LogRepositoryInterface $logRepo,
-        private SettingsServiceInterface $settings,
         private SessionService $session
     ) {}
 
@@ -32,19 +30,17 @@ class BanController
         $page = (int)$request->get('page', 1);
         $perPage = 20;
         $search = trim($request->get('search', ''));
-        $buyRazban = $this->settings->getInt('buy_razban');
 
         if ($search) {
-            $bans = $this->banRepo->searchBans($search);
+            $bans = $this->banService->searchBans($search);
             $total = count($bans);
         } else {
-            $bans = $this->banRepo->findPaginated($page, $perPage);
-            $total = $this->banRepo->count();
+            $bans = $this->banService->getBans($page, $perPage);
+            $total = $this->banService->countBans();
         }
 
         $html = View::render('bans/index.tpl', [
             'bans' => $bans,
-            'buy_razban' => $buyRazban,
             'total' => $total,
             'page' => $page,
             'per_page' => $perPage,
@@ -66,7 +62,7 @@ class BanController
         $banId = (int)$request->post('ban_id');
         $demoUrl = trim($request->post('demo_url', ''));
 
-        $bans = $this->banRepo->findPaginated(1, 1000);
+        $bans = $this->banService->findPaginated(1, 1000);
         $ban = null;
         foreach ($bans as $b) {
             if ($b['bid'] == $banId) {
@@ -126,7 +122,7 @@ class BanController
             return new JsonResponse(['error' => 'Недостаточно средств']);
         }
 
-        $banDeleted = $this->banRepo->deleteBan($banId);
+        $banDeleted = $this->banService->deleteBan($banId);
         if (!$banDeleted) {
             return new JsonResponse(['error' => 'Не удалось удалить бан']);
         }

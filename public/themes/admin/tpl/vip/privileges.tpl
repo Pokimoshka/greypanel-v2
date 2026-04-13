@@ -31,9 +31,10 @@
                 <a href="/admin/vip/servers/{{ server.id }}/privileges/edit/{{ priv.id }}" class="btn btn-sm btn-primary">
                     <i class="fas fa-edit"></i>
                 </a>
-                <a href="/admin/vip/servers/{{ server.id }}/privileges/delete/{{ priv.id }}" class="btn btn-sm btn-danger" onclick="return confirm('Удалить привилегию?')">
-                    <i class="fas fa-trash"></i>
-                </a>
+                <form method="post" action="/admin/vip/servers/{{ server.id }}/privileges/delete/{{ priv.id }}" style="display:inline;" onsubmit="return confirm('Удалить привилегию?');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <button type="submit" class="btn btn-sm btn-danger"><i class="fas fa-trash"></i></button>
+                </form>
             </td>
         </tr>
         {% else %}

@@ -10,6 +10,7 @@ interface MonitorServerRepositoryInterface
     public function findById(int $id): ?array;
     public function create(array $data): int;
     public function update(int $id, array $data): void;
+    public function updateSettings(int $id, array $settings): void;
     public function updateStatus(int $id, int $status, string $cache, int $cacheTime): void;
     public function delete(int $id): void;
 }

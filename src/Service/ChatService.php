@@ -11,14 +11,14 @@ final class ChatService implements ChatServiceInterface
     public function __construct(
         private ChatRepositoryInterface $chatRepo,
         private UserRepositoryInterface $userRepo,
-        private BbcodeServiceInterface $bbcode
+        private MarkdownServiceInterface $markdown
     ) {}
 
     public function getMessages(int $sinceId = 0, int $limit = 50): array
     {
         $messages = $this->chatRepo->findMessages($sinceId, $limit);
         foreach ($messages as &$msg) {
-            $msg['text'] = $this->bbcode->parse($msg['message']);
+            $msg['text'] = $this->markdown->parse($msg['message']);
             $msg['time'] = $this->formatTime($msg['created_at']);
             unset($msg['message']);
         }
@@ -34,7 +34,7 @@ final class ChatService implements ChatServiceInterface
             'user_id' => $userId,
             'username' => $user->getUsername(),
             'avatar' => $user->getAvatar(),
-            'text' => $this->bbcode->parse($message),
+            'text' => $this->markdown->parse($message),
             'time' => 'только что',
         ];
     }

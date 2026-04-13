@@ -145,7 +145,7 @@ class AdminForumController
     public function forumDelete(Request $request, $categoryId, $id): Response
     {
         $this->forumRepo->delete($id);
-        return new RedirectResponse("forum/categories/{$categoryId}/forums");
+        return new RedirectResponse("/admin/forum/categories/{$categoryId}/forums");
     }
 
     public function sortForums(Request $request): Response

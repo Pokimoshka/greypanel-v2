@@ -15,7 +15,10 @@
             {% if app.user and (thread.author.id == app.user.id or app.user.group >= 3) %}
             <div>
                 <a href="{{ url('forum/thread/edit/' ~ thread.id) }}" class="btn btn-sm btn-warning">Ред.</a>
-                <a href="{{ url('forum/thread/delete/' ~ thread.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('Удалить?')">Удалить</a>
+                <form method="post" action="{{ url('forum/thread/delete/' ~ thread.id) }}" style="display:inline;" onsubmit="return confirm('Удалить?');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <button type="submit" class="btn btn-sm btn-danger">Удалить</button>
+                </form>
             </div>
             {% endif %}
         </div>
@@ -58,7 +61,10 @@
                 <div class="mt-2">
                     {% if app.user and (post.author.id == app.user.id or app.user.group >= 3) %}
                         <a href="{{ url('forum/post/edit/' ~ post.id) }}" class="btn btn-sm btn-warning">Ред.</a>
-                        <a href="{{ url('forum/post/delete/' ~ post.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('Удалить?')">Удалить</a>
+                        <form method="post" action="{{ url('forum/post/delete/' ~ post.id) }}" style="display:inline;" onsubmit="return confirm('Удалить?');">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                            <button type="submit" class="btn btn-sm btn-danger">Удалить</button>
+                        </form>
                     {% endif %}
                     <div x-data="quote">
                         <button @click="insertQuote('{{ post.author.username|escape('js') }}', '{{ post.content|escape('js') }}')" class="btn btn-sm btn-outline-secondary">Цитировать</button>
@@ -77,7 +83,7 @@
 <div class="card mt-3">
     <div class="card-header">Ответить</div>
     <div class="card-body">
-        <textarea id="reply-content" class="form-control" rows="6" placeholder="Ваше сообщение..."></textarea>
+        <textarea id="reply-content" class="form-control editor" rows="6" placeholder="Ваше сообщение..."></textarea>
         <button id="submit-reply" class="btn btn-primary mt-2">Отправить</button>
     </div>
 </div>
@@ -89,22 +95,38 @@
 {% block scripts %}
 <script>
 document.addEventListener('alpine:init', () => {
-    $('#reply-content').trumbowyg({
-        btns: ['bold', 'italic', 'underline', 'link', 'quote'],
-        plugins: { bbcode: true }
-    });
+    const submitBtn = document.getElementById('submit-reply');
+    if (submitBtn) {
+        submitBtn.addEventListener('click', async () => {
+            const textarea = document.getElementById('reply-content');
+            const easyMDE = textarea.easyMDE;
+            if (easyMDE) {
+                easyMDE.toTextArea(); // синхронизирует значение с оригинальным textarea
+            }
+            const content = textarea.value;
+            if (!content.trim()) {
+                alert('Введите сообщение');
+                return;
+            }
 
-    document.getElementById('submit-reply').addEventListener('click', async () => {
-        const content = $('#reply-content').trumbowyg('html');
-        const formData = new FormData();
-        formData.append('thread_id', {{ thread.id }});
-        formData.append('content', content);
-        formData.append('csrf_token', '{{ csrf_token }}');
-        const res = await fetch('/forum/post/create', { method: 'POST', body: formData });
-        const data = await res.json();
-        if (data.success) location.reload();
-        else alert(data.error);
-    });
+            const formData = new FormData();
+            formData.append('thread_id', {{ thread.id }});
+            formData.append('content', content);
+            formData.append('csrf_token', '{{ csrf_token }}');
+
+            try {
+                const res = await fetch('/forum/post/create', { method: 'POST', body: formData });
+                const data = await res.json();
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert(data.error || 'Ошибка при отправке');
+                }
+            } catch (e) {
+                alert('Ошибка соединения');
+            }
+        });
+    }
 });
 </script>
 {% endblock %}

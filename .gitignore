@@ -20,9 +20,6 @@
 /public/assets/
 !/public/assets/manifest.json
 
-# Installer lock (папка удаляется после установки)
-/install/
-
 # IDE / OS
 .idea/
 .vscode/

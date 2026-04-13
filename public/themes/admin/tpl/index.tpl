@@ -142,7 +142,7 @@
                 <div class="d-grid gap-2">
                     <a href="{{ url('admin/vip/servers') }}" class="btn btn-outline-primary"><i class="fas fa-crown me-2"></i> Управление VIP</a>
                     <a href="{{ url('admin/forum/categories') }}" class="btn btn-outline-success"><i class="fas fa-comments me-2"></i> Настройки форума</a>
-                    <a href="{{ url('admin/monitor/servers') }}" class="btn btn-outline-info"><i class="fas fa-server me-2"></i> Мониторинг</a>
+                    <a href="{{ url('admin/server-settings') }}" class="btn btn-outline-info"><i class="fas fa-server me-2"></i> Мониторинг</a>
                     <a href="{{ url('admin/themes') }}" class="btn btn-outline-warning"><i class="fas fa-palette me-2"></i> Темы оформления</a>
                     <a href="{{ url('admin/modules') }}" class="btn btn-outline-secondary"><i class="fas fa-puzzle-piece me-2"></i> Модули</a>
                 </div>

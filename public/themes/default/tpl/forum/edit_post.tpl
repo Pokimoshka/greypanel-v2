@@ -8,7 +8,7 @@
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     <div class="mb-3">
         <label class="form-label">Сообщение</label>
-        <textarea name="content" class="form-control" rows="10" required>{{ post.content }}</textarea>
+        <textarea name="content" class="form-control editor" rows="10">{{ post.content }}</textarea>
     </div>
     <button type="submit" class="btn btn-primary">Сохранить</button>
     <a href="/forum/thread/{{ thread.id }}" class="btn btn-secondary">Отмена</a>

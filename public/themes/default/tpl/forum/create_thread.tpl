@@ -13,32 +13,9 @@
     </div>
     <div class="mb-3">
         <label class="form-label">Сообщение</label>
-        <textarea name="content" id="content" class="form-control" rows="10" required>{{ thread.content ?? '' }}</textarea>
+        <textarea name="content" class="form-control editor" rows="10">{{ thread.content ?? '' }}</textarea>
         <div class="form-text">Доступные BB-коды: [b], [i], [u], [url], [img], [quote], [code]</div>
     </div>
     <button type="submit" class="btn btn-primary">Создать тему</button>
 </form>
-{% endblock %}
-
-{% block scripts %}
-<script>
-$(document).ready(function() {
-    $('#content').trumbowyg({
-        btns: ['bold', 'italic', 'underline', '|', 'link', 'insertImage', '|', 'unorderedList', 'orderedList', '|', 'quote', 'code', '|', 'removeformat'],
-        btnsDef: {
-            quote: {
-                title: 'Цитата',
-                fn: function() {
-                    this.execCmd('formatBlock', 'blockquote');
-                }
-            }
-        },
-        plugins: {
-            bbcode: true
-        },
-        autogrow: true,
-        removeformatPasted: true
-    });
-});
-</script>
 {% endblock %}

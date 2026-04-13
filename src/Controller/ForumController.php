@@ -109,6 +109,7 @@ final class ForumController
         $forumId = (int)$request->post('forum_id');
         $title = trim($request->post('title'));
         $content = trim($request->post('content'));
+        $content = strip_tags($content);
         $userId = $this->session->getUserId();
 
         if (empty($title) || empty($content)) {
@@ -127,6 +128,7 @@ final class ForumController
 
         $threadId = (int)$request->post('thread_id');
         $content = trim($request->post('content'));
+        $content = strip_tags($content);
         $userId = $this->session->getUserId();
 
         if (empty($content)) {
@@ -185,6 +187,7 @@ final class ForumController
         if ($request->isPost()) {
             $title = trim($request->post('title'));
             $content = trim($request->post('content'));
+            $content = strip_tags($content);
             if (!empty($title) && !empty($content)) {
                 $this->threadRepo->update($id, $title, $content);
             }
@@ -251,6 +254,7 @@ final class ForumController
 
         if ($request->isPost()) {
             $content = trim($request->post('content'));
+            $content = strip_tags($content);
             if (!empty($content)) {
                 $this->postRepo->update($id, $content);
             }

@@ -19,8 +19,10 @@
                 <td>{{ cat.sort_order }}</td>
                 <td>
                     <a href="{{ url('admin/forum/categories/edit/' ~ cat.id) }}" class="btn btn-sm btn-primary">Ред.</a>
-                    <a href="{{ url('admin/forum/categories/delete/' ~ cat.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('Удалить?')">Удалить</a>
-                </td>
+                    <form method="post" action="{{ url('admin/forum/categories/delete/' ~ cat.id) }}" style="display:inline;" onsubmit="return confirm('Удалить?');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <button type="submit" class="btn btn-sm btn-danger">Удалить</button>
+                    </form>
             </tr>
             {% endfor %}
         </tbody>

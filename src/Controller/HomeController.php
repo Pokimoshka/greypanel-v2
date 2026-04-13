@@ -8,7 +8,7 @@ use GreyPanel\Core\Response;
 use GreyPanel\Core\View;
 use GreyPanel\Repository\UserRepositoryInterface;
 use GreyPanel\Repository\ForumThreadRepositoryInterface;
-use GreyPanel\Repository\BanRepositoryInterface;
+use GreyPanel\Service\BanServiceInterface;
 use GreyPanel\Repository\OnlineRepositoryInterface;
 use GreyPanel\Service\SessionServiceInterface;
 use GreyPanel\Service\SeoServiceInterface;
@@ -18,7 +18,7 @@ final class HomeController
     public function __construct(
         private UserRepositoryInterface $userRepo,
         private ForumThreadRepositoryInterface $threadRepo,
-        private BanRepositoryInterface $banRepo,
+        private BanServiceInterface $banService,
         private OnlineRepositoryInterface $onlineRepo,
         private SessionServiceInterface $session,
         private SeoServiceInterface $seoService
@@ -28,7 +28,7 @@ final class HomeController
     {
         $lastTopics = $this->threadRepo->findLast(5);
         $topDonators = $this->userRepo->findTopDonators(5);
-        $lastBans = $this->banRepo->findPaginated(1, 5);
+        $lastBans = $this->banService->getBans(1, 5);
         $onlineUsers = $this->onlineRepo->findOnlineUsers();
         $meta = $this->seoService->getMetaTags('Главная страница', 'Добро пожаловать на GreyPanel');
 
