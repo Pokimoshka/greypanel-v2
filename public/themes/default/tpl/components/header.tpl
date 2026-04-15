@@ -7,8 +7,8 @@
             
             <div class="d-flex align-items-center gap-3">
                 <button class="theme-toggle" @click="toggleTheme">
-                    <i class="fas" :class="theme === 'light' ? 'fa-moon' : 'fa-sun'"></i>
-                    <span class="d-none d-sm-inline ms-2" x-text="theme === 'light' ? 'Тёмная' : 'Светлая'"></span>
+                    <i class="fas" :class="getThemeIcon()"></i>
+                    <span class="d-none d-sm-inline ms-2" x-text="getThemeText()"></span>
                 </button>
                 
                 {% if app.user %}
