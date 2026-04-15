@@ -2,12 +2,6 @@
 
 {% block title %}{{ server.id ? 'Редактирование сервера' : 'Добавление сервера' }}{% endblock %}
 
-{% block head %}
-{{ parent() }}
-<!-- Подключаем Alpine.js, если ещё не подключён глобально -->
-<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-{% endblock %}
-
 {% block content %}
 <h1>{{ server.id ? 'Редактирование' : 'Добавление' }} сервера</h1>
 
@@ -172,7 +166,6 @@
 {{ parent() }}
 <script>
 function serverForm(initialData) {
-    // Приводим типы и значения по умолчанию
     return {
         type: initialData?.type || 'halflife',
         ip: initialData?.ip || '',

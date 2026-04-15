@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS `{prefix}users` (
   `group` tinyint(1) NOT NULL DEFAULT '0' COMMENT '0-пользователь,1-меценат,2-модератор,3-админ,4-root',
   `money` int(11) NOT NULL DEFAULT '0',
   `all_money` int(11) NOT NULL DEFAULT '0',
-  `avatar` varchar(500) NOT NULL DEFAULT 'assets/img/avatar_default.png',
+  `avatar` varchar(500) NOT NULL DEFAULT 'public/assets/img/avatar_default.png',
   `vk_id` int(11) NOT NULL DEFAULT '0',
   `reg_data` int(11) NOT NULL DEFAULT '0',
   `reg_ip` varchar(45) NOT NULL,

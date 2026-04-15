@@ -1,34 +1,32 @@
-{% extends "base.tpl" %}
+{% extends 'base.tpl' %}
 
-{% block title %}Вход{% endblock %}
+{% block title %}Вход — {{ site_name }}{% endblock %}
 
 {% block content %}
-<div class="row justify-content-center">
-    <div class="col-md-6">
-        <div class="card">
-            <div class="card-header">Вход на сайт</div>
-            <div class="card-body">
-                {% if error is defined %}
-                    <div class="alert alert-danger">{{ error }}</div>
-                {% endif %}
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="widget-card p-4">
+                <h4 class="mb-4 text-center"><i class="fas fa-sign-in-alt me-2" style="color: var(--accent);"></i>Вход</h4>
+                {% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
                 <form method="post">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                     <div class="mb-3">
-                        <label for="username" class="form-label">Ник или Email</label>
-                        <input type="text" class="form-control" id="username" name="username" required>
+                        <label class="form-label">Ник или Email</label>
+                        <input type="text" name="username" class="form-control" required autofocus>
                     </div>
                     <div class="mb-3">
-                        <label for="password" class="form-label">Пароль</label>
-                        <input type="password" class="form-control" id="password" name="password" required>
+                        <label class="form-label">Пароль</label>
+                        <input type="password" name="password" class="form-control" required>
                     </div>
                     <div class="mb-3 form-check">
-                        <input type="checkbox" class="form-check-input" id="remember" name="remember">
+                        <input type="checkbox" name="remember" class="form-check-input" id="remember">
                         <label class="form-check-label" for="remember">Запомнить меня</label>
                     </div>
-                    <button type="submit" class="btn btn-primary">Войти</button>
+                    <button type="submit" class="btn btn-primary w-100">Войти</button>
                 </form>
+                <hr style="border-color: var(--border-color);">
+                <p class="text-center mb-0">Нет аккаунта? <a href="{{ url('/register') }}" class="link-accent">Зарегистрироваться</a></p>
             </div>
         </div>
     </div>
-</div>
 {% endblock %}

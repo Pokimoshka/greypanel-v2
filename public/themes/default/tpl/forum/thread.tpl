@@ -1,132 +1,130 @@
-{% extends "base.tpl" %}
+{% extends 'base.tpl' %}
 
-{% block title %}{{ thread.title }}{% endblock %}
+{% block title %}{{ thread.title }} — {{ site_name }}{% endblock %}
 
 {% block content %}
-<div class="mb-3">
-    <a href="{{ url('forum/forum/' ~ thread.forum_id) }}" class="btn btn-secondary btn-sm">← Назад</a>
-</div>
-
-<div class="card mb-3">
-    <div class="card-header">
-        <h3>{{ thread.title }}</h3>
-        <div class="d-flex justify-content-between">
-            <span>Автор: {{ thread.author.username }}</span>
-            {% if app.user and (thread.author.id == app.user.id or app.user.group >= 3) %}
-            <div>
-                <a href="{{ url('forum/thread/edit/' ~ thread.id) }}" class="btn btn-sm btn-warning">Ред.</a>
-                <form method="post" action="{{ url('forum/thread/delete/' ~ thread.id) }}" style="display:inline;" onsubmit="return confirm('Удалить?');">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                    <button type="submit" class="btn btn-sm btn-danger">Удалить</button>
-                </form>
-            </div>
-            {% endif %}
+    <div class="mb-4">
+        <a href="{{ url('/forum/forum/' ~ thread.forum_id) }}" class="link-accent small">
+            <i class="fas fa-arrow-left me-1"></i>К списку тем
+        </a>
+        <h2 class="mt-2 mb-0" style="color: var(--accent-bright);">{{ thread.title }}</h2>
+        <div class="d-flex justify-content-between align-items-center">
+            <span class="text-secondary small">
+                <i class="fas fa-user me-1"></i>{{ thread.author.username }} · 
+                <i class="fas fa-calendar me-1"></i>{{ thread.created_at|date('d.m.Y H:i') }}
+            </span>
+            <span class="text-secondary small">
+                <i class="fas fa-eye me-1"></i>{{ thread.views }} · 
+                <i class="fas fa-reply me-1"></i>{{ thread.replies }}
+            </span>
         </div>
     </div>
-    <div class="card-body">
-        <div class="row">
-            <div class="col-md-2 text-center">
-                <img src="{{ thread.author.avatar }}" class="rounded-circle mb-2" width="80">
-                <div><strong>{{ thread.author.username }}</strong></div>
-            </div>
-            <div class="col-md-10">
-                {{ thread.content_html|raw }}
-                <div class="mt-3">
-                    <div x-data="likeButton('thread', {{ thread.id }}, {{ thread.likes_count|default(0) }}, {{ thread.user_liked ? 'true' : 'false' }})">
-                        <button @click="toggle" class="btn btn-sm btn-outline-primary">
-                            👍 <span x-text="count"></span>
-                        </button>
+
+    {# Сообщения темы #}
+    {% for post in thread.posts %}
+        <div class="widget-card p-3 mb-4" id="post-{{ post.id }}">
+            <div class="d-flex">
+                <div class="text-center me-3" style="min-width: 60px;">
+                    <img src="{{ post.author.avatar }}" width="48" height="48" class="rounded-circle mb-1">
+                    <div class="fw-bold small">{{ post.author.username }}</div>
+                    <span class="badge mt-1" style="background: var(--accent); font-size: 0.7rem;">{{ post.author.group_name }}</span>
+                </div>
+                <div class="flex-grow-1">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-secondary small">
+                            <i class="fas fa-clock me-1"></i>{{ post.created_at|date('d.m.Y H:i') }}
+                            {% if post.updated_at != post.created_at %}
+                                <span class="ms-2">(отредактировано)</span>
+                            {% endif %}
+                        </span>
+                        <div>
+                            <span class="text-secondary me-2">#{{ loop.index }}</span>
+                            {% if app.user and (post.author.id == app.user.id or app.user.group >= 3) %}
+                                <a href="{{ url('/forum/post/edit/' ~ post.id) }}" class="btn btn-sm btn-link text-secondary" title="Редактировать">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="post-content">
+                        {{ post.content_html|raw }}
+                    </div>
+                    <div class="mt-3 d-flex gap-2">
+                        <div x-data="likeButton('post', {{ post.id }}, {{ post.likes_count|default(0) }}, {{ post.user_liked ? 'true' : 'false' }})">
+                            <button @click="toggle" class="btn btn-sm" :class="liked ? 'btn-primary' : 'btn-outline-secondary'">
+                                <i class="far fa-heart me-1"></i>
+                                <span x-text="count"></span>
+                            </button>
+                        </div>
+                        <div x-data="quote">
+                            <button @click="insertQuote('{{ post.author.username|escape('js') }}', '{{ post.content|escape('js') }}')" class="btn btn-sm btn-outline-secondary">
+                                <i class="fas fa-quote-right me-1"></i>Цитировать
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-</div>
+    {% endfor %}
 
-<h4>Ответы ({{ thread.posts_count }})</h4>
+    {# Пагинация #}
+    {% include 'partials/pagination.tpl' with {
+        'current': page,
+        'total': thread.posts_count,
+        'per_page': per_page,
+        'url': '/forum/thread/' ~ thread.id
+    } %}
 
-{% for post in thread.posts %}
-<div class="card mb-3" id="post-{{ post.id }}">
-    <div class="card-body">
-        <div class="row">
-            <div class="col-md-2 text-center">
-                <img src="{{ post.author.avatar }}" class="rounded-circle mb-2" width="60">
-                <div><strong>{{ post.author.username }}</strong></div>
-            </div>
-            <div class="col-md-10">
-                <div class="text-muted small mb-2">
-                    #{{ loop.index }} · {{ post.created_at|date('d.m.Y H:i') }}
-                </div>
-                {{ post.content_html|raw }}
-                <div class="mt-2">
-                    {% if app.user and (post.author.id == app.user.id or app.user.group >= 3) %}
-                        <a href="{{ url('forum/post/edit/' ~ post.id) }}" class="btn btn-sm btn-warning">Ред.</a>
-                        <form method="post" action="{{ url('forum/post/delete/' ~ post.id) }}" style="display:inline;" onsubmit="return confirm('Удалить?');">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                            <button type="submit" class="btn btn-sm btn-danger">Удалить</button>
-                        </form>
-                    {% endif %}
-                    <div x-data="quote">
-                        <button @click="insertQuote('{{ post.author.username|escape('js') }}', '{{ post.content|escape('js') }}')" class="btn btn-sm btn-outline-secondary">Цитировать</button>
-                    </div>
-                    <div x-data="likeButton('post', {{ post.id }}, {{ post.likes_count|default(0) }}, {{ post.user_liked ? 'true' : 'false' }})" class="d-inline">
-                        <button @click="toggle" class="btn btn-sm btn-outline-primary">Нравится</button>
-                    </div>
-                </div>
+    {# Форма ответа #}
+    {% if not thread.is_closed and app.user %}
+        <div class="widget-card p-3 mt-4">
+            <h5 class="mb-3">Ответить</h5>
+            <textarea id="reply-content" class="form-control editor" rows="6" placeholder="Ваше сообщение..."></textarea>
+            <div class="mt-3">
+                <button id="submit-reply" class="btn btn-primary">
+                    <i class="fas fa-paper-plane me-1"></i>Отправить
+                </button>
             </div>
         </div>
-    </div>
-</div>
-{% endfor %}
-
-{% if not thread.is_closed and app.user %}
-<div class="card mt-3">
-    <div class="card-header">Ответить</div>
-    <div class="card-body">
-        <textarea id="reply-content" class="form-control editor" rows="6" placeholder="Ваше сообщение..."></textarea>
-        <button id="submit-reply" class="btn btn-primary mt-2">Отправить</button>
-    </div>
-</div>
-{% endif %}
-
-{% include 'partials/pagination.tpl' %}
+    {% elseif thread.is_closed %}
+        <div class="alert alert-warning mt-4">
+            <i class="fas fa-lock me-1"></i>Тема закрыта.
+        </div>
+    {% else %}
+        <div class="alert alert-info mt-4">
+            <a href="{{ url('/login') }}">Войдите</a>, чтобы ответить.
+        </div>
+    {% endif %}
 {% endblock %}
 
 {% block scripts %}
-<script>
-document.addEventListener('alpine:init', () => {
-    const submitBtn = document.getElementById('submit-reply');
-    if (submitBtn) {
-        submitBtn.addEventListener('click', async () => {
-            const textarea = document.getElementById('reply-content');
-            const easyMDE = textarea.easyMDE;
-            if (easyMDE) {
-                easyMDE.toTextArea(); // синхронизирует значение с оригинальным textarea
-            }
-            const content = textarea.value;
-            if (!content.trim()) {
-                alert('Введите сообщение');
-                return;
-            }
-
-            const formData = new FormData();
-            formData.append('thread_id', {{ thread.id }});
-            formData.append('content', content);
-            formData.append('csrf_token', '{{ csrf_token }}');
-
-            try {
-                const res = await fetch('/forum/post/create', { method: 'POST', body: formData });
-                const data = await res.json();
-                if (data.success) {
-                    location.reload();
-                } else {
-                    alert(data.error || 'Ошибка при отправке');
-                }
-            } catch (e) {
-                alert('Ошибка соединения');
+    {{ parent() }}
+    <script>
+        document.addEventListener('alpine:init', () => {
+            const submitBtn = document.getElementById('submit-reply');
+            if (submitBtn) {
+                submitBtn.addEventListener('click', async () => {
+                    const textarea = document.getElementById('reply-content');
+                    const easyMDE = textarea.easyMDE;
+                    if (easyMDE) easyMDE.toTextArea();
+                    const content = textarea.value.trim();
+                    if (!content) return alert('Введите сообщение');
+                    
+                    const formData = new FormData();
+                    formData.append('thread_id', {{ thread.id }});
+                    formData.append('content', content);
+                    formData.append('csrf_token', '{{ csrf_token }}');
+                    
+                    try {
+                        const res = await fetch('/forum/post/create', { method: 'POST', body: formData });
+                        const data = await res.json();
+                        if (data.success) location.reload();
+                        else alert(data.error || 'Ошибка');
+                    } catch (e) {
+                        alert('Ошибка соединения');
+                    }
+                });
             }
         });
-    }
-});
-</script>
+    </script>
 {% endblock %}

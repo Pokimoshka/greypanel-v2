@@ -30,7 +30,7 @@ class User
         $this->group = $data['group'] ?? 0;
         $this->money = $data['money'] ?? 0;
         $this->allMoney = $data['all_money'] ?? 0;
-        $this->avatar = $data['avatar'] ?? 'assets/img/avatar_default.png';
+        $this->avatar = $data['avatar'] ?? 'public/assets/img/avatar_default.png';
         $this->regData = $data['reg_data'] ?? 0;
         $this->regIp = $data['reg_ip'] ?? '';
         $this->referral = $data['referral'] ?? 0;

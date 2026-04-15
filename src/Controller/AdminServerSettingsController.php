@@ -19,9 +19,6 @@ class AdminServerSettingsController
         private EncryptionServiceInterface $encryption
     ) {}
 
-    /**
-     * Список серверов
-     */
     public function index(Request $request): Response
     {
         $servers = $this->repo->findAll();
@@ -30,9 +27,6 @@ class AdminServerSettingsController
         ]));
     }
 
-    /**
-     * Форма добавления / редактирования сервера
-     */
     public function form(Request $request, ?int $id = null): Response
     {
         if ($id !== null) {
@@ -45,7 +39,6 @@ class AdminServerSettingsController
         }
 
         if ($request->isPost()) {
-            // Базовые данные сервера
             $baseData = [
                 'type'       => $request->post('type', 'halflife'),
                 'ip'         => trim($request->post('ip')),
@@ -55,7 +48,6 @@ class AdminServerSettingsController
                 'disabled'   => (int)$request->post('disabled', 0),
             ];
 
-            // Данные интеграций
             $settings = [
                 'privilege_storage'   => (int)$request->post('privilege_storage', 1),
                 'stats_engine'        => (int)$request->post('stats_engine', 1),
@@ -74,7 +66,6 @@ class AdminServerSettingsController
                 'ftp_path'            => $request->post('ftp_path'),
             ];
 
-            // Шифруем пароли, если они были переданы (не пустые)
             if ($pass = $request->post('amxbans_db_pass')) {
                 $settings['amxbans_db_pass'] = $this->encryption->encrypt($pass);
             }
@@ -90,16 +81,13 @@ class AdminServerSettingsController
             }
 
             if ($id !== null) {
-                // Обновление существующего сервера
                 $this->repo->update($id, $baseData);
                 $this->repo->updateSettings($id, $settings);
             } else {
-                // Создание нового сервера
                 $data = array_merge($baseData, $settings);
                 $id = $this->repo->create($data);
             }
 
-            // Обновляем статус сервера через мониторинг
             $this->monitorService->updateServerStatus($id);
 
             return new RedirectResponse('/admin/server-settings');
@@ -110,18 +98,12 @@ class AdminServerSettingsController
         ]));
     }
 
-    /**
-     * Удаление сервера
-     */
     public function delete(Request $request, int $id): Response
     {
         $this->repo->delete($id);
         return new RedirectResponse('/admin/server-settings');
     }
 
-    /**
-     * Тест соединения с сервером (обновление статуса)
-     */
     public function testConnection(Request $request, int $id): Response
     {
         $this->monitorService->updateServerStatus($id);

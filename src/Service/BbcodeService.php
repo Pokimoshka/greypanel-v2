@@ -9,10 +9,8 @@ final class BbcodeService implements BbcodeServiceInterface
 
     public function parse(string $text): string
     {
-        // Экранируем весь HTML
         $text = htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
 
-        // Применяем BB-теги
         $text = $this->parseBold($text);
         $text = $this->parseItalic($text);
         $text = $this->parseUnderline($text);
@@ -21,7 +19,6 @@ final class BbcodeService implements BbcodeServiceInterface
         $text = $this->parseQuote($text);
         $text = $this->parseCode($text);
 
-        // Преобразуем переносы строк в <br>
         return nl2br($text);
     }
 
@@ -54,7 +51,6 @@ final class BbcodeService implements BbcodeServiceInterface
 
     private function parseUrl(string $text): string
     {
-        // [url]http://example.com[/url]
         $text = preg_replace_callback(
             '#\[url\](.*?)\[/url\]#is',
             function ($m) {
@@ -64,7 +60,6 @@ final class BbcodeService implements BbcodeServiceInterface
             $text
         );
 
-        // [url=http://example.com]текст[/url]
         return preg_replace_callback(
             '#\[url=(.*?)\](.*?)\[/url\]#is',
             function ($m) {
@@ -84,7 +79,6 @@ final class BbcodeService implements BbcodeServiceInterface
                 if (!$url) {
                     return $m[0];
                 }
-                // Дополнительно можно проверять Content-Type, но это замедлит вывод
                 return '<img src="' . $url . '" alt="User image" class="img-fluid" style="max-width:100%">';
             },
             $text
@@ -93,14 +87,12 @@ final class BbcodeService implements BbcodeServiceInterface
 
     private function parseQuote(string $text): string
     {
-        // [quote=Author]текст[/quote]
         $text = preg_replace_callback(
             '#\[quote=(.*?)\](.*?)\[/quote\]#is',
             fn($m) => '<blockquote class="blockquote"><small>' . htmlspecialchars($m[1]) . ' wrote:</small><br>' . $this->parse($m[2]) . '</blockquote>',
             $text
         );
 
-        // [quote]текст[/quote]
         return preg_replace_callback(
             '#\[quote\](.*?)\[/quote\]#is',
             fn($m) => '<blockquote class="blockquote">' . $this->parse($m[1]) . '</blockquote>',
@@ -128,7 +120,6 @@ final class BbcodeService implements BbcodeServiceInterface
         if (!$parts || !in_array(strtolower($parts['scheme']), $this->allowedSchemes, true)) {
             return null;
         }
-        // Дополнительно можно запретить IP-адреса, localhost и т.д.
         return filter_var($url, FILTER_VALIDATE_URL) ? $url : null;
     }
 }

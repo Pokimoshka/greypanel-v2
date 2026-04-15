@@ -198,15 +198,11 @@ final class App
             throw new \RuntimeException("Method not found: {$method} in {$controllerClass}");
         }
 
-        // Приводим параметры маршрута к ожидаемым типам метода контроллера
         $args = $this->resolveMethodArguments($controllerClass, $method, $request, $vars);
 
         return $controller->$method(...$args);
     }
 
-    /**
-     * Преобразует параметры маршрута в соответствии с сигнатурой метода контроллера.
-     */
     private function resolveMethodArguments(string $controllerClass, string $method, Request $request, array $routeVars): array
     {
         $reflectionMethod = new \ReflectionMethod($controllerClass, $method);
@@ -219,16 +215,13 @@ final class App
             $paramType = $param->getType();
             $paramName = $param->getName();
 
-            // Если параметр — Request
             if ($paramType && $paramType->getName() === Request::class) {
                 $args[] = $request;
                 continue;
             }
 
-            // Если ещё есть неиспользованные параметры маршрута
             if ($routeIndex < count($routeValues)) {
                 $value = $routeValues[$routeIndex++];
-                // Приводим к ожидаемому типу
                 if ($paramType instanceof \ReflectionNamedType) {
                     $typeName = $paramType->getName();
                     if ($typeName === 'int') {
@@ -240,7 +233,6 @@ final class App
                     } elseif ($typeName === 'string') {
                         $value = (string)$value;
                     }
-                    // Для других типов (объекты) пока не поддерживаем
                 }
                 $args[] = $value;
             } elseif ($param->isDefaultValueAvailable()) {

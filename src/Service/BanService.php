@@ -18,14 +18,10 @@ final class BanService implements BanServiceInterface
         $this->loadConfig();
     }
 
-    /**
-     * Загружает конфигурацию первого сервера с включённой AmxBans
-     */
     private function loadConfig(): void
     {
         $servers = $this->serverRepo->findAll();
         foreach ($servers as $server) {
-            // privilege_storage: 2 = AmxBans, 3 = both
             if (in_array($server['privilege_storage'] ?? 0, [2, 3]) && !empty($server['amxbans_db_host'])) {
                 $this->serverConfig = $server;
                 break;

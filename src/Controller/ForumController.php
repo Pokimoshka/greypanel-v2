@@ -311,4 +311,11 @@ final class ForumController
             'per_page' => $perPage,
         ]));
     }
+
+    public function lastTopics(Request $request): JsonResponse
+    {
+        $limit = (int)($request->get('limit') ?? 5);
+        $topics = $this->threadRepo->findLast($limit);
+        return new JsonResponse($topics);
+    }
 }

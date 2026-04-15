@@ -18,7 +18,7 @@ final class MarkdownService implements MarkdownServiceInterface
     public function __construct()
     {
         $environment = new Environment([
-            'html_input' => 'escape', // важнейшая настройка: экранирует любой HTML в исходном тексте
+            'html_input' => 'escape', 
             'allow_unsafe_links' => false,
         ]);
         $environment->addExtension(new CommonMarkCoreExtension());

@@ -13,7 +13,6 @@ define('INSTALL_DIR', __DIR__);
 
 session_start();
 
-// Если уже установлено – редирект на сайт
 if (file_exists(ENV_FILE) && filesize(ENV_FILE) > 0) {
     header('Location: /');
     exit;
@@ -23,10 +22,8 @@ $step = $_POST['step'] ?? $_GET['step'] ?? 1;
 $error = '';
 $success = '';
 
-// Обработка POST
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($step == 1) {
-        // Проверка окружения
         $envOk = true;
         $phpVersion = phpversion();
         if (version_compare($phpVersion, '8.1', '<')) {
@@ -65,7 +62,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
     } elseif ($step == 2) {
-        // Сохраняем данные БД
         $_SESSION['db_host'] = trim($_POST['db_host'] ?? 'localhost');
         $_SESSION['db_name'] = trim($_POST['db_name'] ?? '');
         $_SESSION['db_user'] = trim($_POST['db_user'] ?? '');
@@ -94,7 +90,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
     } elseif ($step == 3) {
-        // Данные администратора
         $_SESSION['admin_username'] = trim($_POST['admin_username'] ?? '');
         $_SESSION['admin_email'] = trim($_POST['admin_email'] ?? '');
         $_SESSION['admin_password'] = $_POST['admin_password'] ?? '';
@@ -130,10 +125,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header('Location: ?step=4');
         exit;
     } elseif ($step == 4) {
-        // Выполнение установки
         $result = runInstallation();
         if ($result === true) {
-            // Перенаправляем на сайт
             header('Location: /');
             exit;
         } else {
@@ -164,7 +157,6 @@ function runInstallation()
             [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
         );
         
-        // Читаем SQL-файл миграций
         $sqlFile = __DIR__ . '/migrations.sql';
         if (!file_exists($sqlFile)) {
             return "Файл миграций не найден: $sqlFile";
@@ -172,7 +164,6 @@ function runInstallation()
         $sql = file_get_contents($sqlFile);
         $sql = str_replace('{prefix}', $db_prefix, $sql);
         
-        // Выполняем миграции
         $queries = array_filter(array_map('trim', explode(';', $sql)));
         foreach ($queries as $query) {
             if (!empty($query)) {
@@ -180,10 +171,8 @@ function runInstallation()
             }
         }
         
-        // Вставка начальных данных
         $now = time();
         
-        // Администратор
         $hashedPassword = password_hash($_SESSION['admin_password'], PASSWORD_DEFAULT);
         $stmt = $pdo->prepare("
             INSERT INTO `{$db_prefix}users` 
@@ -200,7 +189,6 @@ function runInstallation()
             $now
         ]);
         
-        // Настройки по умолчанию
         $defaultSettings = [
             'sitename' => 'GreyPanel',
             'default_app' => 'forum',
@@ -254,7 +242,6 @@ function runInstallation()
             $settingStmt->execute([$key, $value]);
         }
         
-        // Меню по умолчанию
         $menuItems = [
             ['num' => 1, 'text' => 'Форум', 'desc' => 'Форум', 'module' => 'forum', 'icon' => 'fa fa-comments', 'active' => 1, 'ses' => 0],
             ['num' => 2, 'text' => 'Привилегии', 'desc' => 'Покупка привилегий', 'module' => 'vip', 'icon' => 'fa fa-bolt', 'active' => 1, 'ses' => 1],
@@ -267,7 +254,6 @@ function runInstallation()
             $menuStmt->execute([$item['num'], $item['text'], $item['desc'], $item['module'], $item['icon'], $item['active'], $item['ses']]);
         }
         
-        // Создаём .env
         $envContent = "# GreyPanel v2 Environment\n";
         $envContent .= "APP_ENV=prod\n";
         $envContent .= "APP_DEBUG=false\n";
@@ -290,22 +276,19 @@ function runInstallation()
             return "Не удалось создать файл .env";
         }
         
-        // Очищаем сессию
         session_destroy();
 
-        // Добавляем флаг установки в .env
         file_put_contents(ENV_FILE, "\nAPP_INSTALLED=true\n", FILE_APPEND);
 
-        // Пытаемся удалить папку install
         $installDir = __DIR__;
-        $success = $this->deleteDirectory($installDir);
+        $success = deleteDirectory($installDir);
 
         if (!$success) {
-            // Если удалить не удалось, переименовываем папку, чтобы блокировать повторный запуск
             rename($installDir, $installDir . '_disabled_' . time());
         }
 
-        return true;
+        header('Location: /');
+        exit;
     } catch (Exception $e) {
         return "Ошибка при установке: " . $e->getMessage();
     }
@@ -321,7 +304,6 @@ function deleteDirectory($dir) {
     return rmdir($dir);
 }
 
-// HTML-шаги (без изменений, но для краткости оставлю основные)
 ?>
 <!DOCTYPE html>
 <html lang="ru">

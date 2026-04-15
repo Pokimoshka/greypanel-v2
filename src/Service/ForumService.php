@@ -81,7 +81,6 @@ final class ForumService implements ForumServiceInterface
         try {
             $threadId = $this->threadRepo->create($forumId, $userId, $title, $content);
             
-            // Увеличиваем счётчик тем пользователя
             $user = $this->userRepo->findById($userId);
             if ($user) {
                 $user->setCountTheard($user->getCountTheard() + 1);

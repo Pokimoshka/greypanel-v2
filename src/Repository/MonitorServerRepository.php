@@ -56,7 +56,6 @@ final class MonitorServerRepository implements MonitorServerRepositoryInterface
 
     public function update(int $id, array $data): void
     {
-        // Обновляем только базовые поля, а для настроек используем отдельный метод updateSettings
         $this->db->query(
             "UPDATE {$this->table} SET type = ?, ip = ?, c_port = ?, q_port = ?, s_port = ?, disabled = ? WHERE id = ?",
             [$data['type'], $data['ip'], $data['c_port'], $data['q_port'], $data['s_port'], $data['disabled'], $id]

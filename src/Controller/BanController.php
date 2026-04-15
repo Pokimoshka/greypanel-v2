@@ -138,4 +138,11 @@ class BanController
 
         return new JsonResponse(['success' => true]);
     }
+
+    public function lastBans(Request $request): JsonResponse
+    {
+        $limit = (int)($request->get('limit') ?? 5);
+        $bans = $this->banService->getBans(1, $limit);
+        return new JsonResponse($bans);
+    }
 }

@@ -1,103 +1,124 @@
-Alpine.data('chatWidget', () => ({
-    messages: [],
-    newMessage: '',
-    lastId: 0,
-    csrf: '',
-
-    init() {
-        this.csrf = document.querySelector('meta[name="csrf-token"]').content;
-        this.fetchMessages();
-        setInterval(() => this.fetchMessages(), 10000);
-    },
-
-    async fetchMessages() {
-        const res = await fetch(`/chat/messages?last=${this.lastId}`);
-        const data = await res.json();
-        if (data.length) {
-            this.messages = [...data.reverse(), ...this.messages];
-            this.lastId = data[0].id;
-            this.$nextTick(() => {
-                const el = this.$refs.messagesContainer;
-                if (el) el.scrollTop = el.scrollHeight;
+document.addEventListener('alpine:init', () => {
+    Alpine.data('app', () => ({
+        theme: localStorage.getItem('theme') || 'dark',
+        systemTheme: window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light',
+        mobileMenuOpen: false,
+        
+        init() {
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+                this.systemTheme = e.matches ? 'dark' : 'light';
+                if (this.theme === 'auto') {
+                    document.documentElement.setAttribute('data-bs-theme', this.systemTheme);
+                }
             });
+            
+            this.$watch('theme', val => {
+                const appliedTheme = val === 'auto' ? this.systemTheme : val;
+                document.documentElement.setAttribute('data-bs-theme', appliedTheme);
+                localStorage.setItem('theme', val);
+            });
+            
+            const initialTheme = this.theme === 'auto' ? this.systemTheme : this.theme;
+            document.documentElement.setAttribute('data-bs-theme', initialTheme);
+        },
+        
+        toggleTheme() {
+            const themes = ['light', 'dark', 'auto'];
+            const currentIndex = themes.indexOf(this.theme);
+            this.theme = themes[(currentIndex + 1) % themes.length];
+        },
+        
+        getThemeIcon() {
+            if (this.theme === 'light') return 'fa-sun';
+            if (this.theme === 'dark') return 'fa-moon';
+            return 'fa-circle-half-stroke';
+        },
+        
+        getThemeText() {
+            if (this.theme === 'light') return 'Светлая';
+            if (this.theme === 'dark') return 'Тёмная';
+            return 'Авто';
+        },
+        
+        toggleMobileMenu() {
+            this.mobileMenuOpen = !this.mobileMenuOpen;
         }
-    },
+    }));
 
-    async sendMessage() {
-        if (!this.newMessage.trim()) return;
-        const formData = new FormData();
-        formData.append('message', this.newMessage);
-        formData.append('csrf_token', this.csrf);
-        await fetch('/chat/send', { method: 'POST', body: formData });
-        this.newMessage = '';
-        this.fetchMessages();
-    }
-
-}));
-
-Alpine.data('monitorWidget', () => ({
-    servers: [],
-    loading: true,
-
-    async init() {
-        await this.fetchServers();
-        setInterval(() => this.fetchServers(), 30000);
-    },
-
-    async fetchServers() {
-        const res = await fetch('/monitor/data');
-        this.servers = await res.json();
-        this.loading = false;
-    }
-}));
-
-Alpine.data('likeButton', () => ({
-    count: initialCount,
-    liked: initialLiked,
-    csrf: document.querySelector('meta[name="csrf-token"]').content,
-
-    async toggle() {
-        const formData = new FormData();
-        formData.append('type', type);
-        formData.append('target_id', targetId);
-        formData.append('csrf_token', this.csrf);
-        const res = await fetch('/forum/like', { method: 'POST', body: formData });
-        const data = await res.json();
-        if (data.success) {
-            this.liked = !this.liked;
-            this.count += this.liked ? 1 : -1;
-        }
-    }
-}));
-Alpine.data('modal', () => ({
-    open: false,
-    close() { this.open = false; }
-}));
-Alpine.data('sortableList', () =>({
-    init() {
-        const el = this.$refs.sortableList;
-        new Sortable(el, {
-            animation: 150,
-            onEnd: async (evt) => {
-                const items = [...el.children].map((item, index) => ({
-                    id: item.dataset.id,
-                    order: index
-                }));
-                await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ order: items, csrf_token: csrf })
-                });
+    Alpine.data('onlineWidget', () => ({
+        count: 0,
+        users: [],
+        loading: true,
+        
+        async init() {
+            await this.fetchOnline();
+            setInterval(() => this.fetchOnline(), 30000);
+        },
+        
+        async fetchOnline() {
+            try {
+                const res = await fetch('/online/data');
+                const data = await res.json();
+                this.count = data.count || 0;
+                this.users = data.users || [];
+            } catch (e) {
+                console.error('Ошибка загрузки онлайн:', e);
+            } finally {
+                this.loading = false;
             }
-        });
-    }
-}));
-Alpine.data('quote', () =>({
-    insertQuote(author, content) {
-        const textarea = document.getElementById('reply-content');
-        if (textarea) {
-            textarea.value += `[quote=${author}]${content}[/quote]\n\n`;
-            textarea.focus();
         }
-    }
-}));
+    }));
+
+    Alpine.data('collapsibleWidget', (widgetId, defaultOpen = true) => ({
+        open: localStorage.getItem(`widget_${widgetId}`) !== null 
+            ? localStorage.getItem(`widget_${widgetId}`) === 'true'
+            : defaultOpen,
+        
+        toggle() {
+            this.open = !this.open;
+            localStorage.setItem(`widget_${widgetId}`, this.open);
+        }
+    }));
+
+    Alpine.data('lastTopicsWidget', () => ({
+        topics: [],
+        loading: true,
+        
+        async init() {
+            await this.fetchTopics();
+        },
+        
+        async fetchTopics() {
+            try {
+                const res = await fetch('/api/forum/last-topics?limit=5');
+                const data = await res.json();
+                this.topics = data;
+            } catch (e) {
+                console.error('Ошибка загрузки тем:', e);
+            } finally {
+                this.loading = false;
+            }
+        }
+    }));
+
+    Alpine.data('lastBansWidget', () => ({
+        bans: [],
+        loading: true,
+        
+        async init() {
+            await this.fetchBans();
+        },
+        
+        async fetchBans() {
+            try {
+                const res = await fetch('/api/bans/last-bans?limit=5');
+                const data = await res.json();
+                this.bans = data;
+            } catch (e) {
+                console.error('Ошибка загрузки банов:', e);
+            } finally {
+                this.loading = false;
+            }
+        }
+    }));
+});

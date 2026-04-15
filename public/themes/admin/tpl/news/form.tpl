@@ -2,11 +2,6 @@
 
 {% block title %}{{ news.id ? 'Редактирование' : 'Добавление' }} новости{% endblock %}
 
-{% block head %}
-{{ parent() }}
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.css">
-{% endblock %}
-
 {% block content %}
 <h1>{{ news.id ? 'Редактирование' : 'Добавление' }} новости</h1>
 
@@ -49,7 +44,6 @@
             'guide'
         ],
         previewRender: (plainText) => {
-            // Можно оставить стандартный рендер или настроить под BB-код
             return easyMDE.markdown(plainText);
         }
     });

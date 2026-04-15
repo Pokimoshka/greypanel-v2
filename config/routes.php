@@ -20,15 +20,6 @@ return function (RouteCollector $r) {
     $r->addRoute(['GET', 'POST'], '/admin/users/edit/{id:\d+}', 'AdminController@userEdit')->addMiddleware('auth')->addMiddleware('role:4')->addMiddleware('csrf');
     $r->addRoute('GET', '/admin/logs', 'AdminController@logs')->addMiddleware('auth')->addMiddleware('role:4');
     $r->addRoute('GET', '/admin/stats/registrations', 'AdminController@statsRegistrations')->addMiddleware('auth')->addMiddleware('role:4');
-    //$r->addRoute('GET', '/admin/vip/servers', 'AdminVipController@servers')->addMiddleware('auth')->addMiddleware('role:4');
-    //$r->addRoute(['GET', 'POST'], '/admin/vip/servers/add', 'AdminVipController@serverForm')->addMiddleware('auth')->addMiddleware('role:4')->addMiddleware('csrf');
-    //$r->addRoute(['GET', 'POST'], '/admin/vip/servers/edit/{id:\d+}', 'AdminVipController@serverForm')->addMiddleware('auth')->addMiddleware('role:4')->addMiddleware('csrf');
-    //$r->addRoute('POST', '/admin/vip/servers/delete/{id:\d+}', 'AdminVipController@serverDelete')->addMiddleware('auth')->addMiddleware('role:4')->addMiddleware('csrf');
-    //$r->addRoute('GET', '/admin/vip/servers/{id:\d+}/privileges', 'AdminVipController@privileges')->addMiddleware('auth')->addMiddleware('role:4');
-    //$r->addRoute(['GET', 'POST'], '/admin/vip/servers/{id:\d+}/privileges/add', 'AdminVipController@privilegeForm')->addMiddleware('auth')->addMiddleware('role:4')->addMiddleware('csrf');
-    //$r->addRoute(['GET', 'POST'], '/admin/vip/servers/{id:\d+}/privileges/edit/{privId:\d+}', 'AdminVipController@privilegeForm')->addMiddleware('auth')->addMiddleware('role:4')->addMiddleware('csrf');
-    //$r->addRoute('POST', '/admin/vip/servers/{id:\d+}/privileges/delete/{privId:\d+}', 'AdminVipController@privilegeDelete')->addMiddleware('auth')->addMiddleware('role:4')->addMiddleware('csrf');
-    //$r->addRoute('GET', '/admin/vip/servers/{id:\d+}/test', 'AdminVipController@testConnection')->addMiddleware('auth')->addMiddleware('role:4');
 
     $r->addRoute('GET', '/admin/server-settings', 'AdminServerSettingsController@index')->addMiddleware('auth')->addMiddleware('role:4');
     $r->addRoute(['GET', 'POST'], '/admin/server-settings/add', 'AdminServerSettingsController@form')->addMiddleware('auth')->addMiddleware('role:4')->addMiddleware('csrf');
@@ -103,15 +94,15 @@ return function (RouteCollector $r) {
     $r->addRoute('POST', '/chat/send', 'ChatController@sendMessage')->addMiddleware('auth')->addMiddleware('csrf');
     $r->addRoute('DELETE', '/chat/message/{id:\d+}', 'ChatController@deleteMessage')->addMiddleware('auth')->addMiddleware('role:2')->addMiddleware('csrf');
 
-    // Новости (публичные)
     $r->addRoute('GET', '/news', 'NewsController@index');
     $r->addRoute('GET', '/news/{slug}', 'NewsController@show');
-
-    // Новости (админка)
     $r->addRoute('GET', '/admin/news', 'AdminNewsController@index')->addMiddleware('auth')->addMiddleware('role:3');
     $r->addRoute(['GET', 'POST'], '/admin/news/create', 'AdminNewsController@form')->addMiddleware('auth')->addMiddleware('role:3')->addMiddleware('csrf');
     $r->addRoute(['GET', 'POST'], '/admin/news/edit/{id:\d+}', 'AdminNewsController@form')->addMiddleware('auth')->addMiddleware('role:3')->addMiddleware('csrf');
     $r->addRoute('POST', '/admin/news/delete/{id:\d+}', 'AdminNewsController@delete')->addMiddleware('auth')->addMiddleware('role:3')->addMiddleware('csrf');
+
+    $r->addRoute('GET', '/api/forum/last-topics', 'ForumController@lastTopics');
+    $r->addRoute('GET', '/api/bans/last-bans', 'BanController@lastBans');
 
     $r->addRoute('GET', '/sitemap.xml', 'SitemapController@index');
 };

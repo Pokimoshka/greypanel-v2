@@ -1,4 +1,5 @@
 import Alpine from 'alpinejs';
+import collapse from '@alpinejs/collapse';
 import 'bootstrap/dist/js/bootstrap.min.js';
 import Sortable from 'sortablejs';
 import EasyMDE from 'easymde';
@@ -25,9 +26,10 @@ Alpine.data('monitorWidget', monitorWidget);
 Alpine.data('quote', quote);
 Alpine.data('sortableList', sortableList);
 
+Alpine.plugin(collapse);
+
 Alpine.start();
 
-// Настройка marked
 marked.use(markedHighlight({
     langPrefix: 'hljs language-',
     highlight(code, lang) {
@@ -38,7 +40,6 @@ marked.use(markedHighlight({
     }
 }));
 
-// Расширенный тулбар
 const editorToolbar = [
     'bold', 'italic', 'heading', '|',
     'quote', 'unordered-list', 'ordered-list', 'table', 'horizontal-rule', '|',
@@ -91,7 +92,6 @@ document.addEventListener('DOMContentLoaded', () => {
             previewRender: (plainText) => marked.parse(plainText),
         });
 
-        // Сохраняем оригинальный toTextArea для конвертации в BB-код при отправке
         const originalToTextArea = easyMDE.toTextArea;
         easyMDE.toTextArea = function() {
             const md = this.value();
