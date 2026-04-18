@@ -6,24 +6,31 @@ namespace GreyPanel\Service;
 use GreyPanel\Repository\MonitorServerRepositoryInterface;
 use xPaw\SourceQuery\SourceQuery;
 use xPaw\SourceQuery\Exception\SourceQueryException;
+use Symfony\Component\Cache\Adapter\FilesystemAdapter;
+use Symfony\Contracts\Cache\ItemInterface;
 
 final class MonitorService implements MonitorServiceInterface
 {
     private MonitorServerRepositoryInterface $repo;
+    private FilesystemAdapter $cache;
 
     public function __construct(MonitorServerRepositoryInterface $repo)
     {
         $this->repo = $repo;
+        $this->cache = new FilesystemAdapter('monitor', 0, __DIR__ . '/../../var/cache');
     }
 
     public function getServers(): array
     {
-        $servers = $this->repo->findEnabled();
-        $result = [];
-        foreach ($servers as $server) {
-            $result[] = $this->formatServer($server);
-        }
-        return $result;
+        return $this->cache->get('servers_list', function (ItemInterface $item) {
+            $item->expiresAfter(30); // 30 секунд – свежие данные
+            $servers = $this->repo->findEnabled();
+            $result = [];
+            foreach ($servers as $server) {
+                $result[] = $this->formatServer($server);
+            }
+            return $result;
+        });
     }
 
     public function updateServerStatus(int $id): void
@@ -88,5 +95,10 @@ final class MonitorService implements MonitorServiceInterface
             'players' => $players,
             'status_html' => $statusHtml,
         ];
+    }
+
+    public function clearCache(): void
+    {
+        $this->cache->delete('servers_list');
     }
 }

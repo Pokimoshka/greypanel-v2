@@ -95,6 +95,7 @@ use GreyPanel\Service\NewsService;
 use GreyPanel\Service\NewsServiceInterface;
 use GreyPanel\Controller\NewsController;
 use GreyPanel\Controller\AdminNewsController;
+use GreyPanel\Middleware\RateLimitMiddleware;
 
 return function (Container $container) {
     $container->singleton(Database::class, function () {
@@ -140,6 +141,8 @@ return function (Container $container) {
     $container->bind(SeoServiceInterface::class, SeoService::class);
     $container->bind(ChatServiceInterface::class, ChatService::class);
     $container->bind(NewsServiceInterface::class, NewsService::class);
+    $container->singleton(RecaptchaService::class);
+    $container->singleton(SiteService::class);
 
     $container->bind(UserController::class);
     $container->bind(AuthController::class);
@@ -174,4 +177,11 @@ return function (Container $container) {
         ));
         return $logger;
     });
+
+    $rateLimiterConfig = require __DIR__ . '/rate_limiter.php';
+    foreach ($rateLimiterConfig as $key => $config) {
+        $container->singleton('rate_limit.' . $key, function () use ($config, $key) {
+            return new RateLimitMiddleware($key, $config);
+        });
+    }
 };

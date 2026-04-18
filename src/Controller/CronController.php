@@ -24,12 +24,4 @@ class CronController
         $this->cronService->run();
         return new Response('OK');
     }
-
-    public function trigger(): Response
-    {
-        if ($this->cronService->isDue() && mt_rand(1, 100) <= 5) {
-            $this->cronService->run();
-        }
-        return new Response('', 204);
-    }
 }

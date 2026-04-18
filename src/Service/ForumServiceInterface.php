@@ -16,4 +16,5 @@ interface ForumServiceInterface
     public function incrementViews(int $threadId): void;
     public function search(string $query, int $page, int $perPage): array;
     public function countSearch(string $query): int;
+    public function clearCache(): void;
 }

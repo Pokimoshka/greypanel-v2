@@ -4,12 +4,12 @@ use GreyPanel\Core\RouteCollector;
 
 return function (RouteCollector $r) {
     $r->addRoute('GET', '/', 'HomeController@index');
-    $r->addRoute(['GET', 'POST'], '/login', 'AuthController@login')->addMiddleware('guest')->addMiddleware('csrf');
-    $r->addRoute(['GET', 'POST'], '/register', 'AuthController@register')->addMiddleware('guest')->addMiddleware('csrf');
+    $r->addRoute(['GET', 'POST'], '/login', 'AuthController@login')->addMiddleware('guest')->addMiddleware('csrf')->addMiddleware('rate_limit:login');
+    $r->addRoute(['GET', 'POST'], '/register', 'AuthController@register')->addMiddleware('guest')->addMiddleware('csrf')->addMiddleware('rate_limit:register');
     $r->addRoute('GET', '/logout', 'AuthController@logout')->addMiddleware('auth');
 
     $r->addRoute('GET', '/profile', 'UserController@profile')->addMiddleware('auth');
-    $r->addRoute(['GET', 'POST'], '/settings', 'UserController@settings')->addMiddleware('auth');
+    $r->addRoute(['GET', 'POST'], '/settings', 'UserController@settings')->addMiddleware('auth')->addMiddleware('csrf');
     $r->addRoute('GET', '/profile/referrals', 'UserController@referrals')->addMiddleware('auth');
 
     $r->addRoute(['GET', 'POST'], '/admin/themes', 'AdminController@themes')->addMiddleware('auth')->addMiddleware('role:4')->addMiddleware('csrf');
@@ -39,15 +39,19 @@ return function (RouteCollector $r) {
     $r->addRoute('POST', '/admin/forum/categories/{id:\d+}/forums/delete/{fid:\d+}', 'AdminForumController@forumDelete')->addMiddleware('auth')->addMiddleware('role:4')->addMiddleware('csrf');
     $r->addRoute('POST', '/admin/forum/forums/sort', 'AdminForumController@sortForums')->addMiddleware('auth')->addMiddleware('role:4')->addMiddleware('csrf');
 
-    $r->addRoute('POST', '/admin/upload-image', 'AdminController@uploadImage')->addMiddleware('auth')->addMiddleware('role:2')->addMiddleware('csrf');
+    $r->addRoute('POST', '/admin/upload-image', 'AdminController@uploadImage')->addMiddleware('auth')->addMiddleware('role:2')->addMiddleware('csrf')->addMiddleware('rate_limit:upload_image');
 
     $r->addRoute('GET', '/admin/modules', 'AdminModuleController@index')->addMiddleware('auth')->addMiddleware('role:4');
-
     $r->addRoute('POST', '/admin/modules/toggle', 'AdminModuleController@toggle')->addMiddleware('auth')->addMiddleware('role:4')->addMiddleware('csrf');
 
     $r->addRoute(['GET', 'POST'], '/admin/seo', 'AdminSeoController@index')->addMiddleware('auth')->addMiddleware('role:4')->addMiddleware('csrf');
-
     $r->addRoute('POST', '/admin/seo/regenerate', 'AdminSeoController@regenerateSitemap')->addMiddleware('auth')->addMiddleware('role:4')->addMiddleware('csrf');
+
+    $r->addRoute(['GET', 'POST'], '/admin/security', 'AdminSecurityController@index')->addMiddleware('auth')->addMiddleware('role:4')->addMiddleware('csrf');
+    $r->addRoute('POST', '/admin/security/save', 'AdminSecurityController@save')->addMiddleware('auth')->addMiddleware('role:4')->addMiddleware('csrf');
+
+    $r->addRoute(['GET', 'POST'], '/admin/site-settings', 'AdminSiteController@index')->addMiddleware('auth')->addMiddleware('role:4')->addMiddleware('csrf');
+    $r->addRoute('POST', '/admin/site-settings/save', 'AdminSiteController@save')->addMiddleware('auth')->addMiddleware('role:4')->addMiddleware('csrf');
 
     $r->addRoute('GET', '/balance', 'BalanceController@index')->addMiddleware('auth');
     $r->addRoute('GET', '/balance/history', 'BalanceController@history')->addMiddleware('auth');
@@ -55,7 +59,7 @@ return function (RouteCollector $r) {
     $r->addRoute('GET', '/vip', 'VipController@index')->addMiddleware('auth');
     $r->addRoute('GET', '/vip/{id:\d+}', 'VipController@privileges')->addMiddleware('auth');
     $r->addRoute('POST', '/vip/confirm', 'VipController@confirm')->addMiddleware('auth')->addMiddleware('csrf');
-    $r->addRoute('POST', '/vip/activate', 'VipController@activate')->addMiddleware('auth')->addMiddleware('csrf');
+    $r->addRoute('POST', '/vip/activate', 'VipController@activate')->addMiddleware('auth')->addMiddleware('csrf')->addMiddleware('rate_limit:vip_activate');
     $r->addRoute('GET', '/vip/success', 'VipController@success')->addMiddleware('auth');
 
     $r->addRoute('GET', '/monitor', 'MonitorController@index');
@@ -77,7 +81,7 @@ return function (RouteCollector $r) {
     $r->addRoute(['GET', 'POST'], '/admin/payments', 'AdminController@paymentSettings')->addMiddleware('auth')->addMiddleware('role:4')->addMiddleware('csrf');
     $r->addRoute('GET', '/payment', 'PaymentController@index')->addMiddleware('auth');
     $r->addRoute('POST', '/payment/yoomoney', 'PaymentController@yoomoneyForm')->addMiddleware('auth')->addMiddleware('csrf');
-    $r->addRoute('POST', '/payment/yoomoney/notify', 'PaymentController@yoomoneyNotify')->addMiddleware('csrf');
+    $r->addRoute('POST', '/payment/yoomoney/notify', 'PaymentController@yoomoneyNotify');
     $r->addRoute('GET', '/payment/success', 'PaymentController@success')->addMiddleware('auth');
 
     $r->addRoute(['GET', 'POST'], '/admin/bans/settings', 'AdminController@banSettings')->addMiddleware('auth')->addMiddleware('role:4')->addMiddleware('csrf');
@@ -87,11 +91,10 @@ return function (RouteCollector $r) {
 
     $r->addRoute('GET', '/online/data', 'OnlineController@data');
 
-    $r->addRoute('GET', '/cron/trigger', 'CronController@trigger');
     $r->addRoute('GET', '/cron/{key}', 'CronController@run');
 
     $r->addRoute('GET', '/chat/messages', 'ChatController@fetchMessages');
-    $r->addRoute('POST', '/chat/send', 'ChatController@sendMessage')->addMiddleware('auth')->addMiddleware('csrf');
+    $r->addRoute('POST', '/chat/send', 'ChatController@sendMessage')->addMiddleware('auth')->addMiddleware('csrf')->addMiddleware('rate_limit:chat_send');
     $r->addRoute('DELETE', '/chat/message/{id:\d+}', 'ChatController@deleteMessage')->addMiddleware('auth')->addMiddleware('role:2')->addMiddleware('csrf');
 
     $r->addRoute('GET', '/news', 'NewsController@index');

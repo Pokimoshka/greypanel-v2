@@ -22,6 +22,13 @@
                         <input type="checkbox" name="remember" class="form-check-input" id="remember">
                         <label class="form-check-label" for="remember">Запомнить меня</label>
                     </div>
+
+                    {% if recaptcha_site_key %}
+                    <div class="mb-3">
+                        <div class="g-recaptcha" data-sitekey="{{ recaptcha_site_key }}"></div>
+                    </div>
+                    {% endif %}
+
                     <button type="submit" class="btn btn-primary w-100">Войти</button>
                 </form>
                 <hr style="border-color: var(--border-color);">

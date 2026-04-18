@@ -6,13 +6,13 @@ use GreyPanel\Core\Request;
 use GreyPanel\Core\Response;
 use GreyPanel\Core\View;
 use GreyPanel\Core\RedirectResponse;
-use GreyPanel\Core\JsonResponse;
 use GreyPanel\Repository\LogRepositoryInterface;
 use Psr\Log\LoggerInterface;
 use GreyPanel\Service\SettingsServiceInterface;
 use GreyPanel\Repository\PaymentRepositoryInterface;
 use GreyPanel\Repository\UserRepositoryInterface;
 use GreyPanel\Repository\MoneyLogRepositoryInterface;
+use GreyPanel\Service\EncryptionServiceInterface;
 
 class PaymentController
 {
@@ -22,7 +22,8 @@ class PaymentController
         private MoneyLogRepositoryInterface $moneyLogRepo,
         private LogRepositoryInterface $logRepo,
         private LoggerInterface $logger,
-        private SettingsServiceInterface $settings
+        private SettingsServiceInterface $settings,
+        private EncryptionServiceInterface $encryption
     ) {}
 
     public function index(Request $request): Response
@@ -48,10 +49,10 @@ class PaymentController
         $this->paymentRepo->add($userId, 'yoomoney', $amount, $paymentId, 0);
 
         $wallet = $this->settings->get('yoomoney_wallet');
-        $secret = $this->settings->get('yoomoney_secret');
+        $encryptedSecret = $this->settings->get('yoomoney_secret');
+        $secret = $encryptedSecret ? $this->encryption->decrypt($encryptedSecret) : '';
 
         $sum = number_format($amount, 2, '.', '');
-
         $signature = md5("$amount:$paymentId:$secret");
 
         $params = [
@@ -79,6 +80,19 @@ class PaymentController
 
     public function yoomoneyNotify(Request $request): Response
     {
+        // 1. Проверка IP (диапазоны ЮMoney)
+        $allowedIps = [
+            '77.75.153.0/25', '77.75.154.0/25', '77.75.156.0/26', '77.75.156.64/26',
+            '77.75.156.128/26', '77.75.156.192/26', '77.75.158.0/26', '77.75.158.64/26',
+            '77.75.158.128/26', '77.75.158.192/26', '185.71.76.0/27', '185.71.76.32/27',
+            '185.71.76.64/27', '185.71.76.96/27'
+        ];
+        $clientIp = $_SERVER['REMOTE_ADDR'] ?? '';
+        if (!$this->ipInRange($clientIp, $allowedIps)) {
+            $this->logger->warning('YooMoney notify from untrusted IP: ' . $clientIp);
+            return new Response('Forbidden', 403);
+        }
+
         $notification_type = $request->post('notification_type');
         $operation_id = $request->post('operation_id');
         $amount = (float)$request->post('amount');
@@ -89,14 +103,38 @@ class PaymentController
         $label = $request->post('label');
         $sha1_hash = $request->post('sha1_hash');
 
-        $secret = $this->settings->get('yoomoney_secret');
+        $encryptedSecret = $this->settings->get('yoomoney_secret');
+        $secret = $encryptedSecret ? $this->encryption->decrypt($encryptedSecret) : '';
 
-        $hash_string = "$notification_type&$operation_id&$amount&$currency&$datetime&$sender&$codepro&$secret&$label";
+        // Проверка подписи
+        $hash_string = $notification_type . '&' . $operation_id . '&' . $amount . '&' . $currency . '&' . $datetime . '&' . $sender . '&' . $codepro . '&' . $secret . '&' . $label;
         $hash = sha1($hash_string);
 
         if ($hash !== $sha1_hash) {
-            $this->logger->error(0, 'payment_error', 'Invalid signature for YooMoney');
+            $this->logger->error('YooMoney invalid signature', ['hash' => $hash, 'received' => $sha1_hash]);
             return new Response('Invalid signature', 400);
+        }
+
+        // Проверка через API ЮMoney
+        $checkUrl = "https://yoomoney.ru/api/operation-details?operation_id=" . urlencode($operation_id);
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $checkUrl);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+        curl_setopt($ch, CURLOPT_USERPWD, $secret . ":");
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($httpCode !== 200) {
+            $this->logger->error('YooMoney API check failed', ['http_code' => $httpCode]);
+            return new Response('API check failed', 400);
+        }
+
+        $operation = json_decode($response, true);
+        if (!$operation || $operation['status'] !== 'success' || $operation['direction'] !== 'in') {
+            $this->logger->error('YooMoney operation not valid', ['operation' => $operation]);
+            return new Response('Operation not valid', 400);
         }
 
         $existing = $this->paymentRepo->findByExternalId($label);
@@ -120,13 +158,13 @@ class PaymentController
         $this->userRepo->update($user);
 
         $this->moneyLogRepo->add($userId, (int)$amount, 'Пополнение через ЮMoney', 0);
-
         $this->paymentRepo->updateStatus($label, 1);
 
+        // Реферальный бонус
         $referralId = $user->getReferral();
         if ($referralId > 0) {
             $referralUser = $this->userRepo->findById($referralId);
-            if ($referralUser) {
+            if ($referralUser && !$referralUser->isBanned()) {
                 $bonus = (int)($amount * 0.1);
                 if ($bonus > 0) {
                     $newReferralMoney = $referralUser->getMoney() + $bonus;
@@ -146,5 +184,24 @@ class PaymentController
     {
         $html = View::render('payment/success.tpl');
         return new Response($html);
+    }
+
+    private function ipInRange(string $ip, array $ranges): bool
+    {
+        foreach ($ranges as $range) {
+            if ($this->ipInCidr($ip, $range)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private function ipInCidr(string $ip, string $cidr): bool
+    {
+        list($subnet, $mask) = explode('/', $cidr);
+        if ((ip2long($ip) & ~((1 << (32 - $mask)) - 1)) == ip2long($subnet)) {
+            return true;
+        }
+        return false;
     }
 }

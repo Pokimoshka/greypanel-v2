@@ -1,2 +1,7 @@
 @import 'bootstrap/scss/bootstrap';
 @import 'easymde/dist/easymde.min.css';
+
+img {
+    max-width: 100%;
+    height: auto;
+}

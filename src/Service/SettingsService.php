@@ -4,28 +4,31 @@ declare(strict_types=1);
 namespace GreyPanel\Service;
 
 use GreyPanel\Core\Database;
+use Symfony\Component\Cache\Adapter\FilesystemAdapter;
+use Symfony\Contracts\Cache\ItemInterface;
 
 final class SettingsService implements SettingsServiceInterface
 {
     private Database $db;
     private string $table;
-    private array $cache = [];
+    private FilesystemAdapter $cache;
 
     public function __construct(Database $db)
     {
         $this->db = $db;
         $this->table = $db->table('settings');
+        $this->cache = new FilesystemAdapter('settings', 0, __DIR__ . '/../../var/cache');
     }
 
     public function get(string $key, ?string $default = null): ?string
     {
-        if (array_key_exists($key, $this->cache)) {
-            return $this->cache[$key];
-        }
-        $row = $this->db->fetchOne("SELECT `value` FROM {$this->table} WHERE `key` = ?", [$key]);
-        $value = $row ? $row['value'] : $default;
-        $this->cache[$key] = $value;
-        return $value;
+        // Пытаемся получить из кэша
+        $cached = $this->cache->get($key, function (ItemInterface $item) use ($key, $default) {
+            $item->expiresAfter(3600); // на 1 час
+            $row = $this->db->fetchOne("SELECT `value` FROM {$this->table} WHERE `key` = ?", [$key]);
+            return $row ? $row['value'] : $default;
+        });
+        return $cached;
     }
 
     public function set(string $key, string $value): void
@@ -34,7 +37,8 @@ final class SettingsService implements SettingsServiceInterface
             "INSERT INTO {$this->table} (`key`, `value`) VALUES (?, ?) ON DUPLICATE KEY UPDATE `value` = ?",
             [$key, $value, $value]
         );
-        $this->cache[$key] = $value;
+        // Сбрасываем кэш для этого ключа
+        $this->cache->delete($key);
     }
 
     public function getInt(string $key, int $default = 0): int

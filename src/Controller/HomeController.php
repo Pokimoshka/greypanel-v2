@@ -12,6 +12,7 @@ use GreyPanel\Service\BanServiceInterface;
 use GreyPanel\Repository\OnlineRepositoryInterface;
 use GreyPanel\Service\SessionServiceInterface;
 use GreyPanel\Service\SeoServiceInterface;
+use GreyPanel\Service\CacheService;
 
 final class HomeController
 {
@@ -26,8 +27,15 @@ final class HomeController
 
     public function index(Request $request): Response
     {
-        $lastTopics = $this->threadRepo->findLast(5);
-        $topDonators = $this->userRepo->findTopDonators(5);
+        $homeCache = new CacheService('home');
+
+        $lastTopics = $homeCache->get('last_topics', function() {
+            return $this->threadRepo->findLast(5);
+        }, 300);
+
+        $topDonators = $homeCache->get('top_donators', function() {
+            return $this->userRepo->findTopDonators(5);
+        }, 600);
         $lastBans = $this->banService->getBans(1, 5);
         $onlineUsers = $this->onlineRepo->findOnlineUsers();
         $meta = $this->seoService->getMetaTags('Главная страница', 'Добро пожаловать на GreyPanel');

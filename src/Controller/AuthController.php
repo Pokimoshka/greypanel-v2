@@ -11,6 +11,8 @@ use GreyPanel\Service\AuthServiceInterface;
 use GreyPanel\Repository\LogRepositoryInterface;
 use GreyPanel\Service\SessionServiceInterface;
 use GreyPanel\Repository\UserRepositoryInterface;
+use GreyPanel\Service\RecaptchaService;
+use GreyPanel\Service\SettingsServiceInterface;
 
 final class AuthController
 {
@@ -18,12 +20,26 @@ final class AuthController
         private AuthServiceInterface $auth,
         private LogRepositoryInterface $logRepo,
         private SessionServiceInterface $session,
-        private UserRepositoryInterface $userRepo
+        private UserRepositoryInterface $userRepo,
+        private RecaptchaService $recaptcha,
+        private SettingsServiceInterface $settings
     ) {}
 
     public function login(Request $request): Response
     {
         if ($request->isPost()) {
+            // Проверка reCAPTCHA (только при POST)
+            $recaptchaEnabled = $this->settings->getBool('recaptcha_enabled', false);
+            if ($recaptchaEnabled) {
+                $recaptchaResponse = $request->post('g-recaptcha-response');
+                if (!$this->recaptcha->verify($recaptchaResponse, $_SERVER['REMOTE_ADDR'])) {
+                    return new Response(View::render('auth/login.tpl', [
+                        'error' => 'Пожалуйста, подтвердите, что вы не робот.',
+                        'recaptcha_site_key' => $this->settings->get('recaptcha_site_key', '')
+                    ]));
+                }
+            }
+
             $login = $request->post('username');
             $password = $request->post('password');
             $remember = (bool)$request->post('remember');
@@ -42,10 +58,16 @@ final class AuthController
                 return new RedirectResponse('/');
             }
 
-            return new Response(View::render('auth/login.tpl', ['error' => $result]));
+            return new Response(View::render('auth/login.tpl', [
+                'error' => $result,
+                'recaptcha_site_key' => $this->settings->get('recaptcha_site_key', '')
+            ]));
         }
 
-        return new Response(View::render('auth/login.tpl'));
+        // GET запрос – показываем форму
+        return new Response(View::render('auth/login.tpl', [
+            'recaptcha_site_key' => $this->settings->get('recaptcha_site_key', '')
+        ]));
     }
 
     public function register(Request $request): Response
@@ -58,6 +80,18 @@ final class AuthController
         }
 
         if ($request->isPost()) {
+            // Проверка reCAPTCHA
+            $recaptchaEnabled = $this->settings->getBool('recaptcha_enabled', false);
+            if ($recaptchaEnabled) {
+                $recaptchaResponse = $request->post('g-recaptcha-response');
+                if (!$this->recaptcha->verify($recaptchaResponse, $_SERVER['REMOTE_ADDR'])) {
+                    return new Response(View::render('auth/register.tpl', [
+                        'error' => 'Пожалуйста, подтвердите, что вы не робот.',
+                        'recaptcha_site_key' => $this->settings->get('recaptcha_site_key', '')
+                    ]));
+                }
+            }
+
             $username = $request->post('username');
             $email = $request->post('email');
             $password = $request->post('password');
@@ -77,10 +111,13 @@ final class AuthController
                 'error' => $result,
                 'username' => $username,
                 'email' => $email,
+                'recaptcha_site_key' => $this->settings->get('recaptcha_site_key', '')
             ]));
         }
 
-        return new Response(View::render('auth/register.tpl'));
+        return new Response(View::render('auth/register.tpl', [
+            'recaptcha_site_key' => $this->settings->get('recaptcha_site_key', '')
+        ]));
     }
 
     public function logout(Request $request): Response

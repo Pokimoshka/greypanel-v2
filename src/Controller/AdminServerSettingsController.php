@@ -90,6 +90,8 @@ class AdminServerSettingsController
 
             $this->monitorService->updateServerStatus($id);
 
+            $this->monitorService->clearCache();
+
             return new RedirectResponse('/admin/server-settings');
         }
 

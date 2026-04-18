@@ -30,6 +30,8 @@
             <div class="sidebar-menu">
                 <ul class="nav flex-column">
                     <li class="nav-item"><a href="{{ url('admin') }}" class="nav-link"><i class="fas fa-tachometer-alt"></i> <span>Дашборд</span></a></li>
+                    <li class="nav-item"><a href="{{ url('admin/site-settings') }}" class="nav-link"><i class="fas fa-globe"></i> <span>Настройки сайта</span></a></li>
+                    <li class="nav-item"><a href="{{ url('admin/security') }}" class="nav-link"><i class="fas fa-shield-alt"></i> <span>Безопасность</span></a></li>
                     <li class="nav-item"><a href="{{ url('admin/users') }}" class="nav-link"><i class="fas fa-users"></i> <span>Пользователи</span></a></li>
                     <li class="nav-item"><a href="{{ url('admin/logs') }}" class="nav-link"><i class="fas fa-history"></i> <span>Логи</span></a></li>
                     <li class="nav-item"><a href="{{ url('admin/forum/categories') }}" class="nav-link"><i class="fas fa-comments"></i> <span>Форум</span></a></li>

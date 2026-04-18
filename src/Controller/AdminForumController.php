@@ -8,15 +8,18 @@ use GreyPanel\Core\View;
 use GreyPanel\Core\RedirectResponse;
 use GreyPanel\Repository\ForumCategoryRepositoryInterface;
 use GreyPanel\Repository\ForumForumRepositoryInterface;
+use GreyPanel\Service\ForumServiceInterface;
 
 class AdminForumController
 {
     public function __construct(
         private ForumCategoryRepositoryInterface $categoryRepo,
-        private ForumForumRepositoryInterface $forumRepo
+        private ForumForumRepositoryInterface $forumRepo,
+        private ForumServiceInterface $forumService
     ) {
         $this->categoryRepo = $categoryRepo;
         $this->forumRepo = $forumRepo;
+        $this->forumService = $forumService;
     }
 
     public function categories(Request $request): Response
@@ -56,6 +59,8 @@ class AdminForumController
             return new RedirectResponse('/admin/forum/categories');
         }
 
+        $this->forumService->clearCache(); 
+
         $html = View::render('forum/category_form.tpl', [
             'category' => $category,
         ]);
@@ -65,6 +70,7 @@ class AdminForumController
     public function categoryDelete(Request $request, int $id): Response
     {
         $this->categoryRepo->delete($id);
+        $this->forumService->clearCache();
         return new RedirectResponse('/admin/forum/categories');
     }
 
@@ -76,6 +82,7 @@ class AdminForumController
                 $this->categoryRepo->updateSortOrder((int)$id, (int)$pos);
             }
         }
+        $this->forumService->clearCache();
         return new Response('OK');
     }
 
@@ -135,6 +142,8 @@ class AdminForumController
             return new RedirectResponse("/admin/forum/categories/{$categoryId}/forums");
         }
 
+        $this->forumService->clearCache();
+
         $html = View::render('forum/forum_form.tpl', [
             'category' => $category,
             'forum' => $forum,
@@ -145,6 +154,7 @@ class AdminForumController
     public function forumDelete(Request $request, $categoryId, $id): Response
     {
         $this->forumRepo->delete($id);
+        $this->forumService->clearCache();
         return new RedirectResponse("/admin/forum/categories/{$categoryId}/forums");
     }
 
@@ -156,6 +166,7 @@ class AdminForumController
                 $this->forumRepo->updateSortOrder((int)$id, (int)$pos);
             }
         }
+        $this->forumService->clearCache();
         return new Response('OK');
     }
 }

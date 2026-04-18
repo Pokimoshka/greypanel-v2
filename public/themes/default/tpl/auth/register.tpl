@@ -26,6 +26,13 @@
                         <label class="form-label">Повторите пароль</label>
                         <input type="password" name="password2" class="form-control" required>
                     </div>
+
+                    {% if recaptcha_site_key %}
+                    <div class="mb-3">
+                        <div class="g-recaptcha" data-sitekey="{{ recaptcha_site_key }}"></div>
+                    </div>
+                    {% endif %}
+
                     <button type="submit" class="btn btn-primary w-100">Зарегистрироваться</button>
                 </form>
                 <hr style="border-color: var(--border-color);">

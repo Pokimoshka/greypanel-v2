@@ -17,6 +17,9 @@ use GreyPanel\Service\ThemeServiceInterface;
 use GreyPanel\Repository\ForumForumRepositoryInterface;
 use GreyPanel\Repository\OnlineRepositoryInterface;
 use GreyPanel\Service\SessionService;
+use GreyPanel\Service\EncryptionServiceInterface;
+use Intervention\Image\ImageManager;
+use Intervention\Image\Drivers\Imagick\Driver;
 
 class AdminController
 {
@@ -30,7 +33,8 @@ class AdminController
         private ThemeServiceInterface $themeService,
         private ForumForumRepositoryInterface $forumForumRepo,
         private OnlineRepositoryInterface $onlineRepo,
-        private SessionService $session
+        private SessionService $session,
+        private EncryptionServiceInterface $encryption
     ) {}
 
     public function index(Request $request): Response
@@ -93,6 +97,13 @@ class AdminController
             $banned = (bool)$request->post('banned');
             $newPassword = $request->post('password');
 
+            // Защита от повышения привилегий
+            $currentAdminGroup = $_SESSION['user_group'] ?? 0;
+            if ($currentAdminGroup < 4 && $group > $currentAdminGroup) {
+                $_SESSION['flash_error'] = 'Вы не можете назначить группу выше своей.';
+                return new RedirectResponse('/admin/users');
+            }
+
             $user->setGroup($group);
             $user->setMoney($money);
             $user->setBanned($banned);
@@ -141,16 +152,16 @@ class AdminController
         if ($request->isPost()) {
             $wallet = trim($request->post('yoomoney_wallet'));
             $secret = trim($request->post('yoomoney_secret'));
-            
+            $encryptedSecret = $this->encryption->encrypt($secret);
             $this->settings->set('yoomoney_wallet', $wallet);
-            $this->settings->set('yoomoney_secret', $secret);
-            
+            $this->settings->set('yoomoney_secret', $encryptedSecret);
             return new RedirectResponse('/admin/payments');
         }
-        
+
         $wallet = $this->settings->get('yoomoney_wallet');
-        $secret = $this->settings->get('yoomoney_secret');
-        
+        $encryptedSecret = $this->settings->get('yoomoney_secret');
+        $secret = $encryptedSecret ? $this->encryption->decrypt($encryptedSecret) : '';
+
         $html = View::render('payment_settings.tpl', [
             'wallet' => $wallet,
             'secret' => $secret,
@@ -168,10 +179,10 @@ class AdminController
                 return new RedirectResponse('/admin/themes?error=1');
             }
         }
-        
+
         $themes = $this->themeService->getThemes();
         $active = $this->themeService->getActiveTheme();
-        
+
         $html = View::render('theme_settings.tpl', [
             'themes' => $themes,
             'active' => $active,
@@ -243,14 +254,38 @@ class AdminController
                 return new JsonResponse(['error' => 'Файл не загружен'], 400);
             }
 
+            // Проверка MIME через finfo (без finfo_close, т.к. объект освободится сам)
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            $mime = finfo_file($finfo, $file->getPathname());
+            $allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+            if (!in_array($mime, $allowedMimes)) {
+                return new JsonResponse(['error' => 'Разрешены только изображения (JPEG, PNG, GIF, WEBP)'], 400);
+            }
+
             $uploadDir = __DIR__ . '/../../public/uploads/';
             if (!is_dir($uploadDir) && !mkdir($uploadDir, 0755, true)) {
                 throw new \RuntimeException('Не удалось создать директорию для загрузок');
             }
 
-            $ext = $file->guessExtension() ?? 'bin';
-            $filename = uniqid() . '.' . $ext;
-            $file->move($uploadDir, $filename);
+            $filename = uniqid() . '.webp';
+            $targetPath = $uploadDir . $filename;
+
+            // Создаём менеджер с драйвером GD (или Imagick, если предпочитаете)
+            $manager = \Intervention\Image\ImageManager::usingDriver(
+                \Intervention\Image\Drivers\Imagick\Driver::class
+            );
+
+            // Декодируем загруженный файл
+            $image = $manager->decodeSplFileInfo($file);
+
+            // Изменяем размер (максимальная ширина 1200, высота пропорционально)
+            $image->scale(width: 1200);
+
+            // Кодируем в WebP с качеством 85
+            $encoded = $image->encodeUsingFormat(\Intervention\Image\Format::WEBP, quality: 85);
+
+            // Сохраняем на диск
+            $encoded->save($targetPath);
 
             return new JsonResponse(['url' => '/uploads/' . $filename]);
         } catch (\Throwable $e) {

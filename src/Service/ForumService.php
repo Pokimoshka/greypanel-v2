@@ -12,9 +12,13 @@ use GreyPanel\Repository\ForumLikeRepositoryInterface;
 use GreyPanel\Repository\ForumReadRepositoryInterface;
 use GreyPanel\Repository\UserRepositoryInterface;
 use Psr\Log\LoggerInterface;
+use GreyPanel\Service\CacheService;
+use Symfony\Contracts\Cache\ItemInterface;
 
 final class ForumService implements ForumServiceInterface
 {
+    private CacheService $cache;
+
     public function __construct(
         private ForumCategoryRepositoryInterface $categoryRepo,
         private ForumForumRepositoryInterface $forumRepo,
@@ -26,23 +30,28 @@ final class ForumService implements ForumServiceInterface
         private MarkdownServiceInterface $markdown,
         private Database $db,
         private LoggerInterface $logger
-    ) {}
+    ) {
+        $this->cache = new CacheService('forum_categories');
+    }
 
     public function getCategoriesWithForums(): array
     {
-        $categories = $this->categoryRepo->findAll();
-        foreach ($categories as &$cat) {
-            $cat['forums'] = $this->forumRepo->findByCategoryId($cat['id']);
-            foreach ($cat['forums'] as &$forum) {
-                $forum['threads_count'] = $this->threadRepo->countByForumId($forum['id']);
-                $lastThreads = $this->threadRepo->findByForumId($forum['id'], 1, 1);
-                $forum['last_thread'] = $lastThreads[0] ?? null;
-                if ($forum['last_thread']) {
-                    $forum['last_post'] = $this->postRepo->findLastByThreadId($forum['last_thread']['id']);
+        return $this->cache->get('categories_with_forums', function (ItemInterface $item) {
+            $item->expiresAfter(600); // 10 минут
+            $categories = $this->categoryRepo->findAll();
+            foreach ($categories as &$cat) {
+                $cat['forums'] = $this->forumRepo->findByCategoryId($cat['id']);
+                foreach ($cat['forums'] as &$forum) {
+                    $forum['threads_count'] = $this->threadRepo->countByForumId($forum['id']);
+                    $lastThreads = $this->threadRepo->findByForumId($forum['id'], 1, 1);
+                    $forum['last_thread'] = $lastThreads[0] ?? null;
+                    if ($forum['last_thread']) {
+                        $forum['last_post'] = $this->postRepo->findLastByThreadId($forum['last_thread']['id']);
+                    }
                 }
             }
-        }
-        return $categories;
+            return $categories;
+        });
     }
 
     public function getThreadsByForum(int $forumId, int $page, int $perPage = 20): array
@@ -88,6 +97,12 @@ final class ForumService implements ForumServiceInterface
             }
             
             $this->db->getPdo()->commit();
+
+            // Сбрасываем кэш главной страницы
+            $homeCache = new CacheService('home');
+            $homeCache->delete('last_topics');
+            $homeCache->delete('top_donators');
+
             return $threadId;
         } catch (\Throwable $e) {
             $this->db->getPdo()->rollBack();
@@ -175,5 +190,10 @@ final class ForumService implements ForumServiceInterface
                 WHERE (title LIKE ? OR content LIKE ?) AND is_deleted = 0";
         $row = $this->db->fetchOne($sql, [$like, $like]);
         return (int)($row['cnt'] ?? 0);
+    }
+
+    public function clearCache(): void
+    {
+        $this->cache->delete('categories_with_forums');
     }
 }

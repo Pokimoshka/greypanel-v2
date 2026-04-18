@@ -11,6 +11,7 @@ use GreyPanel\Service\AuthService;
 use GreyPanel\Repository\UserRepositoryInterface;
 use GreyPanel\Service\AvatarService;
 use GreyPanel\Service\SessionService;
+use GreyPanel\Service\SiteService;
 
 class UserController
 {
@@ -18,7 +19,8 @@ class UserController
         private AuthService $auth,
         private UserRepositoryInterface $userRepo,
         private AvatarService $avatarService,
-        private SessionService $session
+        private SessionService $session,
+        private SiteService $siteService
     ) {}
 
     public function profile(Request $request): Response
@@ -128,7 +130,7 @@ class UserController
         $userId = $this->session->getUserId();
         $referrals = $this->userRepo->getReferrals($userId);
         $earnings = $this->userRepo->getReferralEarnings($userId);
-        $refLink = $_ENV['SITE_URL'] . '/register?ref=' . $userId;
+        $refLink = $this->siteService->getSiteUrl() . '/register?ref=' . $userId;
         $html = View::render('user/referrals.tpl', [
             'referrals' => $referrals,
             'earnings' => $earnings,

@@ -81,8 +81,9 @@ final class App
         ThemeServiceInterface $themeService,
         bool $isAdmin
     ): void {
-        $twig->addFunction(new TwigFunction('url', function (string $path = '') {
-            return rtrim($_ENV['SITE_URL'] ?? '', '/') . '/' . ltrim($path, '/');
+        $siteService = $this->container->get(\GreyPanel\Service\SiteService::class);
+        $twig->addFunction(new TwigFunction('url', function (string $path = '') use ($siteService) {
+            return rtrim($siteService->getSiteUrl(), '/') . '/' . ltrim($path, '/');
         }));
 
 
@@ -96,6 +97,7 @@ final class App
         $moduleService = $this->container->get(ModuleServiceInterface::class);
         $twig->addFunction(new TwigFunction('module_enabled', [$moduleService, 'isEnabled']));
         $twig->addGlobal('csrf_token', $this->sessionService->getCsrfToken());
+        $twig->addGlobal('site_url', $siteService->getSiteUrl());
     }
 
     private function handleRequest(Request $request): Response
@@ -147,20 +149,37 @@ final class App
         $parts = explode(':', $middlewareDef);
         $name = $parts[0];
         $param = $parts[1] ?? null;
-        $middlewareClass = 'GreyPanel\\Middleware\\' . ucfirst($name) . 'Middleware';
 
-        return function (Request $request) use ($middlewareClass, $param, $next) {
-            if ($param !== null) {
-                if ($middlewareClass === 'GreyPanel\\Middleware\\RoleMiddleware') {
-                    $param = (int)$param;
-                }
-                $middleware = new $middlewareClass($param);
-            } elseif ($this->container->has($middlewareClass)) {
+        // Специальная обработка для rate_limit
+        if ($name === 'rate_limit') {
+            $rateLimitKey = $param;
+            $middleware = $this->container->get('rate_limit.' . $rateLimitKey);
+            return function (Request $request) use ($middleware, $next) {
+                return $middleware->handle($request, $next);
+            };
+        }
+
+        $className = str_replace('_', '', ucwords($name, '_'));
+        $middlewareClass = 'GreyPanel\\Middleware\\' . $className . 'Middleware';
+
+        // Для role НЕ используем контейнер – всегда создаём с параметром
+        if ($name === 'role') {
+            $param = (int)$param;
+            $middleware = new $middlewareClass($param);
+        } else {
+            // Для остальных middleware – пытаемся взять из контейнера
+            if ($this->container->has($middlewareClass)) {
                 $middleware = $this->container->get($middlewareClass);
             } else {
-                $middleware = new $middlewareClass();
+                if ($param !== null) {
+                    $middleware = new $middlewareClass($param);
+                } else {
+                    $middleware = new $middlewareClass();
+                }
             }
+        }
 
+        return function (Request $request) use ($middleware, $next) {
             return $middleware->handle($request, $next);
         };
     }

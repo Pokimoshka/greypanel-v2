@@ -258,7 +258,8 @@ function runInstallation()
         $envContent .= "APP_ENV=prod\n";
         $envContent .= "APP_DEBUG=false\n";
         $envContent .= "SITE_NAME={$defaultSettings['sitename']}\n";
-        $envContent .= "SITE_URL=http://{$_SERVER['HTTP_HOST']}\n";
+        $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') ? 'https' : 'http';
+        $envContent .= "SITE_URL={$protocol}://{$_SERVER['HTTP_HOST']}\n";
         $envContent .= "DB_HOST={$db_host}\n";
         $envContent .= "DB_NAME={$db_name}\n";
         $envContent .= "DB_USER={$db_user}\n";

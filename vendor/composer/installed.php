@@ -3,7 +3,7 @@
         'name' => 'greypanel/v2',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => '54c38abc376b498fa7cc19dc9850e424c13de82a',
+        'reference' => 'b96e7708d33a8af1bb42fc5d43d6cc1fe22680b8',
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -31,7 +31,7 @@
         'greypanel/v2' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => '54c38abc376b498fa7cc19dc9850e424c13de82a',
+            'reference' => 'b96e7708d33a8af1bb42fc5d43d6cc1fe22680b8',
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

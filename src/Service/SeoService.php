@@ -10,6 +10,7 @@ final class SeoService implements SeoServiceInterface
     private Database $db;
     private SettingsService $settings;
     private string $settingsTable;
+    private SiteService $siteService;
 
     public function __construct(Database $db, SettingsService $settings)
     {
@@ -30,7 +31,7 @@ final class SeoService implements SeoServiceInterface
 
     public function generateSitemap(): string
     {
-        $baseUrl = rtrim($_ENV['SITE_URL'] ?? '', '/');
+        $baseUrl = $this->siteService->getSiteUrl();
         $urls = [];
 
         $urls[] = ['loc' => $baseUrl . '/', 'priority' => '1.0', 'changefreq' => 'daily'];

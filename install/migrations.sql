@@ -402,3 +402,6 @@ ADD COLUMN `ban_id` INT NULL AFTER `subject`;
 
 ALTER TABLE `{prefix}ticket_messages` 
 ADD COLUMN `is_staff` TINYINT(1) NOT NULL DEFAULT 0 AFTER `user_id`;
+
+INSERT INTO `{prefix}settings` (`key`, `value`) VALUES ('site_protocol', 'auto') ON DUPLICATE KEY UPDATE `key` = `key`;
+INSERT INTO `{prefix}settings` (`key`, `value`) VALUES ('site_url_manual', '') ON DUPLICATE KEY UPDATE `key` = `key`;

@@ -10,7 +10,9 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     {{ vite_assets('vendor', 'vendor_style')|raw }}
     <link rel="stylesheet" href="{{ theme_url }}/css/theme.css">
-    {% block head %}{% endblock %}
+    {% block head %}
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+    {% endblock %}
 </head>
 <body x-data="app" x-init="init" class="fade-in">
     <div class="app-wrapper">
