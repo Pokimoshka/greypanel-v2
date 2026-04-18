@@ -1,0 +1,16 @@
+{
+  "resources/js/app.js": {
+    "file": "js/vendor.2tZUnjHn.js",
+    "name": "vendor",
+    "src": "resources/js/app.js",
+    "isEntry": true,
+    "css": [
+      "css/vendor.BEHUn5zE.css"
+    ]
+  },
+  "resources/scss/style.scss": {
+    "file": "css/vendor_style.DtkWR80Z.css",
+    "src": "resources/scss/style.scss",
+    "isEntry": true
+  }
+}

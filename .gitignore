@@ -13,10 +13,6 @@
 # Uploads
 /public/uploads/
 
-# Compiled assets
-/public/assets/
-!/public/assets/manifest.json
-
 # IDE / OS
 .idea/
 .vscode/
