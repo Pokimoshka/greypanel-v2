@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 return [
     'login' => [
         'id' => 'login',
@@ -30,5 +32,17 @@ return [
         'policy' => 'fixed_window',
         'limit' => 30,
         'interval' => '1 hour',
+    ],
+    'cron' => [
+        'id' => 'cron',
+        'policy' => 'fixed_window',
+        'limit' => 1,
+        'interval' => '5 minutes',
+    ],
+    'api_monitor' => [
+        'id' => 'api_monitor',
+        'policy' => 'fixed_window',
+        'limit' => 10,
+        'interval' => '1 minute',
     ],
 ];

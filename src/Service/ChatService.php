@@ -1,10 +1,13 @@
 <?php
+
 declare(strict_types=1);
 
 namespace GreyPanel\Service;
 
-use GreyPanel\Repository\ChatRepositoryInterface;
-use GreyPanel\Repository\UserRepositoryInterface;
+use GreyPanel\Interface\Repository\ChatRepositoryInterface;
+use GreyPanel\Interface\Repository\UserRepositoryInterface;
+use GreyPanel\Interface\Service\ChatServiceInterface;
+use GreyPanel\Interface\Service\MarkdownServiceInterface;
 
 final class ChatService implements ChatServiceInterface
 {
@@ -12,13 +15,14 @@ final class ChatService implements ChatServiceInterface
         private ChatRepositoryInterface $chatRepo,
         private UserRepositoryInterface $userRepo,
         private MarkdownServiceInterface $markdown
-    ) {}
+    ) {
+    }
 
     public function getMessages(int $sinceId = 0, int $limit = 50): array
     {
         $messages = $this->chatRepo->findMessages($sinceId, $limit);
         foreach ($messages as &$msg) {
-            $msg['text'] = $this->markdown->parse($msg['message']);
+            $msg['text'] = $this->markdown->parse($msg['message'] ?? '');
             $msg['time'] = $this->formatTime($msg['created_at']);
             unset($msg['message']);
         }
@@ -47,9 +51,15 @@ final class ChatService implements ChatServiceInterface
     private function formatTime(int $timestamp): string
     {
         $diff = time() - $timestamp;
-        if ($diff < 60) return 'только что';
-        if ($diff < 3600) return round($diff / 60) . ' мин назад';
-        if ($diff < 86400) return round($diff / 3600) . ' ч назад';
+        if ($diff < 60) {
+            return 'только что';
+        }
+        if ($diff < 3600) {
+            return round($diff / 60) . ' мин назад';
+        }
+        if ($diff < 86400) {
+            return round($diff / 3600) . ' ч назад';
+        }
         return date('H:i', $timestamp);
     }
 }

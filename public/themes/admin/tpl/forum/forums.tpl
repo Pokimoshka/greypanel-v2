@@ -35,6 +35,8 @@
 
 {% block scripts %}
 <script>
+const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+
 document.getElementById('save-order')?.addEventListener('click', function() {
     let rows = document.querySelectorAll('#sortable-forums tr');
     let order = {};
@@ -42,7 +44,7 @@ document.getElementById('save-order')?.addEventListener('click', function() {
     fetch('/admin/forum/forums/sort', {
         method: 'POST',
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: 'order=' + JSON.stringify(order) + '&csrf_token=' + encodeURIComponent('{{ csrf_token }}')
+        body: 'order=' + JSON.stringify(order) + '&csrf_token=' + encodeURIComponent(csrfToken)
     }).then(() => location.reload());
 });
 </script>

@@ -25,7 +25,7 @@
                     Автор: {{ thread.author_name }} |
                     {{ thread.created_at|date('d.m.Y H:i') }}
                 </p>
-                <p>{{ thread.content|slice(0, 200)|raw }}</p>
+                <p>{{ thread.content|slice(0, 200)|striptags }}</p>
             </div>
         </div>
     {% else %}

@@ -1,14 +1,15 @@
 <?php
+
 declare(strict_types=1);
 
 namespace GreyPanel\Controller;
 
+use GreyPanel\Core\RedirectResponse;
 use GreyPanel\Core\Request;
 use GreyPanel\Core\Response;
 use GreyPanel\Core\View;
-use GreyPanel\Core\RedirectResponse;
-use GreyPanel\Repository\MonitorServerRepositoryInterface;
-use GreyPanel\Service\EncryptionServiceInterface;
+use GreyPanel\Interface\Repository\MonitorServerRepositoryInterface;
+use GreyPanel\Interface\Service\EncryptionServiceInterface;
 use GreyPanel\Service\MonitorService;
 
 class AdminServerSettingsController
@@ -17,7 +18,8 @@ class AdminServerSettingsController
         private MonitorServerRepositoryInterface $repo,
         private MonitorService $monitorService,
         private EncryptionServiceInterface $encryption
-    ) {}
+    ) {
+    }
 
     public function index(Request $request): Response
     {

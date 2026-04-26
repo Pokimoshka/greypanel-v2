@@ -1,7 +1,10 @@
 <?php
+
 declare(strict_types=1);
 
 namespace GreyPanel\Service;
+
+use GreyPanel\Interface\Service\SessionServiceInterface;
 
 final class SessionService implements SessionServiceInterface
 {
@@ -9,6 +12,15 @@ final class SessionService implements SessionServiceInterface
     {
         if (session_status() === PHP_SESSION_NONE) {
             session_name($_ENV['SESSION_NAME'] ?? 'greysession');
+            $cookieParams = [
+                'lifetime' => (int)($_ENV['SESSION_LIFETIME'] ?? 7200),
+                'path' => '/',
+                'domain' => '',
+                'secure' => (!empty($_ENV['APP_ENV']) && $_ENV['APP_ENV'] === 'prod'),
+                'httponly' => true,
+                'samesite' => 'Lax',
+            ];
+            session_set_cookie_params($cookieParams);
             session_start();
         }
         if (!isset($_SESSION['_initiated'])) {
@@ -40,14 +52,15 @@ final class SessionService implements SessionServiceInterface
     public function setUser($user): void
     {
         $_SESSION['user_id'] = $user->getId();
-        $_SESSION['user_group'] = $user->getGroup();
+        $_SESSION['user_group'] = $user->getGroupId();
         $_SESSION['user'] = [
             'id' => $user->getId(),
             'username' => $user->getUsername(),
             'email' => $user->getEmail(),
-            'group' => $user->getGroup(),
+            'group_id' => $user->getGroupId(),
+            'group_flags' => $user->getGroup() ? $user->getGroup()->getFlags() : '',
             'avatar' => $user->getAvatar(),
-            'count_theard' => $user->getCountTheard(),
+            'count_thread' => $user->getCountThread(),
             'count_post' => $user->getCountPost(),
             'count_like' => $user->getCountLike(),
             'money' => $user->getMoney(),

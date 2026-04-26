@@ -51,6 +51,7 @@
                 <div class="card-header">Куда записывать купленные услуги</div>
                 <div class="card-body">
                     <select name="privilege_storage" class="form-select" x-model="privilege_storage">
+                        <option value="0" x-bind:selected="privilege_storage == 0">Нет</option>
                         <option value="1">users.ini</option>
                         <option value="2">AmxBans / CsBans</option>
                         <option value="3">AmxBans/CsBans + users.ini</option>
@@ -106,13 +107,16 @@
                 <div class="card-header">Статистика</div>
                 <div class="card-body">
                     <select name="stats_engine" class="form-select" x-model="stats_engine">
+                        <option value="0">Нет</option>
                         <option value="1">CSStats SQL</option>
                         <option value="2">AES Stats</option>
                         <option value="3">CSStats SQL + AES Stats</option>
+                        <option value="4">RankMe</option>
+                        <option value="5">Levels Ranks</option>
                     </select>
 
-                    <div x-show="stats_engine == 1 || stats_engine == 3" class="mt-3">
-                        <h6>CSStats SQL</h6>
+                    <div x-show="stats_engine != 0" class="mt-3">
+                        <h6>Подключение к базе данных статистики</h6>
                         <div class="mb-2">
                             <input type="text" name="csstats_db_host" class="form-control" placeholder="Хост БД" x-model="csstats_db_host">
                         </div>
@@ -128,24 +132,8 @@
                         <div class="mb-2">
                             <input type="text" name="csstats_db_name" class="form-control" placeholder="Имя БД" x-model="csstats_db_name">
                         </div>
-                    </div>
-
-                    <div x-show="stats_engine == 2 || stats_engine == 3" class="mt-3">
-                        <h6>AES Stats</h6>
                         <div class="mb-2">
-                            <input type="text" name="aes_stats_db_host" class="form-control" placeholder="Хост БД" x-model="aes_stats_db_host">
-                        </div>
-                        <div class="mb-2">
-                            <input type="text" name="aes_stats_db_user" class="form-control" placeholder="Пользователь" x-model="aes_stats_db_user">
-                        </div>
-                        <div class="mb-2">
-                            <input type="password" name="aes_stats_db_pass" class="form-control" placeholder="Пароль">
-                            {% if server.aes_stats_db_pass %}
-                                <small class="text-muted">Оставьте пустым, чтобы не менять</small>
-                            {% endif %}
-                        </div>
-                        <div class="mb-2">
-                            <input type="text" name="aes_stats_db_name" class="form-control" placeholder="Имя БД" x-model="aes_stats_db_name">
+                            <input type="text" name="csstats_table" class="form-control" placeholder="Имя таблицы (например, rankme)" x-model="csstats_table">
                         </div>
                     </div>
                 </div>
@@ -173,8 +161,8 @@ function serverForm(initialData) {
         q_port: initialData?.q_port || '',
         s_port: initialData?.s_port || '',
         disabled: initialData?.disabled == 1,
-        privilege_storage: initialData?.privilege_storage || 1,
-        stats_engine: initialData?.stats_engine || 1,
+        privilege_storage: initialData?.privilege_storage ?? 0,
+        stats_engine: initialData?.stats_engine ?? 0,
         amxbans_db_host: initialData?.amxbans_db_host || '',
         amxbans_db_user: initialData?.amxbans_db_user || '',
         amxbans_db_name: initialData?.amxbans_db_name || '',
@@ -182,6 +170,7 @@ function serverForm(initialData) {
         csstats_db_host: initialData?.csstats_db_host || '',
         csstats_db_user: initialData?.csstats_db_user || '',
         csstats_db_name: initialData?.csstats_db_name || '',
+        csstats_table: initialData?.csstats_table || '',
         aes_stats_db_host: initialData?.aes_stats_db_host || '',
         aes_stats_db_user: initialData?.aes_stats_db_user || '',
         aes_stats_db_name: initialData?.aes_stats_db_name || '',

@@ -1,21 +1,23 @@
 <?php
+
 declare(strict_types=1);
 
 namespace GreyPanel\Controller;
 
+use GreyPanel\Core\RedirectResponse;
 use GreyPanel\Core\Request;
 use GreyPanel\Core\Response;
 use GreyPanel\Core\View;
-use GreyPanel\Core\RedirectResponse;
-use GreyPanel\Service\NewsServiceInterface;
-use GreyPanel\Service\SessionServiceInterface;
+use GreyPanel\Interface\Service\NewsServiceInterface;
+use GreyPanel\Interface\Service\SessionServiceInterface;
 
 final class AdminNewsController
 {
     public function __construct(
         private NewsServiceInterface $newsService,
         private SessionServiceInterface $session
-    ) {}
+    ) {
+    }
 
     public function index(Request $request): Response
     {
@@ -37,7 +39,7 @@ final class AdminNewsController
             $data = [
                 'title' => trim($request->post('title')),
                 'slug' => trim($request->post('slug')),
-                'content' => trim($request->post('content')),
+                'content' => htmlspecialchars(trim($request->post('content')), ENT_QUOTES, 'UTF-8'),
                 'is_published' => (bool)$request->post('is_published'),
             ];
             if ($id) {

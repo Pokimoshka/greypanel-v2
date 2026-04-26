@@ -1,7 +1,8 @@
 import Sortable from 'sortablejs';
 
-export default (url, csrf) => ({
+export default (url, csrf = null) => ({
     init() {
+        const csrfToken = csrf || document.querySelector('meta[name="csrf-token"]').content;
         const el = this.$refs.sortableList;
         new Sortable(el, {
             animation: 150,
@@ -13,7 +14,7 @@ export default (url, csrf) => ({
                 await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ order: items, csrf_token: csrf })
+                    body: JSON.stringify({ order: items, csrf_token: csrfToken })
                 });
             }
         });

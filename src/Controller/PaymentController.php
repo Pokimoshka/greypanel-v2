@@ -1,18 +1,20 @@
 <?php
 
+declare(strict_types=1);
+
 namespace GreyPanel\Controller;
 
+use GreyPanel\Core\RedirectResponse;
 use GreyPanel\Core\Request;
 use GreyPanel\Core\Response;
 use GreyPanel\Core\View;
-use GreyPanel\Core\RedirectResponse;
-use GreyPanel\Repository\LogRepositoryInterface;
+use GreyPanel\Interface\Repository\LogRepositoryInterface;
+use GreyPanel\Interface\Repository\MoneyLogRepositoryInterface;
+use GreyPanel\Interface\Repository\PaymentRepositoryInterface;
+use GreyPanel\Interface\Repository\UserRepositoryInterface;
+use GreyPanel\Interface\Service\EncryptionServiceInterface;
+use GreyPanel\Interface\Service\SettingsServiceInterface;
 use Psr\Log\LoggerInterface;
-use GreyPanel\Service\SettingsServiceInterface;
-use GreyPanel\Repository\PaymentRepositoryInterface;
-use GreyPanel\Repository\UserRepositoryInterface;
-use GreyPanel\Repository\MoneyLogRepositoryInterface;
-use GreyPanel\Service\EncryptionServiceInterface;
 
 class PaymentController
 {
@@ -24,7 +26,8 @@ class PaymentController
         private LoggerInterface $logger,
         private SettingsServiceInterface $settings,
         private EncryptionServiceInterface $encryption
-    ) {}
+    ) {
+    }
 
     public function index(Request $request): Response
     {
@@ -198,6 +201,7 @@ class PaymentController
 
     private function ipInCidr(string $ip, string $cidr): bool
     {
+        $mask = (int) $mask;
         list($subnet, $mask) = explode('/', $cidr);
         if ((ip2long($ip) & ~((1 << (32 - $mask)) - 1)) == ip2long($subnet)) {
             return true;

@@ -1,9 +1,11 @@
 <?php
+
 declare(strict_types=1);
 
 namespace GreyPanel\Service;
 
 use GreyPanel\Core\Database;
+use GreyPanel\Interface\Service\ThemeServiceInterface;
 
 final class ThemeService implements ThemeServiceInterface
 {
@@ -25,7 +27,9 @@ final class ThemeService implements ThemeServiceInterface
         $themes = [];
         foreach (glob($this->themesPath . '/*', GLOB_ONLYDIR) as $dir) {
             $name = basename($dir);
-            if ($name === 'admin') continue;
+            if ($name === 'admin') {
+                continue;
+            }
             $themes[$name] = $this->loadManifest($name);
         }
         return $themes;

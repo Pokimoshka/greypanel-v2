@@ -1,0 +1,12 @@
+{
+  "Виджеты": [
+    {"name": "Чат", "code": "{% include 'components/chat.tpl' %}"},
+    {"name": "Онлайн", "code": "{% include 'components/online.tpl' %}"},
+    {"name": "Последние темы", "code": "{% include 'components/last_topics.tpl' %}"},
+    {"name": "Топ донаторов", "code": "{% include 'components/donators.tpl' %}"}
+  ],
+  "Компоненты": [
+    {"name": "Форма входа", "code": "<form method=\"post\" action=\"/login\">\n    <input type=\"hidden\" name=\"csrf_token\" value=\"{{ csrf_token }}\">\n    <input type=\"text\" name=\"username\" placeholder=\"Логин\">\n    <input type=\"password\" name=\"password\" placeholder=\"Пароль\">\n    <button type=\"submit\">Войти</button>\n</form>"},
+    {"name": "Кнопка темы", "code": "<button class=\"theme-toggle\" @click=\"toggleTheme\">\n    <i class=\"fas\" :class=\"getThemeIcon()\"></i>\n</button>"}
+  ]
+}

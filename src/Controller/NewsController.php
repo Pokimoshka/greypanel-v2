@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace GreyPanel\Controller;
@@ -6,11 +7,13 @@ namespace GreyPanel\Controller;
 use GreyPanel\Core\Request;
 use GreyPanel\Core\Response;
 use GreyPanel\Core\View;
-use GreyPanel\Service\NewsServiceInterface;
+use GreyPanel\Interface\Service\NewsServiceInterface;
 
 final class NewsController
 {
-    public function __construct(private NewsServiceInterface $newsService) {}
+    public function __construct(private NewsServiceInterface $newsService)
+    {
+    }
 
     public function index(Request $request): Response
     {

@@ -35,7 +35,7 @@
                         <tbody>
                             <template x-for="srv in servers" :key="srv.id">
                                 <tr>
-                                    <td x-html="srv.status_html"></td>
+                                    <td x-text="srv.status_html"></td>
                                     <td>
                                         <span x-text="srv.server_name"></span>
                                         <div class="small text-secondary" x-text="srv.address"></div>

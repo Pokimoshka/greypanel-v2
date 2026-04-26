@@ -59,6 +59,17 @@
         <i class="fas fa-bars"></i>
     </button>
 
+    <div x-data="toast" class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1080;">
+        <template x-for="toast in toasts" :key="toast.id">
+            <div class="toast show align-items-center text-white" :class="'bg-' + toast.type" role="alert">
+                <div class="d-flex">
+                    <div class="toast-body" x-text="toast.message"></div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" @click="toasts = toasts.filter(t => t.id !== toast.id)"></button>
+                </div>
+            </div>
+        </template>
+    </div>
+
     {# Скрипты #}
     {{ vite_assets('vendor')|raw }}
     <script src="{{ theme_url }}/js/theme.js"></script>

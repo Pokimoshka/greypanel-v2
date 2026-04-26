@@ -20,29 +20,98 @@
                     <span class="badge bg-primary ms-2">Admin</span>
                 </a>
             </div>
-            <!-- Кнопка сворачивания отдельной строкой -->
+
             <div class="sidebar-collapse-control">
                 <button class="sidebar-toggle" @click="toggleSidebar">
                     <i class="fas" :class="sidebarCollapsed ? 'fa-angle-right' : 'fa-angle-left'"></i>
                     <span x-show="!sidebarCollapsed">Свернуть</span>
                 </button>
             </div>
+
+            <a href="{{ url('/') }}" class="btn btn-sm btn-outline-secondary ms-2" target="_blank">
+                <i class="fas fa-external-link-alt"></i> На сайт
+            </a>
+
             <div class="sidebar-menu">
                 <ul class="nav flex-column">
-                    <li class="nav-item"><a href="{{ url('admin') }}" class="nav-link"><i class="fas fa-tachometer-alt"></i> <span>Дашборд</span></a></li>
-                    <li class="nav-item"><a href="{{ url('admin/site-settings') }}" class="nav-link"><i class="fas fa-globe"></i> <span>Настройки сайта</span></a></li>
-                    <li class="nav-item"><a href="{{ url('admin/security') }}" class="nav-link"><i class="fas fa-shield-alt"></i> <span>Безопасность</span></a></li>
-                    <li class="nav-item"><a href="{{ url('admin/users') }}" class="nav-link"><i class="fas fa-users"></i> <span>Пользователи</span></a></li>
-                    <li class="nav-item"><a href="{{ url('admin/logs') }}" class="nav-link"><i class="fas fa-history"></i> <span>Логи</span></a></li>
-                    <li class="nav-item"><a href="{{ url('admin/forum/categories') }}" class="nav-link"><i class="fas fa-comments"></i> <span>Форум</span></a></li>
-                    <li class="nav-item"><a href="{{ url('admin/server-settings') }}" class="nav-link"><i class="fas fa-server"></i> <span>Серверы</span></a></li>
-                    <li class="nav-item"><a href="{{ url('admin/news') }}" class="nav-link"><i class="fas fa-newspaper"></i> <span>Новости</span></a></li>
-                    <li class="nav-item"><a href="{{ url('admin/themes') }}" class="nav-link"><i class="fas fa-palette"></i> <span>Темы</span></a></li>
-                    <li class="nav-item"><a href="{{ url('admin/modules') }}" class="nav-link"><i class="fas fa-puzzle-piece"></i> <span>Модули</span></a></li>
-                    <li class="nav-item"><a href="{{ url('admin/seo') }}" class="nav-link"><i class="fas fa-search"></i> <span>SEO</span></a></li>
-                    <li class="nav-item"><a href="{{ url('admin/payments') }}" class="nav-link"><i class="fas fa-credit-card"></i> <span>Платежи</span></a></li>
+                    <li class="nav-item">
+                        <a href="{{ url('admin') }}" class="nav-link">
+                            <i class="fas fa-tachometer-alt"></i> <span>Дашборд</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ url('admin/site-settings') }}" class="nav-link">
+                            <i class="fas fa-globe"></i> <span>Настройки сайта</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ url('admin/security') }}" class="nav-link">
+                            <i class="fas fa-shield-alt"></i> <span>Безопасность</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ url('admin/groups') }}" class="nav-link">
+                            <i class="fas fa-users-cog"></i> <span>Группы</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ url('admin/services') }}" class="nav-link">
+                            <i class="fas fa-cogs"></i> <span>Услуги</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ url('admin/users') }}" class="nav-link">
+                            <i class="fas fa-users"></i> <span>Пользователи</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ url('admin/logs') }}" class="nav-link">
+                            <i class="fas fa-history"></i> <span>Логи</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ url('admin/forum/categories') }}" class="nav-link">
+                            <i class="fas fa-comments"></i> <span>Форум</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ url('admin/server-settings') }}" class="nav-link">
+                            <i class="fas fa-server"></i> <span>Серверы</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ url('admin/news') }}" class="nav-link">
+                            <i class="fas fa-newspaper"></i> <span>Новости</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ url('admin/themes') }}" class="nav-link">
+                            <i class="fas fa-palette"></i> <span>Темы</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ url('admin/theme-editor') }}" class="nav-link">
+                            <i class="fas fa-edit"></i> <span>Редактор темы</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ url('admin/modules') }}" class="nav-link">
+                            <i class="fas fa-puzzle-piece"></i> <span>Модули</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ url('admin/seo') }}" class="nav-link">
+                            <i class="fas fa-search"></i> <span>SEO</span>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="{{ url('admin/payments') }}" class="nav-link">
+                            <i class="fas fa-credit-card"></i> <span>Платежи</span>
+                        </a>
+                    </li>
                 </ul>
             </div>
+
             <div class="sidebar-footer mt-auto pt-3">
                 <button class="theme-toggle w-100" @click="toggleTheme">
                     <i class="fas" :class="getThemeIcon()"></i>
@@ -84,6 +153,15 @@
             </nav>
 
             <main class="admin-content">
+                {% if install_exists %}
+                <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Внимание!</strong> Папка <code>/install</code> всё ещё существует в корне сайта.
+                    Для безопасности удалите её (например, через FTP или файловый менеджер).
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endif %}
+
                 {% if app.flash.success %}
                     <div class="alert alert-success alert-dismissible fade show">{{ app.flash.success|e }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
                 {% endif %}
@@ -98,6 +176,17 @@
     <button class="mobile-menu-toggle d-lg-none" @click="toggleMobileMenu">
         <i class="fas fa-bars"></i>
     </button>
+
+    <div x-data="toast" class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1080;">
+        <template x-for="toast in toasts" :key="toast.id">
+            <div class="toast show align-items-center text-white" :class="'bg-' + toast.type" role="alert">
+                <div class="d-flex">
+                    <div class="toast-body" x-text="toast.message"></div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" @click="toasts = toasts.filter(t => t.id !== toast.id)"></button>
+                </div>
+            </div>
+        </template>
+    </div>
 
     {{ vite_assets('vendor')|raw }}
     <script src="{{ theme_url }}/js/theme.js"></script>

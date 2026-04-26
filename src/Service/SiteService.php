@@ -1,7 +1,10 @@
 <?php
+
 declare(strict_types=1);
 
 namespace GreyPanel\Service;
+
+use GreyPanel\Interface\Service\SettingsServiceInterface;
 
 class SiteService
 {
@@ -33,11 +36,19 @@ class SiteService
     public function getProtocol(): string
     {
         $setting = $this->settings->get('site_protocol', 'auto');
-        if ($setting === 'http') return 'http';
-        if ($setting === 'https') return 'https';
+        if ($setting === 'http') {
+            return 'http';
+        }
+        if ($setting === 'https') {
+            return 'https';
+        }
         // auto – определяем по запросу
-        if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') return 'https';
-        if (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') return 'https';
+        if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') {
+            return 'https';
+        }
+        if (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') {
+            return 'https';
+        }
         return 'http';
     }
 

@@ -1,18 +1,20 @@
 <?php
+
 declare(strict_types=1);
 
 namespace GreyPanel\Controller;
 
+use GreyPanel\Core\JsonResponse;
+use GreyPanel\Core\RedirectResponse;
 use GreyPanel\Core\Request;
 use GreyPanel\Core\Response;
 use GreyPanel\Core\View;
-use GreyPanel\Core\RedirectResponse;
-use GreyPanel\Core\JsonResponse;
-use GreyPanel\Service\ForumServiceInterface;
-use GreyPanel\Repository\ForumForumRepositoryInterface;
-use GreyPanel\Repository\ForumThreadRepositoryInterface;
-use GreyPanel\Repository\ForumPostRepositoryInterface;
-use GreyPanel\Service\SessionServiceInterface;
+use GreyPanel\Interface\Repository\ForumForumRepositoryInterface;
+use GreyPanel\Interface\Repository\ForumPostRepositoryInterface;
+use GreyPanel\Interface\Repository\ForumThreadRepositoryInterface;
+use GreyPanel\Interface\Service\ForumServiceInterface;
+use GreyPanel\Interface\Service\SessionServiceInterface;
+use GreyPanel\Service\PermissionService;
 
 final class ForumController
 {
@@ -21,8 +23,10 @@ final class ForumController
         private ForumForumRepositoryInterface $forumRepo,
         private ForumThreadRepositoryInterface $threadRepo,
         private ForumPostRepositoryInterface $postRepo,
-        private SessionServiceInterface $session
-    ) {}
+        private SessionServiceInterface $session,
+        private PermissionService $permissionService
+    ) {
+    }
 
     public function index(Request $request): Response
     {
@@ -109,7 +113,6 @@ final class ForumController
         $forumId = (int)$request->post('forum_id');
         $title = trim($request->post('title'));
         $content = trim($request->post('content'));
-        $content = strip_tags($content);
         $userId = $this->session->getUserId();
 
         if (empty($title) || empty($content)) {
@@ -128,7 +131,6 @@ final class ForumController
 
         $threadId = (int)$request->post('thread_id');
         $content = trim($request->post('content'));
-        $content = strip_tags($content);
         $userId = $this->session->getUserId();
 
         if (empty($content)) {
@@ -162,7 +164,7 @@ final class ForumController
         if (!$thread) {
             return new RedirectResponse('/forum');
         }
-        if ($thread['user_id'] != $this->session->getUserId() && $this->session->getUserGroup() < 3) {
+        if ($thread['user_id'] != $this->session->getUserId() && !$this->permissionService->hasPermission('c')) {
             return new RedirectResponse('/forum');
         }
         return new Response(View::render('forum/edit_thread.tpl', ['thread' => $thread]));
@@ -180,14 +182,13 @@ final class ForumController
         if (!$thread) {
             return new RedirectResponse('/forum');
         }
-        if ($thread['user_id'] != $this->session->getUserId() && $this->session->getUserGroup() < 3) {
+        if ($thread['user_id'] != $this->session->getUserId() && !$this->permissionService->hasPermission('c')) {
             return new RedirectResponse('/forum');
         }
 
         if ($request->isPost()) {
             $title = trim($request->post('title'));
             $content = trim($request->post('content'));
-            $content = strip_tags($content);
             if (!empty($title) && !empty($content)) {
                 $this->threadRepo->update($id, $title, $content);
             }
@@ -209,7 +210,7 @@ final class ForumController
         if (!$thread) {
             return new RedirectResponse('/forum');
         }
-        if ($thread['user_id'] != $this->session->getUserId() && $this->session->getUserGroup() < 3) {
+        if ($thread['user_id'] != $this->session->getUserId() && !$this->permissionService->hasPermission('c')) {
             return new RedirectResponse('/forum');
         }
         $this->threadRepo->deleteSoft($id);
@@ -229,7 +230,7 @@ final class ForumController
             return new RedirectResponse('/forum');
         }
         $thread = $this->threadRepo->findById($post['thread_id']);
-        if ($post['user_id'] != $this->session->getUserId() && $this->session->getUserGroup() < 3) {
+        if ($thread['user_id'] != $this->session->getUserId() && !$this->permissionService->hasPermission('c')) {
             return new RedirectResponse('/forum');
         }
         return new Response(View::render('forum/edit_post.tpl', ['post' => $post, 'thread' => $thread]));
@@ -248,13 +249,12 @@ final class ForumController
             return new RedirectResponse('/forum');
         }
         $thread = $this->threadRepo->findById($post['thread_id']);
-        if ($post['user_id'] != $this->session->getUserId() && $this->session->getUserGroup() < 3) {
+        if ($thread['user_id'] != $this->session->getUserId() && !$this->permissionService->hasPermission('c')) {
             return new RedirectResponse('/forum');
         }
 
         if ($request->isPost()) {
             $content = trim($request->post('content'));
-            $content = strip_tags($content);
             if (!empty($content)) {
                 $this->postRepo->update($id, $content);
             }
@@ -277,7 +277,7 @@ final class ForumController
             return new RedirectResponse('/forum');
         }
         $thread = $this->threadRepo->findById($post['thread_id']);
-        if ($post['user_id'] != $this->session->getUserId() && $this->session->getUserGroup() < 3) {
+        if ($thread['user_id'] != $this->session->getUserId() && !$this->permissionService->hasPermission('c')) {
             return new RedirectResponse('/forum');
         }
         $this->postRepo->delete($id);

@@ -150,38 +150,4 @@
     </div>
     {% endif %}
 
-    {# Виджет VIP статуса (если пользователь авторизован и есть активные привилегии) #}
-    {% if app.user %}
-    <div class="widget-card" x-data="collapsibleWidget('vip_status', true)" x-cloak>
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h6 class="mb-0">
-                <i class="fas fa-crown me-2" style="color: var(--accent);"></i>
-                Ваш VIP
-            </h6>
-            <button class="btn btn-sm btn-link text-secondary" @click="toggle">
-                <i class="fas" :class="open ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
-            </button>
-        </div>
-        <div x-show="open" x-collapse>
-            <div class="small">
-                <div class="d-flex justify-content-between mb-1">
-                    <span>Баланс:</span>
-                    <strong>{{ app.user.money }} ₽</strong>
-                </div>
-                <div class="d-flex justify-content-between">
-                    <span>Всего пополнено:</span>
-                    <strong>{{ app.user.all_money }} ₽</strong>
-                </div>
-                <hr class="my-2" style="border-color: var(--border-color);">
-                <a href="{{ url('/vip') }}" class="btn btn-sm w-100" style="background: linear-gradient(145deg, var(--accent), var(--accent-hover)); color: white; border: none;">
-                    Купить VIP
-                </a>
-                <a href="{{ url('/balance') }}" class="btn btn-sm btn-outline-secondary w-100 mt-2">
-                    Пополнить баланс
-                </a>
-            </div>
-        </div>
-    </div>
-    {% endif %}
-
 </div>

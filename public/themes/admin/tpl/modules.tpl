@@ -33,12 +33,14 @@
 {% block scripts %}
 {{ parent() }}
 <script>
+const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+
 document.querySelectorAll('.module-toggle').forEach(t => {
     t.addEventListener('change', async function() {
         const formData = new URLSearchParams();
         formData.append('module', this.dataset.module);
         formData.append('enabled', this.checked ? '1' : '0');
-        formData.append('csrf_token', '{{ csrf_token }}');
+        formData.append('csrf_token', csrfToken);
         await fetch('/admin/modules/toggle', { method: 'POST', body: formData });
     });
 });

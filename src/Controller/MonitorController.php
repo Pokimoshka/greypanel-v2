@@ -1,12 +1,13 @@
 <?php
+
 declare(strict_types=1);
 
 namespace GreyPanel\Controller;
 
+use GreyPanel\Core\JsonResponse;
 use GreyPanel\Core\Request;
 use GreyPanel\Core\Response;
 use GreyPanel\Core\View;
-use GreyPanel\Core\JsonResponse;
 use GreyPanel\Service\MonitorService;
 
 class MonitorController

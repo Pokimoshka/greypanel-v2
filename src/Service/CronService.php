@@ -1,9 +1,11 @@
 <?php
+
 declare(strict_types=1);
 
 namespace GreyPanel\Service;
 
-use GreyPanel\Repository\VipUserRepositoryInterface;
+use GreyPanel\Interface\Repository\VipUserRepositoryInterface;
+use GreyPanel\Interface\Service\CronServiceInterface;
 use Psr\Log\LoggerInterface;
 
 final class CronService implements CronServiceInterface
@@ -30,25 +32,36 @@ final class CronService implements CronServiceInterface
 
     public function run(): void
     {
+        $unlock = $this->acquireLock();
+        if (!$unlock) {
+            $this->logger?->warning('Cron already running, skipping');
+            return;
+        }
+
         if (!$this->isDue()) {
+            $unlock();
             return;
         }
 
         $this->setLastRun(time());
 
-        $this->logger?->info('Cron started');
+        try {
+            $this->logger?->info('Cron started');
 
-        $deleted = $this->vipUserRepo->deleteExpired();
-        $this->logger?->info('Deleted expired VIPs', ['count' => $deleted]);
+            $deleted = $this->vipUserRepo->deleteExpired();
+            $this->logger?->info('Deleted expired VIPs', ['count' => $deleted]);
 
-        $this->monitorService->updateAllServers();
-        $this->logger?->info('Monitor servers updated');
+            $this->monitorService->updateAllServers();
+            $this->logger?->info('Monitor servers updated');
 
-        if ($this->settings->getBool('seo_sitemap_enabled', true)) {
-            $this->seoService->saveSitemap();
+            if ($this->settings->getBool('seo_sitemap_enabled', true)) {
+                $this->seoService->saveSitemap();
+            }
+
+            $this->logger?->info('Cron finished');
+        } finally {
+            $unlock();
         }
-
-        $this->logger?->info('Cron finished');
     }
 
     private function getLastRun(): int
@@ -62,5 +75,22 @@ final class CronService implements CronServiceInterface
     private function setLastRun(int $timestamp): void
     {
         file_put_contents($this->lockFile, $timestamp);
+    }
+
+    private function acquireLock(): ?\Closure
+    {
+        $lockFile = __DIR__ . '/../../var/cron.lock';
+        $fp = fopen($lockFile, 'w');
+        if (!$fp) {
+            return null;
+        }
+        if (flock($fp, LOCK_EX | LOCK_NB)) {
+            return function () use ($fp) {
+                flock($fp, LOCK_UN);
+                fclose($fp);
+            };
+        }
+        fclose($fp);
+        return null;
     }
 }

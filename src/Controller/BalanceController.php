@@ -1,17 +1,19 @@
 <?php
 
+declare(strict_types=1);
+
 namespace GreyPanel\Controller;
 
 use GreyPanel\Core\Request;
 use GreyPanel\Core\Response;
 use GreyPanel\Core\View;
-use GreyPanel\Core\RedirectResponse;
-use GreyPanel\Repository\MoneyLogRepository;
-use GreyPanel\Repository\MoneyLogRepositoryInterface;
+use GreyPanel\Interface\Repository\MoneyLogRepositoryInterface;
 
 class BalanceController
 {
-    public function __construct(private MoneyLogRepositoryInterface $moneyLogRepo) {}
+    public function __construct(private MoneyLogRepositoryInterface $moneyLogRepo)
+    {
+    }
 
     public function index(Request $request): Response
     {

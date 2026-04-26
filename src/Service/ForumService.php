@@ -1,18 +1,20 @@
 <?php
+
 declare(strict_types=1);
 
 namespace GreyPanel\Service;
 
 use GreyPanel\Core\Database;
-use GreyPanel\Repository\ForumCategoryRepositoryInterface;
-use GreyPanel\Repository\ForumForumRepositoryInterface;
-use GreyPanel\Repository\ForumThreadRepositoryInterface;
-use GreyPanel\Repository\ForumPostRepositoryInterface;
-use GreyPanel\Repository\ForumLikeRepositoryInterface;
-use GreyPanel\Repository\ForumReadRepositoryInterface;
-use GreyPanel\Repository\UserRepositoryInterface;
+use GreyPanel\Interface\Repository\ForumCategoryRepositoryInterface;
+use GreyPanel\Interface\Repository\ForumForumRepositoryInterface;
+use GreyPanel\Interface\Repository\ForumLikeRepositoryInterface;
+use GreyPanel\Interface\Repository\ForumPostRepositoryInterface;
+use GreyPanel\Interface\Repository\ForumReadRepositoryInterface;
+use GreyPanel\Interface\Repository\ForumThreadRepositoryInterface;
+use GreyPanel\Interface\Repository\UserRepositoryInterface;
+use GreyPanel\Interface\Service\ForumServiceInterface;
+use GreyPanel\Interface\Service\MarkdownServiceInterface;
 use Psr\Log\LoggerInterface;
-use GreyPanel\Service\CacheService;
 use Symfony\Contracts\Cache\ItemInterface;
 
 final class ForumService implements ForumServiceInterface
@@ -29,7 +31,7 @@ final class ForumService implements ForumServiceInterface
         private UserRepositoryInterface $userRepo,
         private MarkdownServiceInterface $markdown,
         private Database $db,
-        private LoggerInterface $logger
+        private LoggerInterface $logger,
     ) {
         $this->cache = new CacheService('forum_categories');
     }
@@ -73,7 +75,9 @@ final class ForumService implements ForumServiceInterface
     public function getThread(int $threadId, int $page, int $perPage = 20): ?array
     {
         $thread = $this->threadRepo->findById($threadId);
-        if (!$thread) return null;
+        if (!$thread) {
+            return null;
+        }
         $thread['author'] = $this->userRepo->findById($thread['user_id']);
         $thread['posts'] = $this->postRepo->findByThreadId($threadId, $page, $perPage);
         foreach ($thread['posts'] as &$post) {
@@ -89,13 +93,13 @@ final class ForumService implements ForumServiceInterface
         $this->db->getPdo()->beginTransaction();
         try {
             $threadId = $this->threadRepo->create($forumId, $userId, $title, $content);
-            
+
             $user = $this->userRepo->findById($userId);
             if ($user) {
-                $user->setCountTheard($user->getCountTheard() + 1);
+                $user->setCountThread($user->getCountThread() + 1);
                 $this->userRepo->update($user);
             }
-            
+
             $this->db->getPdo()->commit();
 
             // Сбрасываем кэш главной страницы
@@ -106,7 +110,7 @@ final class ForumService implements ForumServiceInterface
             return $threadId;
         } catch (\Throwable $e) {
             $this->db->getPdo()->rollBack();
-            $this->logger?->error('Failed to create thread: ' . $e->getMessage());
+            $this->logger->error('Failed to create thread: ' . $e->getMessage());
             throw $e;
         }
     }

@@ -486,3 +486,16 @@ a:hover {
     color: var(--text-primary);
 }
 
+/* Бан-лист: подсветка строк */
+.widget-card .table-danger td {
+    background-color: rgba(239, 68, 68, 0.1) !important;
+}
+.widget-card .table-success td {
+    background-color: rgba(16, 185, 129, 0.1) !important;
+}
+.widget-card .table-warning td {
+    background-color: rgba(245, 158, 11, 0.1) !important;
+}
+.widget-card .table-info td {
+    background-color: rgba(6, 182, 212, 0.1) !important;
+}

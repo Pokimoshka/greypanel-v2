@@ -1,20 +1,23 @@
 <?php
 
+declare(strict_types=1);
+
 namespace GreyPanel\Controller;
 
+use GreyPanel\Core\RedirectResponse;
 use GreyPanel\Core\Request;
 use GreyPanel\Core\Response;
 use GreyPanel\Core\View;
-use GreyPanel\Core\RedirectResponse;
-use GreyPanel\Service\SettingsServiceInterface;
-use GreyPanel\Service\EncryptionServiceInterface;
+use GreyPanel\Interface\Service\EncryptionServiceInterface;
+use GreyPanel\Interface\Service\SettingsServiceInterface;
 
 class AdminSecurityController
 {
     public function __construct(
         private SettingsServiceInterface $settings,
         private EncryptionServiceInterface $encryption
-    ) {}
+    ) {
+    }
 
     public function index(Request $request): Response
     {

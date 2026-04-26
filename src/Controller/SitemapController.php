@@ -1,15 +1,17 @@
 <?php
+
 declare(strict_types=1);
 
 namespace GreyPanel\Controller;
 
-use GreyPanel\Core\Request;
 use GreyPanel\Core\Response;
 use GreyPanel\Service\SeoService;
 
 class SitemapController
 {
-    public function __construct(private SeoService $seoService) {}
+    public function __construct(private SeoService $seoService)
+    {
+    }
 
     public function index(): Response
     {

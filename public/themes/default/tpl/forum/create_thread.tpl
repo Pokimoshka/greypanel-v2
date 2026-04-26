@@ -14,7 +14,7 @@
     <div class="mb-3">
         <label class="form-label">Сообщение</label>
         <textarea name="content" class="form-control editor" rows="10">{{ thread.content ?? '' }}</textarea>
-        <div class="form-text">Доступные BB-коды: [b], [i], [u], [url], [img], [quote], [code]</div>
+        <div class="form-text">Поддерживается Markdown.</div>
     </div>
     <button type="submit" class="btn btn-primary">Создать тему</button>
 </form>

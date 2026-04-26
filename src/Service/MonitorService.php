@@ -1,13 +1,15 @@
 <?php
+
 declare(strict_types=1);
 
 namespace GreyPanel\Service;
 
-use GreyPanel\Repository\MonitorServerRepositoryInterface;
-use xPaw\SourceQuery\SourceQuery;
-use xPaw\SourceQuery\Exception\SourceQueryException;
+use GreyPanel\Interface\Repository\MonitorServerRepositoryInterface;
+use GreyPanel\Interface\Service\MonitorServiceInterface;
 use Symfony\Component\Cache\Adapter\FilesystemAdapter;
 use Symfony\Contracts\Cache\ItemInterface;
+use xPaw\SourceQuery\Exception\SourceQueryException;
+use xPaw\SourceQuery\SourceQuery;
 
 final class MonitorService implements MonitorServiceInterface
 {
@@ -51,7 +53,7 @@ final class MonitorService implements MonitorServiceInterface
             $query->Disconnect();
 
             $status = 0;
-            $cache = serialize($info);
+            $cache = json_encode($info, JSON_UNESCAPED_UNICODE);
         } catch (SourceQueryException $e) {
 
         }
@@ -71,10 +73,14 @@ final class MonitorService implements MonitorServiceInterface
 
     private function formatServer(array $server): array
     {
-        $cache = unserialize($server['cache']);
+        $cache = !empty($server['cache']) ? json_decode($server['cache'], true) : [];
+        if (!is_array($cache)) {
+            $cache = [];
+        }
+
         $online = ($server['status'] == 0);
 
-        if ($online && is_array($cache)) {
+        if ($online && !empty($cache)) {
             $serverName = $cache['HostName'] ?? $server['ip'];
             $map = $cache['Map'] ?? 'unknown';
             $players = ($cache['Players'] ?? 0) . '/' . ($cache['MaxPlayers'] ?? 0);

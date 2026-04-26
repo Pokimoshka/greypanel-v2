@@ -1,6 +1,26 @@
 <IfModule mod_rewrite.c>
     RewriteEngine On
+
+    # Запрет доступа к чувствительным файлам
+    <FilesMatch "\.(env|json|lock|md|sql|yml|yaml|ini|log|bak|backup)$">
+        Require all denied
+    </FilesMatch>
+
+    # Запрет доступа к папкам
+    RedirectMatch 403 /\\.(git|svn|hg|idea|env|config|src|var|vendor)/
+
+    # Перенаправление всех запросов на index.php
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteRule ^ index.php [QSA,L]
+</IfModule>
+
+# Защита от просмотра листинга директорий
+Options -Indexes
+
+# Защита от MIME-угадывания
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "DENY"
+    Header set X-XSS-Protection "1; mode=block"
 </IfModule>

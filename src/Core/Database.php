@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace GreyPanel\Core;
@@ -11,14 +12,14 @@ final class Database implements DatabaseInterface
     private PDO $pdo;
     private string $prefix;
 
-    public function __construct(array $env)
+    public function __construct(array $config)
     {
-        $host = $env['DB_HOST'] ?? 'localhost';
-        $dbname = $env['DB_NAME'] ?? '';
-        $user = $env['DB_USER'] ?? 'root';
-        $pass = $env['DB_PASS'] ?? '';
-        $charset = $env['DB_CHARSET'] ?? 'utf8mb4';
-        $this->prefix = $env['DB_PREFIX'] ?? 'grey_';
+        $host = $config['DB_HOST'] ?? 'localhost';
+        $dbname = $config['DB_NAME'] ?? '';
+        $user = $config['DB_USER'] ?? 'root';
+        $pass = $config['DB_PASS'] ?? '';
+        $charset = $config['DB_CHARSET'] ?? 'utf8mb4';
+        $this->prefix = $config['DB_PREFIX'] ?? 'grey_';
 
         $dsn = "mysql:host={$host};dbname={$dbname};charset={$charset}";
         $options = [
@@ -33,9 +34,18 @@ final class Database implements DatabaseInterface
         }
     }
 
-    public function getPrefix(): string { return $this->prefix; }
-    public function table(string $name): string { return $this->prefix . $name; }
-    public function getPdo(): PDO { return $this->pdo; }
+    public function getPrefix(): string
+    {
+        return $this->prefix;
+    }
+    public function table(string $name): string
+    {
+        return $this->prefix . $name;
+    }
+    public function getPdo(): PDO
+    {
+        return $this->pdo;
+    }
 
     public function query(string $sql, array $params = []): \PDOStatement
     {

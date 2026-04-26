@@ -23,8 +23,8 @@
         <input type="text" name="amxbans_user" class="form-control" value="{{ settings.amxbans_user }}">
     </div>
     <div class="mb-3">
-        <label class="form-label">Пароль MySQL</label>
-        <input type="password" name="amxbans_pass" class="form-control" value="{{ settings.amxbans_pass }}">
+        <label class="form-label">Пароль MySQL (оставьте пустым, чтобы не менять)</label>
+        <input type="password" name="amxbans_pass" class="form-control" placeholder="******">
     </div>
     <div class="mb-3">
         <label class="form-label">Префикс таблиц (например, amx_)</label>

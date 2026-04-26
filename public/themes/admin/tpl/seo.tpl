@@ -39,8 +39,10 @@
 {% block scripts %}
 {{ parent() }}
 <script>
+const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+
 document.getElementById('regenerateBtn').addEventListener('click', async () => {
-    const res = await fetch('/admin/seo/regenerate', { method: 'POST', body: new URLSearchParams({csrf_token: '{{ csrf_token }}'}) });
+    const res = await fetch('/admin/seo/regenerate', { method: 'POST', body: new URLSearchParams({csrf_token: csrfToken}) });
     document.getElementById('regenerateResult').textContent = res.ok ? '✓ Готово' : '✗ Ошибка';
 });
 </script>

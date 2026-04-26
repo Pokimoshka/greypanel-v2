@@ -1,11 +1,13 @@
 <?php
+
 declare(strict_types=1);
 
 namespace GreyPanel\Service;
 
+use GreyPanel\Interface\Service\AvatarServiceInterface;
+use Intervention\Image\Drivers\Imagick\Driver;
 use Intervention\Image\ImageManager;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
-use Intervention\Image\Drivers\Imagick\Driver;
 
 final class AvatarService implements AvatarServiceInterface
 {
@@ -44,7 +46,7 @@ final class AvatarService implements AvatarServiceInterface
     {
         $image = $this->manager->decodeSplFileInfo($file);
         $image->cover($this->maxWidth, $this->maxHeight);
-        
+
         $uploadDir = __DIR__ . '/../../public/uploads/avatars/';
         if (!is_dir($uploadDir)) {
             mkdir($uploadDir, 0755, true);
@@ -52,23 +54,27 @@ final class AvatarService implements AvatarServiceInterface
         if (!is_writable($uploadDir)) {
             throw new \RuntimeException('Директория загрузок недоступна для записи');
         }
-        
+
         $filename = 'avatar_' . $userId . '_' . bin2hex(random_bytes(4)) . '.jpg';
         $filePath = $uploadDir . $filename;
-        
+
         $image->save($filePath, quality: 95);
-        
+
         if (!file_exists($filePath)) {
             throw new \RuntimeException('Не удалось сохранить аватар');
         }
-        
+
         return '/uploads/avatars/' . $filename;
     }
 
     public function deleteOldAvatar(?string $avatarPath): void
     {
-        if (!$avatarPath) return;
-        if (str_contains($avatarPath, 'avatar_default.png')) return;
+        if (!$avatarPath) {
+            return;
+        }
+        if (str_contains($avatarPath, 'avatar_default.png')) {
+            return;
+        }
         $fullPath = __DIR__ . '/../../public' . $avatarPath;
         if (file_exists($fullPath) && is_file($fullPath)) {
             unlink($fullPath);

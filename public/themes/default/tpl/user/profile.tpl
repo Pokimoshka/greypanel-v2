@@ -8,14 +8,7 @@
             <div class="widget-card text-center p-4">
                 <img src="{{ user.avatar }}" alt="{{ user.username }}" class="rounded-circle mb-3" style="width: 120px; height: 120px; object-fit: cover;">
                 <h3 class="mb-1">{{ user.username }}</h3>
-                <p class="text-secondary">
-                    {% if user.group == 4 %}Root Admin
-                    {% elseif user.group == 3 %}Admin
-                    {% elseif user.group == 2 %}Moderator
-                    {% elseif user.group == 1 %}Меценат
-                    {% else %}Пользователь
-                    {% endif %}
-                </p>
+                <p class="text-secondary">{{ user.group.name }}</p>
                 <hr style="border-color: var(--border-color);">
                 <div class="text-start small">
                     <div class="d-flex justify-content-between mb-1">
@@ -43,7 +36,7 @@
                 <h5 class="mb-3">Статистика</h5>
                 <div class="row text-center">
                     <div class="col-4">
-                        <div class="display-6 fw-bold">{{ user.countTheard }}</div>
+                        <div class="display-6 fw-bold">{{ user.countThread }}</div>
                         <div class="text-secondary">Тем на форуме</div>
                     </div>
                     <div class="col-4">
@@ -81,8 +74,11 @@
         function copyRefLink() {
             const input = document.getElementById('refLink');
             input.select();
-            document.execCommand('copy');
-            alert('Ссылка скопирована!');
+            navigator.clipboard.writeText(input.value).then(() => {
+                window.dispatchEvent(new CustomEvent('toast:success', { detail: 'Ссылка скопирована!' }));
+            }).catch(() => {
+                window.dispatchEvent(new CustomEvent('toast:error', { detail: 'Не удалось скопировать. Скопируйте вручную.' }));
+            });
         }
     </script>
 {% endblock %}

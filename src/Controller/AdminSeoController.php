@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace GreyPanel\Controller;
@@ -14,7 +15,8 @@ class AdminSeoController
     public function __construct(
         private SeoService $seoService,
         private SettingsService $settings
-    ) {}
+    ) {
+    }
 
     public function index(Request $request): Response
     {

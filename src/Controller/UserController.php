@@ -1,14 +1,15 @@
 <?php
+
 declare(strict_types=1);
 
 namespace GreyPanel\Controller;
 
+use GreyPanel\Core\RedirectResponse;
 use GreyPanel\Core\Request;
 use GreyPanel\Core\Response;
 use GreyPanel\Core\View;
-use GreyPanel\Core\RedirectResponse;
+use GreyPanel\Interface\Repository\UserRepositoryInterface;
 use GreyPanel\Service\AuthService;
-use GreyPanel\Repository\UserRepositoryInterface;
 use GreyPanel\Service\AvatarService;
 use GreyPanel\Service\SessionService;
 use GreyPanel\Service\SiteService;
@@ -21,7 +22,8 @@ class UserController
         private AvatarService $avatarService,
         private SessionService $session,
         private SiteService $siteService
-    ) {}
+    ) {
+    }
 
     public function profile(Request $request): Response
     {
@@ -88,11 +90,11 @@ class UserController
 
             $avatarFile = $request->files()['avatar'] ?? null;
 
-            if ($avatarFile instanceof \Symfony\Component\HttpFoundation\File\UploadedFile && 
+            if ($avatarFile instanceof \Symfony\Component\HttpFoundation\File\UploadedFile &&
                 $avatarFile->getError() === UPLOAD_ERR_OK) {
-                
+
                 $validationError = $this->avatarService->validate($avatarFile);
-                
+
                 if ($validationError === null) {
                     $this->avatarService->deleteOldAvatar($user->getAvatar());
                     $newAvatarPath = $this->avatarService->resizeAndSave($avatarFile, $user->getId());

@@ -1,9 +1,11 @@
 <?php
+
 declare(strict_types=1);
 
 namespace GreyPanel\Repository;
 
 use GreyPanel\Core\Database;
+use GreyPanel\Interface\Repository\NewsRepositoryInterface;
 
 final class NewsRepository implements NewsRepositoryInterface
 {

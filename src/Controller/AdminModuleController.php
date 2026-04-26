@@ -1,19 +1,21 @@
 <?php
+
 declare(strict_types=1);
 
 namespace GreyPanel\Controller;
 
+use GreyPanel\Core\JsonResponse;
 use GreyPanel\Core\Request;
 use GreyPanel\Core\Response;
 use GreyPanel\Core\View;
-use GreyPanel\Core\JsonResponse;
 use GreyPanel\Service\ModuleService;
 
 class AdminModuleController
 {
     public function __construct(
         private ModuleService $moduleService
-    ) {}
+    ) {
+    }
 
     public function index(Request $request): Response
     {

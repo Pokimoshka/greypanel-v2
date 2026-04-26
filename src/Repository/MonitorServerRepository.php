@@ -1,9 +1,11 @@
 <?php
+
 declare(strict_types=1);
 
 namespace GreyPanel\Repository;
 
 use GreyPanel\Core\Database;
+use GreyPanel\Interface\Repository\MonitorServerRepositoryInterface;
 
 final class MonitorServerRepository implements MonitorServerRepositoryInterface
 {
@@ -65,7 +67,7 @@ final class MonitorServerRepository implements MonitorServerRepositoryInterface
     public function updateSettings(int $id, array $settings): void
     {
         $allowed = [
-            'privilege_storage', 'stats_engine',
+            'privilege_storage', 'stats_engine', 'csstats_table',
             'amxbans_db_host', 'amxbans_db_user', 'amxbans_db_pass', 'amxbans_db_name', 'amxbans_db_prefix',
             'csstats_db_host', 'csstats_db_user', 'csstats_db_pass', 'csstats_db_name',
             'aes_stats_db_host', 'aes_stats_db_user', 'aes_stats_db_pass', 'aes_stats_db_name',

@@ -1,9 +1,11 @@
 <?php
+
 declare(strict_types=1);
 
 namespace GreyPanel\Service;
 
 use GreyPanel\Core\Database;
+use GreyPanel\Interface\Service\SettingsServiceInterface;
 use Symfony\Component\Cache\Adapter\FilesystemAdapter;
 use Symfony\Contracts\Cache\ItemInterface;
 

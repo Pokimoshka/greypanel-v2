@@ -29,7 +29,7 @@
                     <td>{{ user.id }}</td>
                     <td>{{ user.username }}</td>
                     <td>{{ user.email }}</td>
-                    <td>{{ user.group }}</td>
+                    <td>{{ user.group ? user.group.name : '—' }}</td>
                     <td>{{ user.money }} ₽</td>
                     <td>{{ user.banned ? 'Да' : 'Нет' }}</td>
                     <td><a href="{{ url('admin/users/edit/' ~ user.id) }}" class="btn btn-sm btn-outline-primary">Ред.</a></td>

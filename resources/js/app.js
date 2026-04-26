@@ -16,6 +16,14 @@ import monitorWidget from './components/monitor';
 import quote from './components/quote';
 import sortableList from './components/sortable';
 
+import { EditorView, basicSetup } from 'codemirror';
+import { html } from '@codemirror/lang-html';
+import { css } from '@codemirror/lang-css';
+import { javascript } from '@codemirror/lang-javascript';
+import { oneDark } from '@codemirror/theme-one-dark';
+import './theme-editor.js';
+import toast from './components/toast';
+
 window.Alpine = Alpine;
 window.Sortable = Sortable;
 
@@ -25,6 +33,7 @@ Alpine.data('modal', modal);
 Alpine.data('monitorWidget', monitorWidget);
 Alpine.data('quote', quote);
 Alpine.data('sortableList', sortableList);
+Alpine.data('toast', toast);
 
 Alpine.plugin(collapse);
 
@@ -67,10 +76,10 @@ const editorToolbar = [
                         const cm = editor.codemirror;
                         cm.replaceSelection(`![](${data.url})`);
                     } else {
-                        alert('Ошибка загрузки');
+                        window.dispatchEvent(new CustomEvent('toast:error', { detail: 'Ошибка загрузки' }));
                     }
                 } catch (e) {
-                    alert('Ошибка соединения');
+                    window.dispatchEvent(new CustomEvent('toast:error', { detail: 'Ошибка соединения' }));
                 }
             };
             input.click();

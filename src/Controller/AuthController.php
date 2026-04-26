@@ -1,18 +1,19 @@
 <?php
+
 declare(strict_types=1);
 
 namespace GreyPanel\Controller;
 
+use GreyPanel\Core\RedirectResponse;
 use GreyPanel\Core\Request;
 use GreyPanel\Core\Response;
 use GreyPanel\Core\View;
-use GreyPanel\Core\RedirectResponse;
-use GreyPanel\Service\AuthServiceInterface;
-use GreyPanel\Repository\LogRepositoryInterface;
-use GreyPanel\Service\SessionServiceInterface;
-use GreyPanel\Repository\UserRepositoryInterface;
+use GreyPanel\Interface\Repository\LogRepositoryInterface;
+use GreyPanel\Interface\Repository\UserRepositoryInterface;
+use GreyPanel\Interface\Service\AuthServiceInterface;
+use GreyPanel\Interface\Service\SessionServiceInterface;
+use GreyPanel\Interface\Service\SettingsServiceInterface;
 use GreyPanel\Service\RecaptchaService;
-use GreyPanel\Service\SettingsServiceInterface;
 
 final class AuthController
 {
@@ -23,7 +24,8 @@ final class AuthController
         private UserRepositoryInterface $userRepo,
         private RecaptchaService $recaptcha,
         private SettingsServiceInterface $settings
-    ) {}
+    ) {
+    }
 
     public function login(Request $request): Response
     {
@@ -46,6 +48,7 @@ final class AuthController
 
             $result = $this->auth->login($login, $password);
             if ($result instanceof \GreyPanel\Model\User) {
+                session_regenerate_id(true);
                 $this->session->setUser($result);
                 $_SESSION['user']['updated_at'] = $result->getUpdatedAt();
                 $this->logRepo->add($result->getId(), 'login', 'Пользователь вошёл');
@@ -101,6 +104,7 @@ final class AuthController
 
             $result = $this->auth->register($username, $email, $password, $password2, $ip, $referralId);
             if ($result instanceof \GreyPanel\Model\User) {
+                session_regenerate_id(true);
                 $this->session->setUser($result);
                 $this->logRepo->add($result->getId(), 'register', 'Пользователь зарегистрировался');
                 unset($_SESSION['referral']);

@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace GreyPanel\Controller;
@@ -6,12 +7,12 @@ namespace GreyPanel\Controller;
 use GreyPanel\Core\Request;
 use GreyPanel\Core\Response;
 use GreyPanel\Core\View;
-use GreyPanel\Repository\UserRepositoryInterface;
-use GreyPanel\Repository\ForumThreadRepositoryInterface;
-use GreyPanel\Service\BanServiceInterface;
-use GreyPanel\Repository\OnlineRepositoryInterface;
-use GreyPanel\Service\SessionServiceInterface;
-use GreyPanel\Service\SeoServiceInterface;
+use GreyPanel\Interface\Repository\ForumThreadRepositoryInterface;
+use GreyPanel\Interface\Repository\OnlineRepositoryInterface;
+use GreyPanel\Interface\Repository\UserRepositoryInterface;
+use GreyPanel\Interface\Service\BanServiceInterface;
+use GreyPanel\Interface\Service\SeoServiceInterface;
+use GreyPanel\Interface\Service\SessionServiceInterface;
 use GreyPanel\Service\CacheService;
 
 final class HomeController
@@ -23,17 +24,18 @@ final class HomeController
         private OnlineRepositoryInterface $onlineRepo,
         private SessionServiceInterface $session,
         private SeoServiceInterface $seoService
-    ) {}
+    ) {
+    }
 
     public function index(Request $request): Response
     {
         $homeCache = new CacheService('home');
 
-        $lastTopics = $homeCache->get('last_topics', function() {
+        $lastTopics = $homeCache->get('last_topics', function () {
             return $this->threadRepo->findLast(5);
         }, 300);
 
-        $topDonators = $homeCache->get('top_donators', function() {
+        $topDonators = $homeCache->get('top_donators', function () {
             return $this->userRepo->findTopDonators(5);
         }, 600);
         $lastBans = $this->banService->getBans(1, 5);

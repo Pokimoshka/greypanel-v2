@@ -1,18 +1,29 @@
 <?php
+
 declare(strict_types=1);
 
 namespace GreyPanel\Service;
 
+use GreyPanel\Interface\Repository\UserRepositoryInterface;
+use GreyPanel\Interface\Service\AuthServiceInterface;
 use GreyPanel\Model\User;
-use GreyPanel\Repository\UserRepositoryInterface;
+use GreyPanel\Model\UserGroup;
+use GreyPanel\Repository\UserGroupRepository;
 
 final class AuthService implements AuthServiceInterface
 {
     private UserRepositoryInterface $userRepo;
+    private UserGroupRepository $groupRepo;
+    private PermissionService $permissionService;
 
-    public function __construct(UserRepositoryInterface $userRepo)
-    {
+    public function __construct(
+        UserRepositoryInterface $userRepo,
+        UserGroupRepository $groupRepo,
+        PermissionService $permissionService
+    ) {
         $this->userRepo = $userRepo;
+        $this->groupRepo = $groupRepo;
+        $this->permissionService = $permissionService;
     }
 
     public function register(string $username, string $email, string $password, string $passwordConfirm, string $ip, int $referralId = 0): User|string
@@ -43,10 +54,20 @@ final class AuthService implements AuthServiceInterface
             $referralId = 0;
         }
 
+        $defaultGroup = $this->groupRepo->findDefault();
+        if (!$defaultGroup) {
+            $defaultGroup = new UserGroup([
+                'name' => 'Пользователь',
+                'flags' => '',
+                'is_default' => true,
+            ]);
+            $this->groupRepo->create($defaultGroup);
+            $defaultGroup = $this->groupRepo->findDefault(); // получить с ID
+        }
+
         $user = new User([
             'username' => $username,
             'email' => $email,
-            'group' => 0,
             'money' => 0,
             'all_money' => 0,
             'reg_data' => time(),
@@ -54,7 +75,9 @@ final class AuthService implements AuthServiceInterface
             'referral' => 0,
             'banned' => false,
         ]);
+        $user->setGroup($defaultGroup);
         $userId = $this->userRepo->create($user, $password, $referralId);
+        $this->permissionService->loadUserPermissions($userId);
         return $this->userRepo->findById($userId);
     }
 
@@ -72,6 +95,7 @@ final class AuthService implements AuthServiceInterface
         if ($user->isBanned()) {
             return 'Ваш аккаунт заблокирован';
         }
+        $this->permissionService->loadUserPermissions($user);
         return $user;
     }
 

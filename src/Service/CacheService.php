@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace GreyPanel\Service;
@@ -19,6 +20,12 @@ class CacheService
     {
         return $this->cache->get($key, function (ItemInterface $item) use ($callback, $ttl) {
             $item->expiresAfter($ttl);
+
+            // Проверяем, сколько параметров ожидает коллбек
+            $reflection = new \ReflectionFunction($callback);
+            if ($reflection->getNumberOfParameters() > 0) {
+                return $callback($item);
+            }
             return $callback();
         });
     }

@@ -1,16 +1,20 @@
 <?php
+
 declare(strict_types=1);
 
 namespace GreyPanel\Service;
 
-use GreyPanel\Repository\NewsRepositoryInterface;
+use GreyPanel\Interface\Repository\NewsRepositoryInterface;
+use GreyPanel\Interface\Service\MarkdownServiceInterface;
+use GreyPanel\Interface\Service\NewsServiceInterface;
 
 final class NewsService implements NewsServiceInterface
 {
     public function __construct(
         private NewsRepositoryInterface $newsRepo,
         private MarkdownServiceInterface $markdown
-    ) {}
+    ) {
+    }
 
     public function getPaginated(int $page, int $perPage, bool $publishedOnly = true): array
     {

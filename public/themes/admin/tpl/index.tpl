@@ -19,6 +19,7 @@
             </div>
         </div>
     </div>
+
     <div class="col-md-3">
         <div class="card text-white bg-success h-100 animate__animated animate__fadeInUp animate__delay-1s">
             <div class="card-body">
@@ -33,20 +34,7 @@
             </div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="card text-white bg-warning h-100 animate__animated animate__fadeInUp animate__delay-2s">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="text-uppercase small opacity-75">VIP активации</h6>
-                        <h2 class="mb-0">{{ total_vip }}</h2>
-                    </div>
-                    <i class="fas fa-crown fa-3x opacity-50"></i>
-                </div>
-                <small class="opacity-75">Действующих</small>
-            </div>
-        </div>
-    </div>
+
     <div class="col-md-3">
         <div class="card text-white bg-info h-100 animate__animated animate__fadeInUp animate__delay-3s">
             <div class="card-body">
@@ -134,11 +122,10 @@
             </div>
             <div class="card-body">
                 <div class="d-grid gap-2">
-                    <a href="{{ url('admin/vip/servers') }}" class="btn btn-outline-primary"><i class="fas fa-crown me-2"></i>VIP серверы</a>
                     <a href="{{ url('admin/forum/categories') }}" class="btn btn-outline-success"><i class="fas fa-comments me-2"></i>Форум</a>
                     <a href="{{ url('admin/server-settings') }}" class="btn btn-outline-info"><i class="fas fa-server me-2"></i>Мониторинг</a>
-                    <a href="{{ url('admin/themes') }}" class="btn btn-outline-warning"><i class="fas fa-palette me-2"></i>Темы</a>
-                    <a href="{{ url('admin/modules') }}" class="btn btn-outline-secondary"><i class="fas fa-puzzle-piece me-2"></i>Модули</a>
+                    <a href="{{ url('admin/services') }}" class="btn btn-outline-warning"><i class="fas fa-cogs me-2"></i>Услуги</a>
+                    <a href="{{ url('admin/themes') }}" class="btn btn-outline-secondary"><i class="fas fa-palette me-2"></i>Темы</a>
                 </div>
             </div>
         </div>

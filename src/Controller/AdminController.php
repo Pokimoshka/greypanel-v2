@@ -1,32 +1,31 @@
 <?php
 
+declare(strict_types=1);
+
 namespace GreyPanel\Controller;
 
+use GreyPanel\Core\JsonResponse;
+use GreyPanel\Core\RedirectResponse;
 use GreyPanel\Core\Request;
 use GreyPanel\Core\Response;
-use GreyPanel\Core\JsonResponse;
 use GreyPanel\Core\View;
-use GreyPanel\Core\RedirectResponse;
-use GreyPanel\Repository\LogRepositoryInterface;
-use GreyPanel\Repository\UserRepositoryInterface;
-use GreyPanel\Repository\ForumThreadRepositoryInterface;
-use GreyPanel\Repository\VipUserRepositoryInterface;
-use GreyPanel\Repository\MoneyLogRepositoryInterface;
-use GreyPanel\Service\SettingsServiceInterface;
-use GreyPanel\Service\ThemeServiceInterface;
-use GreyPanel\Repository\ForumForumRepositoryInterface;
-use GreyPanel\Repository\OnlineRepositoryInterface;
+use GreyPanel\Interface\Repository\ForumForumRepositoryInterface;
+use GreyPanel\Interface\Repository\ForumThreadRepositoryInterface;
+use GreyPanel\Interface\Repository\LogRepositoryInterface;
+use GreyPanel\Interface\Repository\MoneyLogRepositoryInterface;
+use GreyPanel\Interface\Repository\OnlineRepositoryInterface;
+use GreyPanel\Interface\Repository\UserRepositoryInterface;
+use GreyPanel\Interface\Service\EncryptionServiceInterface;
+use GreyPanel\Interface\Service\SettingsServiceInterface;
+use GreyPanel\Interface\Service\ThemeServiceInterface;
+use GreyPanel\Repository\UserGroupRepository;
 use GreyPanel\Service\SessionService;
-use GreyPanel\Service\EncryptionServiceInterface;
-use Intervention\Image\ImageManager;
-use Intervention\Image\Drivers\Imagick\Driver;
 
 class AdminController
 {
     public function __construct(
         private UserRepositoryInterface $userRepo,
         private ForumThreadRepositoryInterface $threadRepo,
-        private VipUserRepositoryInterface $vipUserRepo,
         private LogRepositoryInterface $logRepo,
         private SettingsServiceInterface $settings,
         private MoneyLogRepositoryInterface $moneyLogRepo,
@@ -34,18 +33,24 @@ class AdminController
         private ForumForumRepositoryInterface $forumForumRepo,
         private OnlineRepositoryInterface $onlineRepo,
         private SessionService $session,
-        private EncryptionServiceInterface $encryption
-    ) {}
+        private EncryptionServiceInterface $encryption,
+        private UserGroupRepository $groupRepo
+    ) {
+    }
 
     public function index(Request $request): Response
     {
         $totalUsers = $this->userRepo->count();
         $totalThreads = $this->threadRepo->countAll();
-        $totalVip = $this->vipUserRepo->countActive();
+        $totalVip = 0;
         $onlineUsers = $this->onlineRepo->findOnlineUsers();
         $online_count = count($onlineUsers);
         $recentLogs = $this->logRepo->findPaginated(1, 5);
         $recentUsers = $this->userRepo->findAllPaginated(1, 5);
+
+        // Проверяем, существует ли папка install (относительно корня проекта)
+        $installPath = ROOT_DIR . '/install';
+        $installExists = is_dir($installPath);
 
         $html = View::render('index.tpl', [
             'total_users' => $totalUsers,
@@ -54,6 +59,7 @@ class AdminController
             'online_count' => $online_count,
             'recent_logs' => $recentLogs,
             'recent_users' => $recentUsers,
+            'install_exists' => $installExists,
         ]);
         return new Response($html);
     }
@@ -89,22 +95,33 @@ class AdminController
             return new RedirectResponse('/admin/users');
         }
 
+        $groups = $this->groupRepo->findAll();
+
         if ($request->isPost()) {
             $oldMoney = $user->getMoney();
 
-            $group = (int)$request->post('group');
+            $newGroupId = (int)$request->post('group_id');
             $money = (int)$request->post('money');
             $banned = (bool)$request->post('banned');
             $newPassword = $request->post('password');
 
-            // Защита от повышения привилегий
-            $currentAdminGroup = $_SESSION['user_group'] ?? 0;
-            if ($currentAdminGroup < 4 && $group > $currentAdminGroup) {
-                $_SESSION['flash_error'] = 'Вы не можете назначить группу выше своей.';
+            $newGroup = $this->groupRepo->findById($newGroupId);
+            if (!$newGroup) {
+                $_SESSION['flash_error'] = 'Группа не найдена';
                 return new RedirectResponse('/admin/users');
             }
 
-            $user->setGroup($group);
+            // Проверка на повышение прав через PermissionService
+            $adminFlags = $_SESSION['user_flags'] ?? '';
+            $targetFlags = $newGroup->getFlags();
+            foreach (str_split($targetFlags) as $c) {
+                if (!str_contains($adminFlags, $c)) {
+                    $_SESSION['flash_error'] = 'Вы не можете назначить группу с правами выше ваших.';
+                    return new RedirectResponse('/admin/users');
+                }
+            }
+
+            $user->setGroup($newGroup);
             $user->setMoney($money);
             $user->setBanned($banned);
 
@@ -126,10 +143,10 @@ class AdminController
             return new RedirectResponse('/admin/users');
         }
 
-        $html = View::render('user_edit.tpl', [
+        return new Response(View::render('user_edit.tpl', [
             'user' => $user,
-        ]);
-        return new Response($html);
+            'groups' => $groups,
+        ]));
     }
 
     public function logs(Request $request): Response
@@ -152,9 +169,11 @@ class AdminController
         if ($request->isPost()) {
             $wallet = trim($request->post('yoomoney_wallet'));
             $secret = trim($request->post('yoomoney_secret'));
-            $encryptedSecret = $this->encryption->encrypt($secret);
+            if ($secret !== '') {
+                $encryptedSecret = $this->encryption->encrypt($secret);
+                $this->settings->set('yoomoney_secret', $encryptedSecret);
+            }
             $this->settings->set('yoomoney_wallet', $wallet);
-            $this->settings->set('yoomoney_secret', $encryptedSecret);
             return new RedirectResponse('/admin/payments');
         }
 
@@ -213,7 +232,10 @@ class AdminController
             $this->settings->set('amxbans_host', $request->post('amxbans_host'));
             $this->settings->set('amxbans_db', $request->post('amxbans_db'));
             $this->settings->set('amxbans_user', $request->post('amxbans_user'));
-            $this->settings->set('amxbans_pass', $request->post('amxbans_pass'));
+            if ($pass = $request->post('amxbans_pass')) {
+                $encrypted = $this->encryption->encrypt($pass);
+                $this->settings->set('amxbans_pass', $encrypted);
+            }
             $this->settings->set('amxbans_prefix', $request->post('amxbans_prefix'));
             $this->settings->set('amxbans_forum', $request->post('amxbans_forum'));
             $this->settings->set('buy_razban', $request->post('buy_razban'));

@@ -1,9 +1,11 @@
 <?php
+
 declare(strict_types=1);
 
 namespace GreyPanel\Repository;
 
-use GreyPanel\Service\SettingsServiceInterface;
+use GreyPanel\Interface\Repository\BanRepositoryInterface;
+use GreyPanel\Interface\Service\SettingsServiceInterface;
 use PDO;
 use PDOException;
 

@@ -1,13 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace GreyPanel\Middleware;
 
 use GreyPanel\Core\Request;
 use GreyPanel\Core\Response;
 use GreyPanel\Core\View;
+use Symfony\Component\Cache\Adapter\FilesystemAdapter;
 use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Symfony\Component\RateLimiter\Storage\CacheStorage;
-use Symfony\Component\Cache\Adapter\FilesystemAdapter;
 
 class RateLimitMiddleware
 {
@@ -29,9 +31,8 @@ class RateLimitMiddleware
 
         if (!$limit->isAccepted()) {
             $retryAfter = $limit->getRetryAfter()->getTimestamp() - time();
-            // Если $retryAfter <= 0, показываем примерное время из конфига
             if ($retryAfter <= 0) {
-                $retryAfter = 60; // или взять из конфига
+                $retryAfter = 60;
             }
             $minutes = ceil($retryAfter / 60);
             $seconds = $retryAfter % 60;
@@ -45,7 +46,6 @@ class RateLimitMiddleware
                 return new \GreyPanel\Core\JsonResponse(['error' => $message, 'retry_after' => $retryAfter], 429);
             }
 
-            // Для обычных запросов рендерим шаблон ошибки
             $html = View::render('errors/429.tpl', [
                 'message' => $message,
                 'retry_after' => $retryAfter,

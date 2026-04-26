@@ -10,12 +10,10 @@
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <div class="mb-3">
                 <label class="form-label">Группа</label>
-                <select name="group" class="form-select">
-                    <option value="0" {{ user.group == 0 ? 'selected' }}>Пользователь</option>
-                    <option value="1" {{ user.group == 1 ? 'selected' }}>Меценат</option>
-                    <option value="2" {{ user.group == 2 ? 'selected' }}>Модератор</option>
-                    <option value="3" {{ user.group == 3 ? 'selected' }}>Администратор</option>
-                    <option value="4" {{ user.group == 4 ? 'selected' }}>Root Admin</option>
+                <select name="group_id" class="form-select">
+                    {% for grp in groups %}
+                        <option value="{{ grp.id }}" {{ user.group and user.group.id == grp.id ? 'selected' : '' }}>{{ grp.name }} ({{ grp.flags }})</option>
+                    {% endfor %}
                 </select>
             </div>
             <div class="mb-3">

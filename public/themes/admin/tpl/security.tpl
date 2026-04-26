@@ -21,9 +21,8 @@
                 <div class="form-text">Получите ключи на <a href="https://www.google.com/recaptcha/admin" target="_blank">Google reCAPTCHA Admin</a></div>
             </div>
             <div class="mb-3">
-                <label class="form-label">Secret Key</label>
-                <input type="password" name="recaptcha_secret_key" class="form-control" value="{{ recaptcha_secret_key }}" autocomplete="off">
-                <div class="form-text">Оставьте пустым, чтобы не менять</div>
+                <label class="form-label">Secret Key (оставьте пустым, чтобы не менять)</label>
+                <input type="password" name="recaptcha_secret_key" class="form-control" placeholder="******" autocomplete="off">
             </div>
             <button type="submit" class="btn btn-primary">Сохранить</button>
         </form>

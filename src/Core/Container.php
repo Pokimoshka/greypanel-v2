@@ -1,13 +1,13 @@
 <?php
+
 declare(strict_types=1);
 
 namespace GreyPanel\Core;
 
+use Closure;
+use InvalidArgumentException;
 use Psr\Container\ContainerInterface;
 use ReflectionClass;
-use ReflectionParameter;
-use InvalidArgumentException;
-use Closure;
 
 class Container implements ContainerInterface
 {

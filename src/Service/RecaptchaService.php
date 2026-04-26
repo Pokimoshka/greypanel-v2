@@ -1,6 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace GreyPanel\Service;
+
+use GreyPanel\Interface\Service\EncryptionServiceInterface;
+use GreyPanel\Interface\Service\SettingsServiceInterface;
 
 class RecaptchaService
 {

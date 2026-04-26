@@ -1,7 +1,10 @@
 <?php
+
 declare(strict_types=1);
 
 namespace GreyPanel\Service;
+
+use GreyPanel\Interface\Service\EncryptionServiceInterface;
 
 final class EncryptionService implements EncryptionServiceInterface
 {
@@ -9,10 +12,11 @@ final class EncryptionService implements EncryptionServiceInterface
 
     public function __construct(string $encryptionKey)
     {
-        $this->key = hex2bin($encryptionKey);
-        if ($this->key === false || strlen($this->key) !== 32) {
+        $bin = hex2bin($encryptionKey);
+        if ($bin === false || strlen($bin) !== 32) {
             throw new \InvalidArgumentException('ENCRYPTION_KEY must be 64 hex characters');
         }
+        $this->key = $bin;
     }
 
     public function encrypt(string $plaintext): string

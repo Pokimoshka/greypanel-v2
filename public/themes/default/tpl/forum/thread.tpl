@@ -100,6 +100,8 @@
 {% block scripts %}
     {{ parent() }}
     <script>
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+
         document.addEventListener('alpine:init', () => {
             const submitBtn = document.getElementById('submit-reply');
             if (submitBtn) {
@@ -108,20 +110,20 @@
                     const easyMDE = textarea.easyMDE;
                     if (easyMDE) easyMDE.toTextArea();
                     const content = textarea.value.trim();
-                    if (!content) return alert('Введите сообщение');
+                    if (!content) return window.dispatchEvent(new CustomEvent('toast:error', { detail: 'Введите сообщение' }));
                     
                     const formData = new FormData();
                     formData.append('thread_id', {{ thread.id }});
                     formData.append('content', content);
-                    formData.append('csrf_token', '{{ csrf_token }}');
+                    formData.append('csrf_token', csrfToken);
                     
                     try {
                         const res = await fetch('/forum/post/create', { method: 'POST', body: formData });
                         const data = await res.json();
                         if (data.success) location.reload();
-                        else alert(data.error || 'Ошибка');
+                        window.dispatchEvent(new CustomEvent('toast:error', { detail: data.error || 'Ошибка' }));
                     } catch (e) {
-                        alert('Ошибка соединения');
+                        window.dispatchEvent(new CustomEvent('toast:error', { detail: 'Ошибка соединения' }));
                     }
                 });
             }

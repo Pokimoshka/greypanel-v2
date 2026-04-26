@@ -42,12 +42,15 @@
             </div>
         </div>
         {% if app.user %}
-        <div class="input-group mt-3">
-            <input type="text" class="form-control" placeholder="Напишите сообщение..." x-model="newMessage" @keyup.enter="sendMessage">
-            <button class="btn btn-primary" @click="sendMessage">
-                <i class="fas fa-paper-plane"></i>
-            </button>
-        </div>
+        <form @submit.prevent="sendMessage">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <div class="input-group">
+                <input type="text" class="form-control" placeholder="Напишите сообщение..." x-model="newMessage" @keyup.enter="sendMessage">
+                <button class="btn btn-primary" type="submit">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </form>
         {% else %}
         <div class="alert alert-light mt-3 mb-0 text-center">
             <a href="{{ url('/login') }}">Войдите</a>, чтобы писать в чат.
@@ -84,7 +87,7 @@
                     <tbody>
                         <template x-for="srv in servers" :key="srv.id">
                             <tr>
-                                <td x-html="srv.status_html"></td>
+                                <td x-text="srv.status_html"></td>
                                 <td>
                                     <a :href="'steam://connect/' + srv.address" x-text="srv.server_name" style="color: var(--text-primary);"></a>
                                 </td>

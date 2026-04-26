@@ -1,14 +1,16 @@
 <?php
+
 declare(strict_types=1);
 
 namespace GreyPanel\Core;
 
 use FastRoute\Dispatcher;
-use GreyPanel\Repository\OnlineRepositoryInterface;
-use GreyPanel\Service\SessionService;
-use GreyPanel\Service\SessionServiceInterface;
-use GreyPanel\Service\ThemeServiceInterface;
-use GreyPanel\Service\ModuleServiceInterface;
+use GreyPanel\Interface\Repository\OnlineRepositoryInterface;
+use GreyPanel\Interface\Service\ModuleServiceInterface;
+use GreyPanel\Interface\Service\SessionServiceInterface;
+use GreyPanel\Interface\Service\SettingsServiceInterface;
+use GreyPanel\Interface\Service\ThemeServiceInterface;
+use GreyPanel\Service\PermissionService;
 use Psr\Log\LoggerInterface;
 use Throwable;
 use Twig\Environment;
@@ -41,6 +43,11 @@ final class App
         $this->boot();
         $request = new Request();
         $this->initView($request);
+
+        View::addGlobal('app', [
+            'user' => $this->sessionService->getUser(),
+            'env' => APP_DEBUG ? 'dev' : 'prod'
+        ]);
 
         if ($this->sessionService->isLoggedIn()) {
             $this->onlineRepo->updateActivity($this->sessionService->getUserId());
@@ -86,18 +93,15 @@ final class App
             return rtrim($siteService->getSiteUrl(), '/') . '/' . ltrim($path, '/');
         }));
 
-
-        $twig->addGlobal('site_name', $_ENV['SITE_NAME'] ?? 'GreyPanel');
-        $twig->addGlobal('app', [
-            'user' => $_SESSION['user'] ?? null,
-            'env' => APP_DEBUG ? 'dev' : 'prod'
-        ]);
-        $twig->addGlobal('active_theme', $themeService->getActiveTheme());
+        $settings = $this->container->get(SettingsServiceInterface::class);
+        $twig->addGlobal('site_name', $settings->get('site_name', 'GreyPanel'));
+        $twig->addGlobal('active_theme', $settings->get('active_theme', 'default'));
         $twig->addGlobal('theme_url', $isAdmin ? '/themes/admin/assets' : $themeService->getPublicPath());
         $moduleService = $this->container->get(ModuleServiceInterface::class);
         $twig->addFunction(new TwigFunction('module_enabled', [$moduleService, 'isEnabled']));
         $twig->addGlobal('csrf_token', $this->sessionService->getCsrfToken());
-        $twig->addGlobal('site_url', $siteService->getSiteUrl());
+        $twig->addGlobal('site_url', $this->container->get(\GreyPanel\Service\SiteService::class)->getSiteUrl());
+        $twig->addFunction(new TwigFunction('has_permission', [$this->container->get(PermissionService::class), 'hasPermission']));
     }
 
     private function handleRequest(Request $request): Response
@@ -159,23 +163,37 @@ final class App
             };
         }
 
+        // Определяем класс middleware
         $className = str_replace('_', '', ucwords($name, '_'));
         $middlewareClass = 'GreyPanel\\Middleware\\' . $className . 'Middleware';
 
-        // Для role НЕ используем контейнер – всегда создаём с параметром
+        // Для permission – используем контейнер с передачей параметра
+        if ($name === 'permission') {
+            // Получаем PermissionService из контейнера
+            $permissionService = $this->container->get(\GreyPanel\Service\PermissionService::class);
+            $middleware = new $middlewareClass($permissionService, $param);
+            return function (Request $request) use ($middleware, $next) {
+                return $middleware->handle($request, $next);
+            };
+        }
+
+        // Для role (если ещё остались старые маршруты, лучше заменить на permission)
         if ($name === 'role') {
             $param = (int)$param;
             $middleware = new $middlewareClass($param);
+            return function (Request $request) use ($middleware, $next) {
+                return $middleware->handle($request, $next);
+            };
+        }
+
+        // Для остальных middleware – пытаемся взять из контейнера
+        if ($this->container->has($middlewareClass)) {
+            $middleware = $this->container->get($middlewareClass);
         } else {
-            // Для остальных middleware – пытаемся взять из контейнера
-            if ($this->container->has($middlewareClass)) {
-                $middleware = $this->container->get($middlewareClass);
+            if ($param !== null) {
+                $middleware = new $middlewareClass($param);
             } else {
-                if ($param !== null) {
-                    $middleware = new $middlewareClass($param);
-                } else {
-                    $middleware = new $middlewareClass();
-                }
+                $middleware = new $middlewareClass();
             }
         }
 

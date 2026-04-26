@@ -13,8 +13,9 @@
                 <input type="text" name="yoomoney_wallet" class="form-control" value="{{ wallet }}">
             </div>
             <div class="mb-3">
-                <label class="form-label">Секретный ключ</label>
-                <input type="text" name="yoomoney_secret" class="form-control" value="{{ secret }}">
+                <label class="form-label">Секретный ключ (оставьте пустым, чтобы не менять)</label>
+                <input type="password" name="yoomoney_secret" class="form-control" placeholder="******">
+                <div class="form-text">Текущий ключ скрыт. Введите новый, только если хотите изменить.</div>
             </div>
             <button class="btn btn-primary">Сохранить</button>
         </form>

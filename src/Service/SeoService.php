@@ -1,22 +1,23 @@
 <?php
+
 declare(strict_types=1);
 
 namespace GreyPanel\Service;
 
 use GreyPanel\Core\Database;
+use GreyPanel\Interface\Service\SeoServiceInterface;
 
 final class SeoService implements SeoServiceInterface
 {
     private Database $db;
     private SettingsService $settings;
-    private string $settingsTable;
     private SiteService $siteService;
 
-    public function __construct(Database $db, SettingsService $settings)
+    public function __construct(Database $db, SettingsService $settings, SiteService $siteService)
     {
         $this->db = $db;
         $this->settings = $settings;
-        $this->settingsTable = $db->table('settings');
+        $this->siteService = $siteService;
     }
 
     public function getRobotsTxt(): string

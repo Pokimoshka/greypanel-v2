@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace GreyPanel\Core;
 
 use Symfony\Component\HttpFoundation\Request as SymfonyRequest;
@@ -43,7 +45,7 @@ class Request
         return $this->request->files->all();
     }
 
-    public function getSession(): Session
+    public function getSession(): \Symfony\Component\HttpFoundation\Session\SessionInterface
     {
         return $this->request->getSession();
     }
@@ -61,5 +63,11 @@ class Request
     public function getRequest(): SymfonyRequest
     {
         return $this->request;
+    }
+
+    public function postArray(string $key, array $default = []): array
+    {
+        $value = $this->request->request->all()[$key] ?? $default;
+        return is_array($value) ? $value : $default;
     }
 }

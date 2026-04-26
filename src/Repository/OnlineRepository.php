@@ -1,9 +1,11 @@
 <?php
+
 declare(strict_types=1);
 
 namespace GreyPanel\Repository;
 
 use GreyPanel\Core\Database;
+use GreyPanel\Interface\Repository\OnlineRepositoryInterface;
 
 final class OnlineRepository implements OnlineRepositoryInterface
 {
@@ -49,9 +51,18 @@ final class OnlineRepository implements OnlineRepositoryInterface
     private function timeAgo(int $timestamp): string
     {
         $diff = time() - $timestamp;
-        if ($diff < 60) return 'только что';
-        if ($diff < 3600) return round($diff / 60) . ' мин назад';
-        if ($diff < 86400) return round($diff / 3600) . ' ч назад';
+        if ($diff < 60) {
+            return 'только что';
+        }
+        if ($diff < 3600) {
+            return round($diff / 60) . ' мин назад';
+        }
+        if ($diff < 86400) {
+            return round($diff / 3600) . ' ч назад';
+        }
+        if ($timestamp <= 0) {
+            return 'давно';
+        }
         return date('d.m.Y H:i', $timestamp);
     }
 }

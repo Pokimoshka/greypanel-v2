@@ -8,7 +8,7 @@
     <a href="{{ url('admin/forum/categories/add') }}" class="btn btn-primary"><i class="fas fa-plus me-1"></i>Добавить</a>
 </div>
 
-<div class="card p-0" x-data="sortableList('/admin/forum/categories/sort', '{{ csrf_token }}')">
+<div class="card p-0" x-data="sortableList('/admin/forum/categories/sort')">
     <div class="table-responsive">
         <table class="table table-hover mb-0">
             <thead><tr><th>ID</th><th>Название</th><th>Порядок</th><th></th></tr></thead>

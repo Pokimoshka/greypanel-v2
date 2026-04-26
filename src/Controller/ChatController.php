@@ -1,19 +1,23 @@
 <?php
+
 declare(strict_types=1);
 
 namespace GreyPanel\Controller;
 
-use GreyPanel\Core\Request;
 use GreyPanel\Core\JsonResponse;
-use GreyPanel\Service\ChatServiceInterface;
-use GreyPanel\Service\SessionServiceInterface;
+use GreyPanel\Core\Request;
+use GreyPanel\Interface\Service\ChatServiceInterface;
+use GreyPanel\Interface\Service\SessionServiceInterface;
+use GreyPanel\Service\PermissionService;
 
 final class ChatController
 {
     public function __construct(
         private ChatServiceInterface $chatService,
-        private SessionServiceInterface $sessionService
-    ) {}
+        private SessionServiceInterface $sessionService,
+        private PermissionService $permissionService
+    ) {
+    }
 
     public function fetchMessages(Request $request): JsonResponse
     {
@@ -29,7 +33,6 @@ final class ChatController
         }
 
         $message = trim($request->post('message') ?? '');
-        $message = strip_tags($message);
         if (empty($message)) {
             return new JsonResponse(['error' => 'Message is empty'], 400);
         }
@@ -40,10 +43,7 @@ final class ChatController
 
     public function deleteMessage(Request $request, int $id): JsonResponse
     {
-        $userId = $this->sessionService->getUserId();
-        $userGroup = $this->sessionService->getUserGroup();
-
-        if ($userGroup < 2) {
+        if (!$this->permissionService->hasPermission('c')) {
             return new JsonResponse(['error' => 'Forbidden'], 403);
         }
 

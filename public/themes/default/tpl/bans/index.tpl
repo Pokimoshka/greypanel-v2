@@ -9,12 +9,21 @@
 
     <div class="widget-card p-3 mb-4">
         <form method="get" class="row g-2">
-            <div class="col-md-8">
+            <div class="col-md-4">
                 <input type="text" name="search" class="form-control" placeholder="Поиск по нику, IP или причине" value="{{ search }}">
             </div>
-            <div class="col-md-4">
+            <div class="col-md-3">
+                <select name="status" class="form-select">
+                    <option value="">Все статусы</option>
+                    <option value="0" {{ status_filter == 0 ? 'selected' : '' }}>Активные</option>
+                    <option value="2" {{ status_filter == 2 ? 'selected' : '' }}>Истекшие</option>
+                    <option value="1" {{ status_filter == 1 ? 'selected' : '' }}>Разбаненные</option>
+                    <option value="3" {{ status_filter == 3 ? 'selected' : '' }}>Куплен разбан</option>
+                </select>
+            </div>
+            <div class="col-md-3">
                 <button type="submit" class="btn btn-primary w-100">
-                    <i class="fas fa-search me-1"></i>Найти
+                    <i class="fas fa-search me-1"></i>Применить
                 </button>
             </div>
         </form>
@@ -29,23 +38,37 @@
                         <th>Админ</th>
                         <th>Причина</th>
                         <th>Дата</th>
+                        <th>Истекает</th>
                         <th>Сервер</th>
+                        <th>Статус</th>
                         <th>Действия</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for ban in bans %}
-                        <tr>
-                            <td class="fw-medium">{{ ban.player_nick }}</td>
-                            <td>{{ ban.admin_nick }}</td>
-                            <td>{{ ban.ban_reason ?: ban.cs_ban_reason }}</td>
-                            <td>{{ ban.ban_created|date('d.m.Y H:i') }}</td>
-                            <td>{{ ban.server_name }}</td>
+                        <tr class="{{ ban.status == 0 ? 'table-danger' : (ban.status == 1 ? 'table-success' : (ban.status == 3 ? 'table-warning' : '')) }}">
+                            <td class="fw-medium">{{ ban.playerNick }}</td>
+                            <td>{{ ban.adminNick }}</td>
+                            <td>{{ ban.reason|slice(0, 50) ~ '...' }}</td>
+                            <td>{{ ban.created|date('d.m.Y H:i') }}</td>
+                            <td>{{ ban.getEndDate() }}</td>
+                            <td><span class="badge bg-secondary">{{ ban.serverName }}</span></td>
+                            <td>
+                                {% if ban.status == 0 %}
+                                    <span class="badge bg-danger">Активен</span>
+                                {% elseif ban.status == 1 %}
+                                    <span class="badge bg-success">Разбанен</span>
+                                {% elseif ban.status == 2 %}
+                                    <span class="badge bg-info">Истек</span>
+                                {% elseif ban.status == 3 %}
+                                    <span class="badge bg-warning text-dark">Куплен разбан</span>
+                                {% endif %}
+                            </td>
                             <td>
                                 <button class="btn btn-sm btn-outline-info unban-request" data-id="{{ ban.bid }}" title="Подать заявку на разбан">
                                     <i class="fas fa-ticket-alt"></i>
                                 </button>
-                                {% if settings.buy_razban > 0 %}
+                                {% if settings.buy_razban > 0 and ban.status == 0 %}
                                     <button class="btn btn-sm btn-outline-warning paid-unban" data-id="{{ ban.bid }}" title="Купить разбан за {{ settings.buy_razban }} ₽">
                                         <i class="fas fa-coins"></i>
                                     </button>
@@ -54,7 +77,7 @@
                         </tr>
                     {% else %}
                         <tr>
-                            <td colspan="6" class="text-center text-muted py-4">
+                            <td colspan="8" class="text-center text-muted py-4">
                                 <i class="fas fa-ban fa-2x mb-2" style="color: var(--accent);"></i>
                                 <p>Банов не найдено</p>
                             </td>
@@ -70,12 +93,14 @@
         'total': total,
         'per_page': per_page,
         'url': '/bans',
-        'params': {'search': search}
+        'params': {'search': search, 'status': status_filter}
     } %}
 {% endblock %}
 
 {% block scripts %}
 <script>
+const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+
 document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.unban-request').forEach(btn => {
         btn.addEventListener('click', async function() {
@@ -85,7 +110,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const formData = new URLSearchParams();
             formData.append('ban_id', banId);
             if (demoUrl) formData.append('demo_url', demoUrl);
-            formData.append('csrf_token', '{{ csrf_token }}');
+            formData.append('csrf_token', csrfToken);
             
             try {
                 const response = await fetch('/bans/request', {
@@ -100,10 +125,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         window.location.href = '/forum/thread/' + data.thread_id;
                     }
                 } else {
-                    alert('Ошибка: ' + (data.error || 'Неизвестная ошибка'));
+                    window.dispatchEvent(new CustomEvent('toast:error', { detail: 'Ошибка: ' + (data.error || 'Неизвестная ошибка') }));
                 }
             } catch (err) {
-                alert('Ошибка соединения');
+                window.dispatchEvent(new CustomEvent('toast:error', { detail: 'Ошибка соединения' }));
             }
         });
     });
@@ -115,7 +140,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const formData = new URLSearchParams();
             formData.append('ban_id', banId);
-            formData.append('csrf_token', '{{ csrf_token }}');
+            formData.append('csrf_token', csrfToken);
             
             try {
                 const response = await fetch('/bans/paid', {
@@ -125,13 +150,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
                 const data = await response.json();
                 if (data.success) {
-                    alert('Бан успешно снят! Страница будет обновлена.');
+                    window.dispatchEvent(new CustomEvent('toast:success', { detail: 'Бан успешно снят! Страница будет обновлена.' }));
                     location.reload();
                 } else {
-                    alert('Ошибка: ' + (data.error || 'Недостаточно средств или бан не найден'));
+                    window.dispatchEvent(new CustomEvent('toast:error', { detail: 'Ошибка: ' + (data.error || 'Недостаточно средств или бан не найден') }));
                 }
             } catch (err) {
-                alert('Ошибка соединения');
+                window.dispatchEvent(new CustomEvent('toast:error', { detail: 'Ошибка соединения' }));
             }
         });
     });

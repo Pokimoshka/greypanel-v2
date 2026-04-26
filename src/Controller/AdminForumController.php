@@ -1,14 +1,16 @@
 <?php
 
+declare(strict_types=1);
+
 namespace GreyPanel\Controller;
 
+use GreyPanel\Core\RedirectResponse;
 use GreyPanel\Core\Request;
 use GreyPanel\Core\Response;
 use GreyPanel\Core\View;
-use GreyPanel\Core\RedirectResponse;
-use GreyPanel\Repository\ForumCategoryRepositoryInterface;
-use GreyPanel\Repository\ForumForumRepositoryInterface;
-use GreyPanel\Service\ForumServiceInterface;
+use GreyPanel\Interface\Repository\ForumCategoryRepositoryInterface;
+use GreyPanel\Interface\Repository\ForumForumRepositoryInterface;
+use GreyPanel\Interface\Service\ForumServiceInterface;
 
 class AdminForumController
 {
@@ -59,7 +61,7 @@ class AdminForumController
             return new RedirectResponse('/admin/forum/categories');
         }
 
-        $this->forumService->clearCache(); 
+        $this->forumService->clearCache();
 
         $html = View::render('forum/category_form.tpl', [
             'category' => $category,
@@ -95,7 +97,9 @@ class AdminForumController
         }
 
         $category = $this->categoryRepo->findById($categoryId);
-        if (!$category) return new RedirectResponse('/admin/forum/categories');
+        if (!$category) {
+            return new RedirectResponse('/admin/forum/categories');
+        }
         $forums = $this->forumRepo->findByCategoryId($categoryId);
         $html = View::render('forum/forums.tpl', [
             'category' => $category,
@@ -113,7 +117,9 @@ class AdminForumController
         }
 
         $category = $this->categoryRepo->findById($categoryId);
-        if (!$category) return new RedirectResponse('/admin/forum/categories');
+        if (!$category) {
+            return new RedirectResponse('/admin/forum/categories');
+        }
         $forum = null;
 
         if ($id !== null && is_numeric($id)) {

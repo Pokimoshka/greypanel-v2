@@ -1,10 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace GreyPanel\Middleware;
 
+use GreyPanel\Core\RedirectResponse;
 use GreyPanel\Core\Request;
 use GreyPanel\Core\Response;
-use GreyPanel\Core\RedirectResponse;
 
 class AuthMiddleware
 {
