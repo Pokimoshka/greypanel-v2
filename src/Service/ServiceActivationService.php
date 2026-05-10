@@ -18,6 +18,7 @@ use League\Flysystem\Ftp\FtpAdapter;
 use League\Flysystem\Ftp\FtpConnectionOptions;
 use PDO;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\Lock\LockFactory;
 
 class ServiceActivationService
 {
@@ -28,67 +29,74 @@ class ServiceActivationService
         private UserServiceRepository $userServiceRepo,
         private LoggerInterface $logger,
         private UserRepository $userRepo,
-        private UserGroupRepository $groupRepo
+        private UserGroupRepository $groupRepo,
+        private LockFactory $lockFactory
     ) {
     }
 
     public function activate(User $user, Service $service, Tariff $tariff, string $plainPassword): bool
     {
-        $rights = $service->getRights();
-        $expiresAt = time() + ($tariff->getDurationDays() * 86400);
-        $serverIds = $this->serviceServerRepo->getServerIdsForService($service->getId());
-        if (empty($serverIds)) {
-            $this->logger->error("No servers assigned to service {$service->getId()}");
-            return false;
+        $lock = $this->lockFactory->createLock('vip_activate_' . $user->getId(), 10);
+        if (!$lock->acquire()) {
+            throw new \RuntimeException('Повторите попытку позже');
         }
 
-        $success = true;
-        foreach ($serverIds as $serverId) {
-            $server = $this->serverRepo->findById($serverId);
-            if (!$server) {
-                continue;
+        try {
+            $rights = $service->getRights();
+            $expiresAt = time() + ($tariff->getDurationDays() * 86400);
+            $serverIds = $this->serviceServerRepo->getServerIdsForService($service->getId());
+            if (empty($serverIds)) {
+                $this->logger->error("No servers assigned to service {$service->getId()}");
+                return false;
             }
-            $activated = $this->activateOnServer($server, $user->getUsername(), $plainPassword, $rights, $tariff->getDurationDays());
-            if (!$activated) {
-                $success = false;
-                $this->logger->error("Activation failed on server {$serverId} for user {$user->getId()}");
-            }
-        }
 
-        if ($success) {
-            // Выдача группы, если у услуги указан group_id
-            if ($service->getGroupId()) {
-                $group = $this->groupRepo->findById($service->getGroupId());
-                if ($group) {
-                    $user->setGroup($group);
-                    $this->userRepo->update($user);
-                    // При следующем запросе пользователь получит новые права
+            $success = true;
+            foreach ($serverIds as $serverId) {
+                $server = $this->serverRepo->findById($serverId);
+                if (!$server) {
+                    continue;
+                }
+                $activated = $this->activateOnServer($server, $user->getUsername(), $plainPassword, $rights, $tariff->getDurationDays());
+                if (!$activated) {
+                    $success = false;
+                    $this->logger->error("Activation failed on server {$serverId} for user {$user->getId()}");
                 }
             }
 
-            // Обновляем или создаём запись в user_services
-            $existing = $this->userServiceRepo->findActiveByService($user->getId(), $service->getId());
-            if ($existing) {
-                $newExpires = max($existing->getExpiresAt(), $expiresAt);
-                $existing->setExpiresAt($newExpires);
-                $this->userServiceRepo->update($existing);
-            } else {
-                $userService = new \GreyPanel\Model\UserService([
-                    'user_id' => $user->getId(),
-                    'service_id' => $service->getId(),
-                    'tariff_id' => $tariff->getId(),
-                    'expires_at' => $expiresAt,
-                ]);
-                $this->userServiceRepo->create($userService);
-            }
-        }
+            if ($success) {
+                if ($service->getGroupId()) {
+                    $group = $this->groupRepo->findById($service->getGroupId());
+                    if ($group) {
+                        $user->setGroup($group);
+                        $this->userRepo->update($user);
+                    }
+                }
 
-        return $success;
+                $existing = $this->userServiceRepo->findActiveByService($user->getId(), $service->getId());
+                if ($existing) {
+                    $newExpires = max($existing->getExpiresAt(), $expiresAt);
+                    $existing->setExpiresAt($newExpires);
+                    $this->userServiceRepo->update($existing);
+                } else {
+                    $userService = new \GreyPanel\Model\UserService([
+                        'user_id' => $user->getId(),
+                        'service_id' => $service->getId(),
+                        'tariff_id' => $tariff->getId(),
+                        'expires_at' => $expiresAt,
+                    ]);
+                    $this->userServiceRepo->create($userService);
+                }
+            }
+
+            return $success;
+        } finally {
+            $lock->release();
+        }
     }
 
     private function activateOnServer(array $server, string $username, string $password, string $rights, int $days): bool
     {
-        $type = $server['privilege_storage'] ?? 1; // 1=users.ini, 2=AmxBans, 3=both
+        $type = $server['privilege_storage'] ?? 1;
         $success = true;
 
         if ($type == 1 || $type == 3) {
@@ -102,11 +110,11 @@ class ServiceActivationService
 
     private function activateViaAmxBans(array $server, string $username, string $password, string $rights, int $days): bool
     {
-        $dbHost = $server['amxbans_db_host'];
-        $dbUser = $server['amxbans_db_user'];
-        $dbPass = $this->encryption->decrypt($server['amxbans_db_pass'] ?? '');
-        $dbName = $server['amxbans_db_name'];
-        $prefix = $server['amxbans_db_prefix'] ?: 'amx_';
+        $dbHost = $server['banlist_db_host'];
+        $dbUser = $server['banlist_db_user'];
+        $dbPass = $this->encryption->decrypt($server['banlist_db_pass'] ?? '');
+        $dbName = $server['banlist_db_name'];
+        $prefix = $server['banlist_db_prefix'] ?: 'amx_';
 
         try {
             $pdo = new PDO("mysql:host=$dbHost;dbname=$dbName;charset=utf8mb4", $dbUser, $dbPass);
@@ -117,7 +125,7 @@ class ServiceActivationService
         }
 
         $amxId = (int)($server['amx_id'] ?? 0);
-        $passwordHash = md5($password); // как требует AmxModX
+        $passwordHash = md5($password);
 
         $stmt = $pdo->prepare("SELECT id FROM {$prefix}amxadmins WHERE username = ? OR steamid = ?");
         $stmt->execute([$username, $username]);
@@ -149,7 +157,7 @@ class ServiceActivationService
         $ftpHost = $server['ftp_host'];
         $ftpUser = $server['ftp_user'];
         $ftpPass = $this->encryption->decrypt($server['ftp_pass'] ?? '');
-        $ftpPath = $server['ftp_path']; // например, /cstrike/addons/amxmodx/configs/users.ini
+        $ftpPath = $server['ftp_path'];
 
         $options = FtpConnectionOptions::fromArray([
             'host' => $ftpHost,

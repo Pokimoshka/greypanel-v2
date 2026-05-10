@@ -104,4 +104,16 @@ final class Database implements DatabaseInterface
         $stmt = $this->query($sql, $where);
         return $stmt->rowCount();
     }
+
+    public static function createFromConfig(Config $config): self
+    {
+        return new self([
+            'DB_HOST'    => $config->get('DB_HOST'),
+            'DB_NAME'    => $config->get('DB_NAME'),
+            'DB_USER'    => $config->get('DB_USER'),
+            'DB_PASS'    => $config->get('DB_PASS'),
+            'DB_CHARSET' => $config->get('DB_CHARSET'),
+            'DB_PREFIX'  => $config->get('DB_PREFIX'),
+        ]);
+    }
 }

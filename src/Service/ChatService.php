@@ -8,13 +8,15 @@ use GreyPanel\Interface\Repository\ChatRepositoryInterface;
 use GreyPanel\Interface\Repository\UserRepositoryInterface;
 use GreyPanel\Interface\Service\ChatServiceInterface;
 use GreyPanel\Interface\Service\MarkdownServiceInterface;
+use Symfony\Component\HtmlSanitizer\HtmlSanitizer;
 
 final class ChatService implements ChatServiceInterface
 {
     public function __construct(
         private ChatRepositoryInterface $chatRepo,
         private UserRepositoryInterface $userRepo,
-        private MarkdownServiceInterface $markdown
+        private MarkdownServiceInterface $markdown,
+        private HtmlSanitizer $sanitizer
     ) {
     }
 
@@ -23,7 +25,7 @@ final class ChatService implements ChatServiceInterface
         $messages = $this->chatRepo->findMessages($sinceId, $limit);
         foreach ($messages as &$msg) {
             $msg['text'] = $this->markdown->parse($msg['message'] ?? '');
-            $msg['time'] = $this->formatTime($msg['created_at']);
+            $msg['time'] = $msg['created_at'];
             unset($msg['message']);
         }
         return $messages;
@@ -31,6 +33,8 @@ final class ChatService implements ChatServiceInterface
 
     public function sendMessage(int $userId, string $message): array
     {
+        $message = $this->sanitizer->sanitize($message);
+
         $id = $this->chatRepo->addMessage($userId, $message);
         $user = $this->userRepo->findById($userId);
         return [
@@ -39,27 +43,12 @@ final class ChatService implements ChatServiceInterface
             'username' => $user->getUsername(),
             'avatar' => $user->getAvatar(),
             'text' => $this->markdown->parse($message),
-            'time' => 'только что',
+            'time' => time(),
         ];
     }
 
     public function deleteMessage(int $id): bool
     {
         return $this->chatRepo->deleteMessage($id);
-    }
-
-    private function formatTime(int $timestamp): string
-    {
-        $diff = time() - $timestamp;
-        if ($diff < 60) {
-            return 'только что';
-        }
-        if ($diff < 3600) {
-            return round($diff / 60) . ' мин назад';
-        }
-        if ($diff < 86400) {
-            return round($diff / 3600) . ' ч назад';
-        }
-        return date('H:i', $timestamp);
     }
 }

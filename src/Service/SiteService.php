@@ -15,9 +15,6 @@ class SiteService
         $this->settings = $settings;
     }
 
-    /**
-     * Возвращает полный URL сайта (с протоколом) без завершающего слеша.
-     */
     public function getSiteUrl(): string
     {
         $manualUrl = $this->settings->get('site_url_manual', '');
@@ -30,9 +27,6 @@ class SiteService
         return $protocol . '://' . $host;
     }
 
-    /**
-     * Определяет протокол на основе настроек и текущего запроса.
-     */
     public function getProtocol(): string
     {
         $setting = $this->settings->get('site_protocol', 'auto');
@@ -42,7 +36,6 @@ class SiteService
         if ($setting === 'https') {
             return 'https';
         }
-        // auto – определяем по запросу
         if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') {
             return 'https';
         }
@@ -52,9 +45,6 @@ class SiteService
         return 'http';
     }
 
-    /**
-     * Сохраняет настройки протокола и ручного URL.
-     */
     public function saveSettings(string $protocol, string $manualUrl): void
     {
         if (!in_array($protocol, ['auto', 'http', 'https'])) {
@@ -64,9 +54,6 @@ class SiteService
         $this->settings->set('site_url_manual', $manualUrl);
     }
 
-    /**
-     * Возвращает текущий URL для отображения в админке.
-     */
     public function getCurrentDisplayUrl(): string
     {
         $manual = $this->settings->get('site_url_manual', '');
@@ -78,9 +65,6 @@ class SiteService
         return $protocol . '://' . $host;
     }
 
-    /**
-     * Возвращает сырое значение ручного URL из настроек (без обработки).
-     */
     public function getManualUrl(): string
     {
         return $this->settings->get('site_url_manual', '');

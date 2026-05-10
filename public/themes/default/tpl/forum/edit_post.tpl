@@ -1,16 +1,16 @@
 {% extends "base.tpl" %}
 
-{% block title %}Редактировать сообщение{% endblock %}
+{% block title %}{{ trans('forum.edit_post') }}{% endblock %}
 
 {% block content %}
-<h1>Редактировать сообщение</h1>
+<h1>{{ trans('forum.edit_post') }}</h1>
 <form method="post" action="/forum/post/edit/{{ post.id }}">
     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
     <div class="mb-3">
-        <label class="form-label">Сообщение</label>
+        <label class="form-label">{{ trans('forum.content_label') }}</label>
         <textarea name="content" class="form-control editor" rows="10">{{ post.content }}</textarea>
     </div>
-    <button type="submit" class="btn btn-primary">Сохранить</button>
-    <a href="/forum/thread/{{ thread.id }}" class="btn btn-secondary">Отмена</a>
+    <button type="submit" class="btn btn-primary">{{ trans('settings.save') }}</button>
+    <a href="/forum/thread/{{ thread.id }}" class="btn btn-secondary">{{ trans('admin.cancel') }}</a>
 </form>
 {% endblock %}

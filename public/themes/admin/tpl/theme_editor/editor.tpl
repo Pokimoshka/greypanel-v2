@@ -1,7 +1,7 @@
 {% extends "base.tpl" %}
 
-{% block title %}Редактор темы: {{ active_theme }}{% endblock %}
-{% block page_title %}Редактор темы: {{ active_theme }}{% endblock %}
+{% block title %}{{ trans('admin.theme_editor') }}: {{ active_theme }}{% endblock %}
+{% block page_title %}{{ trans('admin.theme_editor') }}: {{ active_theme }}{% endblock %}
 
 {% block head %}
 {{ parent() }}
@@ -67,7 +67,7 @@
     }
     .editor-area {
         flex: 1;
-        min-height: 0;  /* позволяет скроллить внутренности */
+        min-height: 0;
         background: var(--admin-card-bg);
         border: 1px solid var(--admin-border);
         border-radius: 0.75rem;
@@ -102,11 +102,10 @@
 
 {% block content %}
 <div class="editor-container">
-    <!-- Левая панель: дерево файлов -->
     <div class="file-tree" id="fileTree">
         <div class="mb-2">
-            <button class="btn btn-sm btn-success" onclick="ThemeEditor.createFile()"><i class="fas fa-file"></i> Файл</button>
-            <button class="btn btn-sm btn-info" onclick="ThemeEditor.createFolder()"><i class="fas fa-folder"></i> Папка</button>
+            <button class="btn btn-sm btn-success" onclick="ThemeEditor.createFile()"><i class="fas fa-file"></i> {{ trans('admin.new_file') }}</button>
+            <button class="btn btn-sm btn-info" onclick="ThemeEditor.createFolder()"><i class="fas fa-folder"></i> {{ trans('admin.new_folder') }}</button>
         </div>
         <ul>
             <li><a class="folder" data-path="" onclick="ThemeEditor.loadDir('')"><i class="fas fa-home"></i> /</a>
@@ -117,34 +116,41 @@
         </ul>
     </div>
 
-    <!-- Правая панель: редактор и превью -->
     <div class="editor-pane">
         <div class="editor-toolbar">
-            <span id="currentFileLabel"><i class="fas fa-file-code"></i> Не выбран файл</span>
             <div>
-                <button class="btn btn-sm btn-secondary" onclick="ThemeEditor.insertBlock()"><i class="fas fa-puzzle-piece"></i> Блок</button>
-                <button class="btn btn-sm btn-primary" onclick="ThemeEditor.saveCurrentFile()"><i class="fas fa-save"></i> Сохранить</button>
-                <button class="btn btn-sm btn-info" onclick="ThemeEditor.togglePreview()"><i class="fas fa-eye"></i> Превью</button>
+                <a href="{{ url('admin/theme-editor') }}" class="btn btn-sm btn-outline-secondary me-2">
+                    <i class="fas fa-arrow-left"></i> {{ trans('admin.back') }}
+                </a>
+                <span id="currentFileLabel"><i class="fas fa-file-code"></i> {{ trans('admin.current_file') }}</span>
+            </div>
+            <div>
+                <button class="btn btn-sm btn-secondary" onclick="ThemeEditor.insertBlock()"><i class="fas fa-puzzle-piece"></i> {{ trans('admin.insert_block') }}</button>
+                <button class="btn btn-sm btn-primary" onclick="ThemeEditor.saveCurrentFile()"><i class="fas fa-save"></i> {{ trans('admin.save') }}</button>
+                <button class="btn btn-sm btn-info" onclick="ThemeEditor.togglePreview()"><i class="fas fa-eye"></i> {{ trans('admin.preview') }}</button>
             </div>
         </div>
         <div class="editor-area" id="editorArea">
             <textarea id="editor" style="height: 100%; width: 100%;"></textarea>
         </div>
         <div class="preview-area" id="previewArea" style="display: none;">
-            <h6>Предпросмотр:</h6>
+            <h6>{{ trans('admin.preview') }}:</h6>
             <iframe id="previewFrame" style="width: 100%; height: 250px; border: none;"></iframe>
         </div>
     </div>
 </div>
 
-<!-- Модальное окно блоков (как раньше) -->
 <div class="modal fade" id="blocksModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <div class="modal-header"><h5>Вставить блок</h5><button type="button" class="btn-close" onclick="closeModal()"></button></div>
-            <div class="modal-body" id="blocksList">Загрузка...</div>
-            <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal()">Закрыть</button></div>
+            <div class="modal-header"><h5>{{ trans('admin.blocks_modal') }}</h5><button type="button" class="btn-close" onclick="closeModal()"></button></div>
+            <div class="modal-body" id="blocksList">{{ trans('admin.loading') }}...</div>
+            <div class="modal-footer"><button class="btn btn-secondary" onclick="closeModal()">{{ trans('admin.close') }}</button></div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+    {{ parent() }}
 {% endblock %}

@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS `{prefix}users` (
   `count_thread` INT NOT NULL DEFAULT 0,
   `count_post` INT NOT NULL DEFAULT 0,
   `count_like` INT NOT NULL DEFAULT 0,
-  `avatar` varchar(500) NOT NULL DEFAULT 'public/assets/img/avatar_default.png',
+  `avatar` varchar(500) NOT NULL DEFAULT '/assets/img/avatar_default.png',
   `vk_id` int(11) NOT NULL DEFAULT '0',
   `reg_data` int(11) NOT NULL DEFAULT '0',
   `reg_ip` varchar(45) NOT NULL,
@@ -210,11 +210,11 @@ CREATE TABLE IF NOT EXISTS `{prefix}monitor_servers` (
   `cache_time` int(11) NOT NULL,
   `privilege_storage` TINYINT(1) NOT NULL DEFAULT 1 COMMENT '1-users.ini, 2-AmXBans, 3-both',
   `stats_engine` TINYINT(1) NOT NULL DEFAULT 1 COMMENT '1-CSStats, 2-AES, 3-both',
-  `amxbans_db_host` VARCHAR(255) NULL,
-  `amxbans_db_user` VARCHAR(100) NULL,
-  `amxbans_db_pass` VARCHAR(255) NULL,
-  `amxbans_db_name` VARCHAR(100) NULL,
-  `amxbans_db_prefix` VARCHAR(50) NULL,
+  `banlist_db_host` VARCHAR(255) NULL,
+  `banlist_db_user` VARCHAR(100) NULL,
+  `banlist_db_pass` VARCHAR(255) NULL,
+  `banlist_db_name` VARCHAR(100) NULL,
+  `banlist_db_prefix` VARCHAR(50) NULL,
   `csstats_db_host` VARCHAR(255) NULL,
   `csstats_db_user` VARCHAR(100) NULL,
   `csstats_db_pass` VARCHAR(255) NULL,
@@ -335,3 +335,7 @@ CREATE TABLE IF NOT EXISTS `{prefix}user_services` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 ALTER TABLE `{prefix}services` ADD COLUMN `group_id` INT NULL DEFAULT NULL AFTER `sort_order`;
+
+ALTER TABLE `{prefix}users` ADD COLUMN `lang` VARCHAR(5) NOT NULL DEFAULT 'ru';
+
+ALTER TABLE `{prefix}forum_threads` ADD FULLTEXT INDEX `ft_title_content` (`title`, `content`);

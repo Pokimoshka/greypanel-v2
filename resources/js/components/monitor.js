@@ -1,3 +1,5 @@
+import { api } from '../utils/api.js';
+
 export default () => ({
     servers: [],
     loading: true,
@@ -8,8 +10,8 @@ export default () => ({
     },
 
     async fetchServers() {
-        const res = await fetch('/monitor/data');
-        this.servers = await res.json();
+        const data = await api.get('/monitor/data');
+        this.servers = data;
         this.loading = false;
-    }
+    },
 });

@@ -6,7 +6,7 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <a href="{{ url('/forum') }}" class="link-accent small mb-2 d-inline-block">
-                <i class="fas fa-arrow-left me-1"></i>К разделам
+                <i class="fas fa-arrow-left me-1"></i>{{ trans('forum.back_to_forums') }}
             </a>
             <h2 class="mb-0" style="color: var(--accent-bright);">
                 <i class="{{ forum.icon }} me-2"></i>{{ forum.title }}
@@ -14,7 +14,7 @@
             <p class="text-secondary mb-0">{{ forum.description }}</p>
         </div>
         <a href="{{ url('/forum/forum/' ~ forum.id ~ '/create') }}" class="btn btn-primary">
-            <i class="fas fa-plus me-1"></i>Создать тему
+            <i class="fas fa-plus me-1"></i>{{ trans('forum.create_thread') }}
         </a>
     </div>
 
@@ -23,10 +23,10 @@
             <table class="table table-hover mb-0">
                 <thead class="small text-secondary">
                     <tr>
-                        <th>Тема</th>
-                        <th style="width: 100px;">Ответов</th>
-                        <th style="width: 100px;">Просмотров</th>
-                        <th style="width: 30%;">Последнее</th>
+                        <th>{{ trans('forum.topic') }}</th>
+                        <th style="width: 100px;">{{ trans('forum.replies') }}</th>
+                        <th style="width: 100px;">{{ trans('forum.views') }}</th>
+                        <th style="width: 30%;">{{ trans('forum.last_post') }}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -40,9 +40,9 @@
                                             {{ thread.title }}
                                         </a>
                                         <small class="text-secondary">
-                                            Автор: 
+                                            {{ trans('forum.author') }}: 
                                             <a href="{{ url('/profile/' ~ thread.author.id) }}" class="text-secondary">{{ thread.author.username }}</a>
-                                            · {{ thread.created_at|date('d.m.Y H:i') }}
+                                            · {{ thread.created_at|format_datetime('medium', 'short', locale=locale) }}
                                         </small>
                                     </div>
                                 </div>
@@ -55,11 +55,11 @@
                                         {{ thread.last_post_title }}
                                     </a>
                                     <span class="text-secondary">
-                                        {{ thread.last_post_at|date('d.m.Y H:i') }} · 
+                                        {{ thread.last_post_at|format_datetime('medium', 'short', locale=locale) }} · 
                                         <a href="{{ url('/profile/' ~ thread.last_post_user.id) }}" class="text-secondary">{{ thread.last_post_user.username }}</a>
                                     </span>
                                 {% else %}
-                                    <span class="text-muted">Нет ответов</span>
+                                    <span class="text-muted">{{ trans('forum.no_replies') }}</span>
                                 {% endif %}
                             </td>
                         </tr>
@@ -67,7 +67,7 @@
                         <tr>
                             <td colspan="4" class="text-center text-muted py-4">
                                 <i class="fas fa-comment-slash fa-2x mb-2" style="color: var(--accent);"></i>
-                                <p>В этом разделе ещё нет тем. Будьте первым!</p>
+                                <p>{{ trans('forum.no_threads') }}</p>
                             </td>
                         </tr>
                     {% endfor %}

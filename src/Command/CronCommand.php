@@ -11,8 +11,8 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class CronCommand extends Command
 {
-    protected static $defaultName = 'cron:run';
-    protected static $defaultDescription = 'Выполняет запланированные задачи (удаление просроченного VIP, обновление мониторинга)';
+    protected static string $defaultName = 'cron:run';
+    protected static string $defaultDescription = 'Выполняет запланированные задачи (удаление просроченного VIP, обновление мониторинга)';
 
     private CronService $cronService;
 

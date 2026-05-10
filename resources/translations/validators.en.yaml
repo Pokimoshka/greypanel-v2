@@ -1,0 +1,21 @@
+auth:
+  empty_fields: 'All fields must be filled'
+  username_length: 'Username must be between 3 and 32 characters'
+  email_invalid: 'Invalid email'
+  password_length: 'Password must be at least 8 characters'
+  password_complexity: 'Password must contain lowercase, uppercase letters and digits'
+  password_mismatch: 'Passwords do not match'
+  username_taken: 'Username already taken'
+  email_taken: 'Email already in use'
+
+profile:
+  email_invalid: 'Invalid email'
+  email_taken: 'This email is already in use'
+  password_short: 'Password must be at least 8 characters'
+  password_weak: 'Password must contain lowercase, uppercase letters and digits'
+  password_mismatch: 'Passwords do not match'
+
+avatar:
+  upload_error: 'File upload error.'
+  too_big: 'File too large (max 2 MB).'
+  invalid_type: 'Only JPEG, PNG, GIF, WEBP are allowed.'

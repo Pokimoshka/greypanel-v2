@@ -9,15 +9,11 @@ use GreyPanel\Interface\Service\SeoServiceInterface;
 
 final class SeoService implements SeoServiceInterface
 {
-    private Database $db;
-    private SettingsService $settings;
-    private SiteService $siteService;
-
-    public function __construct(Database $db, SettingsService $settings, SiteService $siteService)
-    {
-        $this->db = $db;
-        $this->settings = $settings;
-        $this->siteService = $siteService;
+    public function __construct(
+        private Database $db,
+        private SettingsService $settings,
+        private SiteService $siteService
+    ) {
     }
 
     public function getRobotsTxt(): string
@@ -37,15 +33,6 @@ final class SeoService implements SeoServiceInterface
 
         $urls[] = ['loc' => $baseUrl . '/', 'priority' => '1.0', 'changefreq' => 'daily'];
 
-        $categories = $this->db->fetchAll("SELECT id FROM " . $this->db->table('forum_categories'));
-        foreach ($categories as $cat) {
-            $urls[] = [
-                'loc' => $baseUrl . '/forum/category/' . $cat['id'],
-                'priority' => '0.7',
-                'changefreq' => 'weekly'
-            ];
-        }
-
         $forums = $this->db->fetchAll("SELECT id FROM " . $this->db->table('forum_forums'));
         foreach ($forums as $forum) {
             $urls[] = [
@@ -55,7 +42,9 @@ final class SeoService implements SeoServiceInterface
             ];
         }
 
-        $threads = $this->db->fetchAll("SELECT id, last_post_at FROM " . $this->db->table('forum_threads') . " WHERE is_deleted = 0");
+        $threads = $this->db->fetchAll(
+            "SELECT id, last_post_at FROM " . $this->db->table('forum_threads') . " WHERE is_deleted = 0"
+        );
         foreach ($threads as $thread) {
             $urls[] = [
                 'loc' => $baseUrl . '/forum/thread/' . $thread['id'],
@@ -65,12 +54,19 @@ final class SeoService implements SeoServiceInterface
             ];
         }
 
-        if ($this->settings->getBool('lgsl_active', false)) {
-            $urls[] = ['loc' => $baseUrl . '/monitor', 'priority' => '0.4', 'changefreq' => 'daily'];
+        $urls[] = ['loc' => $baseUrl . '/monitor', 'priority' => '0.4', 'changefreq' => 'daily'];
+
+        if ($this->settings->getBool('banlist_active', false)) {
+            $urls[] = ['loc' => $baseUrl . '/bans', 'priority' => '0.3', 'changefreq' => 'daily'];
         }
 
-        if ($this->settings->getBool('amxbans_active', false)) {
-            $urls[] = ['loc' => $baseUrl . '/bans', 'priority' => '0.3', 'changefreq' => 'daily'];
+        $news = $this->db->fetchAll("SELECT slug FROM " . $this->db->table('news') . " WHERE is_published = 1");
+        foreach ($news as $item) {
+            $urls[] = [
+                'loc' => $baseUrl . '/news/' . $item['slug'],
+                'priority' => '0.5',
+                'changefreq' => 'monthly'
+            ];
         }
 
         $xml = '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
@@ -93,7 +89,7 @@ final class SeoService implements SeoServiceInterface
     public function saveSitemap(): string
     {
         $xml = $this->generateSitemap();
-        $path = __DIR__ . '/../../public/sitemap.xml';
+        $path = __DIR__ . '/sitemap.xml';
         file_put_contents($path, $xml);
         return $path;
     }
@@ -110,13 +106,13 @@ final class SeoService implements SeoServiceInterface
 
     public function getMetaTags(?string $title = null, ?string $description = null): array
     {
-        $defaultTitle = $this->settings->get('sitename') ?? 'GreyPanel';
-        $defaultDesc = $this->settings->get('seo_default_description') ?? 'Современная панель управления игровыми серверами';
+        $defaultTitle = $this->settings->get('site_name', 'GreyPanel');
+        $defaultDesc = $this->settings->get('seo_default_description', 'Game server management panel');
 
         return [
             'title' => $title ?: $defaultTitle,
             'description' => $description ?: $defaultDesc,
-            'keywords' => $this->settings->get('seo_keywords') ?? '',
+            'keywords' => $this->settings->get('seo_keywords', ''),
         ];
     }
 }

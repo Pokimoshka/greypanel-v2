@@ -2,204 +2,418 @@
 
 declare(strict_types=1);
 
-use GreyPanel\Core\RouteCollector;
+use Symfony\Component\Routing\Route;
+use Symfony\Component\Routing\RouteCollection;
 
-return function (RouteCollector $r) {
-    // Публичные маршруты
-    $r->addRoute('GET', '/', 'HomeController@index');
-    $r->addRoute(['GET', 'POST'], '/login', 'AuthController@login')
-        ->addMiddleware('guest')->addMiddleware('csrf')->addMiddleware('rate_limit:login');
-    $r->addRoute(['GET', 'POST'], '/register', 'AuthController@register')
-        ->addMiddleware('guest')->addMiddleware('csrf')->addMiddleware('rate_limit:register');
-    $r->addRoute('GET', '/logout', 'AuthController@logout')->addMiddleware('auth');
+return function (RouteCollection $routes): void {
+    $routes->add('home', new Route('/', [
+        '_controller' => 'HomeController@index',
+    ]));
+    $routes->add('monitor', new Route('/monitor', [
+        '_controller' => 'MonitorController@index',
+    ]));
+    $routes->add('monitor_data', new Route('/monitor/data', [
+        '_controller' => 'MonitorController@data',
+        '_middleware' => ['rate_limit:api_monitor'],
+    ]));
+    $routes->add('forum', new Route('/forum', [
+        '_controller' => 'ForumController@index',
+    ]));
+    $routes->add('forum_forum', new Route('/forum/forum/{id}', [
+        '_controller' => 'ForumController@forum',
+    ], ['id' => '\d+']));
+    $routes->add('forum_thread', new Route('/forum/thread/{id}', [
+        '_controller' => 'ForumController@thread',
+    ], ['id' => '\d+']));
+    $routes->add('forum_search', new Route('/forum/search', [
+        '_controller' => 'ForumController@search',
+    ]));
+    $routes->add('news', new Route('/news', [
+        '_controller' => 'NewsController@index',
+    ]));
+    $routes->add('news_show', new Route('/news/{slug}', [
+        '_controller' => 'NewsController@show',
+    ]));
+    $routes->add('bans', new Route('/bans', [
+        '_controller' => 'BanController@index',
+    ]));
+    $routes->add('stats', new Route('/stats', [
+        '_controller' => 'StatisticsController@index',
+    ]));
+    $routes->add('stats_player', new Route('/stats/player/{id}', [
+        '_controller' => 'StatisticsController@player',
+    ], ['id' => '\d+']));
+    $routes->add('chat_messages', new Route('/chat/messages', [
+        '_controller' => 'ChatController@fetchMessages',
+    ]));
+    $routes->add('online_data', new Route('/online/data', [
+        '_controller' => 'OnlineController@data',
+    ]));
+    $routes->add('api_forum_last_topics', new Route('/api/forum/last-topics', [
+        '_controller' => 'ForumController@lastTopics',
+    ]));
+    $routes->add('api_bans_last_bans', new Route('/api/bans/last-bans', [
+        '_controller' => 'BanController@lastBans',
+    ]));
+    $routes->add('api_top_donators', new Route('/api/top-donators', [
+        '_controller' => 'UserController@topDonators',
+    ]));
+    $routes->add('sitemap', new Route('/sitemap.xml', [
+        '_controller' => 'SitemapController@index',
+    ]));
+    $routes->add('cron', new Route('/cron', [
+        '_controller' => 'CronController@run',
+        '_middleware' => ['rate_limit:cron'],
+    ]));
+    $routes->add('robots', new Route('/robots.txt', [
+        '_controller' => 'AdminSeoController@robots',
+    ]));
+    $routes->add('language_switch', new Route('/language/{lang}', [
+        '_controller' => 'LanguageController@switch',
+    ]));
 
-    // Профиль и настройки
-    $r->addRoute('GET', '/profile', 'UserController@profile')->addMiddleware('auth');
-    $r->addRoute(['GET', 'POST'], '/settings', 'UserController@settings')
-        ->addMiddleware('auth')->addMiddleware('csrf');
-    $r->addRoute('GET', '/profile/referrals', 'UserController@referrals')->addMiddleware('auth');
+    $routes->add('login', new Route('/login', [
+        '_controller' => 'AuthController@login',
+        '_middleware' => ['guest', 'csrf', 'rate_limit:login'],
+    ], methods: ['GET', 'POST']));
+    $routes->add('register', new Route('/register', [
+        '_controller' => 'AuthController@register',
+        '_middleware' => ['guest', 'csrf', 'rate_limit:register'],
+    ], methods: ['GET', 'POST']));
 
-    // Админка: группы пользователей
-    $r->addRoute('GET', '/admin/groups', 'AdminUserGroupController@index')
-        ->addMiddleware('auth')->addMiddleware('permission:a');
-    $r->addRoute(['GET', 'POST'], '/admin/groups/add', 'AdminUserGroupController@form')
-        ->addMiddleware('auth')->addMiddleware('permission:a')->addMiddleware('csrf');
-    $r->addRoute(['GET', 'POST'], '/admin/groups/edit/{id:\d+}', 'AdminUserGroupController@form')
-        ->addMiddleware('auth')->addMiddleware('permission:a')->addMiddleware('csrf');
-    $r->addRoute('POST', '/admin/groups/delete/{id:\d+}', 'AdminUserGroupController@delete')
-        ->addMiddleware('auth')->addMiddleware('permission:a')->addMiddleware('csrf');
+    $routes->add('logout', new Route('/logout', [
+        '_controller' => 'AuthController@logout',
+        '_middleware' => ['auth'],
+    ]));
+    $routes->add('profile', new Route('/profile', [
+        '_controller' => 'UserController@profile',
+        '_middleware' => ['auth'],
+    ]));
+    $routes->add('profile_show', new Route('/profile/{id}', [
+        '_controller' => 'UserController@profile',
+        '_middleware' => ['auth'],
+    ], ['id' => '\d+']));
+    $routes->add('settings', new Route('/settings', [
+        '_controller' => 'UserController@settings',
+        '_middleware' => ['auth', 'csrf'],
+    ], methods: ['GET', 'POST']));
+    $routes->add('profile_referrals', new Route('/profile/referrals', [
+        '_controller' => 'UserController@referrals',
+        '_middleware' => ['auth'],
+    ]));
+    $routes->add('balance', new Route('/balance', [
+        '_controller' => 'BalanceController@index',
+        '_middleware' => ['auth'],
+    ]));
+    $routes->add('balance_history', new Route('/balance/history', [
+        '_controller' => 'BalanceController@history',
+        '_middleware' => ['auth'],
+    ]));
+    $routes->add('payment', new Route('/payment', [
+        '_controller' => 'PaymentController@index',
+        '_middleware' => ['auth'],
+    ]));
+    $routes->add('payment_success', new Route('/payment/success', [
+        '_controller' => 'PaymentController@success',
+        '_middleware' => ['auth'],
+    ]));
+    $routes->add('payment_yoomoney_form', new Route('/payment/yoomoney', [
+        '_controller' => 'PaymentController@yoomoneyForm',
+        '_middleware' => ['auth'],
+    ]));
+    $routes->add('payment_yoomoney_notify', new Route('/payment/yoomoney/notify', [
+        '_controller' => 'PaymentController@yoomoneyNotify',
+    ]));
 
-    // Админка: основные разделы
-    $r->addRoute('GET', '/admin', 'AdminController@index')
-        ->addMiddleware('auth')->addMiddleware('permission:a');
-    $r->addRoute('GET', '/admin/users', 'AdminController@users')
-        ->addMiddleware('auth')->addMiddleware('permission:a');
-    $r->addRoute(['GET', 'POST'], '/admin/users/edit/{id:\d+}', 'AdminController@userEdit')
-        ->addMiddleware('auth')->addMiddleware('permission:a')->addMiddleware('csrf');
-    $r->addRoute('GET', '/admin/logs', 'AdminController@logs')
-        ->addMiddleware('auth')->addMiddleware('permission:a');
-    $r->addRoute('GET', '/admin/stats/registrations', 'AdminController@statsRegistrations')
-        ->addMiddleware('auth')->addMiddleware('permission:a');
-    $r->addRoute('POST', '/admin/upload-image', 'AdminController@uploadImage')
-        ->addMiddleware('auth')->addMiddleware('permission:c')->addMiddleware('csrf')
-        ->addMiddleware('rate_limit:upload_image');
+    $routes->add('forum_create_thread_form', new Route('/forum/forum/{forumId}/create', [
+        '_controller' => 'ForumController@createThreadForm',
+        '_middleware' => ['auth'],
+    ], ['forumId' => '\d+']));
+    $routes->add('forum_create_thread', new Route('/forum/thread/create', [
+        '_controller' => 'ForumController@createThread',
+        '_middleware' => ['auth', 'csrf'],
+    ]));
+    $routes->add('forum_create_post', new Route('/forum/post/create', [
+        '_controller' => 'ForumController@createPost',
+        '_middleware' => ['auth', 'csrf'],
+    ]));
+    $routes->add('forum_like', new Route('/forum/like', [
+        '_controller' => 'ForumController@like',
+        '_middleware' => ['auth', 'csrf'],
+    ]));
+    $routes->add('forum_edit_thread', new Route('/forum/thread/edit/{id}', [
+        '_controller' => 'ForumController@editThread',
+        '_middleware' => ['auth', 'csrf'],
+    ], ['id' => '\d+'], methods: ['GET', 'POST']));
+    $routes->add('forum_delete_thread', new Route('/forum/thread/delete/{id}', [
+        '_controller' => 'ForumController@deleteThread',
+        '_middleware' => ['auth', 'csrf'],
+    ], ['id' => '\d+']));
+    $routes->add('forum_edit_post', new Route('/forum/post/edit/{id}', [
+        '_controller' => 'ForumController@editPost',
+        '_middleware' => ['auth', 'csrf'],
+    ], ['id' => '\d+'], methods: ['GET', 'POST']));
+    $routes->add('forum_delete_post', new Route('/forum/post/delete/{id}', [
+        '_controller' => 'ForumController@deletePost',
+        '_middleware' => ['auth', 'csrf'],
+    ], ['id' => '\d+']));
 
-    // Админка: серверы
-    $r->addRoute('GET', '/admin/server-settings', 'AdminServerSettingsController@index')
-        ->addMiddleware('auth')->addMiddleware('permission:a');
-    $r->addRoute(['GET', 'POST'], '/admin/server-settings/add', 'AdminServerSettingsController@form')
-        ->addMiddleware('auth')->addMiddleware('permission:a')->addMiddleware('csrf');
-    $r->addRoute(['GET', 'POST'], '/admin/server-settings/edit/{id:\d+}', 'AdminServerSettingsController@form')
-        ->addMiddleware('auth')->addMiddleware('permission:a')->addMiddleware('csrf');
-    $r->addRoute('POST', '/admin/server-settings/delete/{id:\d+}', 'AdminServerSettingsController@delete')
-        ->addMiddleware('auth')->addMiddleware('permission:a')->addMiddleware('csrf');
-    $r->addRoute('GET', '/admin/server-settings/test/{id:\d+}', 'AdminServerSettingsController@testConnection')
-        ->addMiddleware('auth')->addMiddleware('permission:a');
+    $routes->add('chat_send', new Route('/chat/send', [
+        '_controller' => 'ChatController@sendMessage',
+        '_middleware' => ['auth', 'csrf', 'rate_limit:chat_send'],
+    ]));
 
-    // Админка: форум
-    $r->addRoute('GET', '/admin/forum/categories', 'AdminForumController@categories')
-        ->addMiddleware('auth')->addMiddleware('permission:a');
-    $r->addRoute(['GET', 'POST'], '/admin/forum/categories/add', 'AdminForumController@categoryForm')
-        ->addMiddleware('auth')->addMiddleware('permission:a')->addMiddleware('csrf');
-    $r->addRoute(['GET', 'POST'], '/admin/forum/categories/edit/{id:\d+}', 'AdminForumController@categoryForm')
-        ->addMiddleware('auth')->addMiddleware('permission:a')->addMiddleware('csrf');
-    $r->addRoute('POST', '/admin/forum/categories/delete/{id:\d+}', 'AdminForumController@categoryDelete')
-        ->addMiddleware('auth')->addMiddleware('permission:a')->addMiddleware('csrf');
-    $r->addRoute('POST', '/admin/forum/categories/sort', 'AdminForumController@sortCategories')
-        ->addMiddleware('auth')->addMiddleware('permission:a')->addMiddleware('csrf');
-    $r->addRoute('GET', '/admin/forum/categories/{id:\d+}/forums', 'AdminForumController@forums')
-        ->addMiddleware('auth')->addMiddleware('permission:a');
-    $r->addRoute(['GET', 'POST'], '/admin/forum/categories/{id:\d+}/forums/add', 'AdminForumController@forumForm')
-        ->addMiddleware('auth')->addMiddleware('permission:a')->addMiddleware('csrf');
-    $r->addRoute(['GET', 'POST'], '/admin/forum/categories/{id:\d+}/forums/edit/{fid:\d+}', 'AdminForumController@forumForm')
-        ->addMiddleware('auth')->addMiddleware('permission:a')->addMiddleware('csrf');
-    $r->addRoute('POST', '/admin/forum/categories/{id:\d+}/forums/delete/{fid:\d+}', 'AdminForumController@forumDelete')
-        ->addMiddleware('auth')->addMiddleware('permission:a')->addMiddleware('csrf');
-    $r->addRoute('POST', '/admin/forum/forums/sort', 'AdminForumController@sortForums')
-        ->addMiddleware('auth')->addMiddleware('permission:a')->addMiddleware('csrf');
+    $routes->add('bans_request', new Route('/bans/request', [
+        '_controller' => 'BanController@requestUnban',
+        '_middleware' => ['auth', 'csrf'],
+    ]));
+    $routes->add('bans_paid', new Route('/bans/paid', [
+        '_controller' => 'BanController@paidUnban',
+        '_middleware' => ['auth', 'csrf'],
+    ]));
+    $routes->add('chat_delete', new Route('/chat/message/{id}', [
+        '_controller' => 'ChatController@deleteMessage',
+        '_middleware' => ['auth', 'permission:c', 'csrf'],
+    ], ['id' => '\d+']));
+    $routes->add('upload_image', new Route('/upload-image', [
+        '_controller' => 'AdminController@uploadImage',
+        '_middleware' => ['auth', 'csrf', 'rate_limit:upload_image'],
+    ]));
 
-    // Админка: темы, модули, SEO, безопасность, сайт, платежи
-    $r->addRoute(['GET', 'POST'], '/admin/themes', 'AdminController@themes')
-        ->addMiddleware('auth')->addMiddleware('permission:a')->addMiddleware('csrf');
-    $r->addRoute(['GET', 'POST'], '/admin/theme', 'AdminController@themeSettings')
-        ->addMiddleware('auth')->addMiddleware('permission:a')->addMiddleware('csrf');
-    $r->addRoute('GET', '/admin/modules', 'AdminModuleController@index')
-        ->addMiddleware('auth')->addMiddleware('permission:a');
-    $r->addRoute('POST', '/admin/modules/toggle', 'AdminModuleController@toggle')
-        ->addMiddleware('auth')->addMiddleware('permission:a')->addMiddleware('csrf');
-    $r->addRoute(['GET', 'POST'], '/admin/seo', 'AdminSeoController@index')
-        ->addMiddleware('auth')->addMiddleware('permission:a')->addMiddleware('csrf');
-    $r->addRoute('POST', '/admin/seo/regenerate', 'AdminSeoController@regenerateSitemap')
-        ->addMiddleware('auth')->addMiddleware('permission:a')->addMiddleware('csrf');
-    $r->addRoute(['GET', 'POST'], '/admin/security', 'AdminSecurityController@index')
-        ->addMiddleware('auth')->addMiddleware('permission:a')->addMiddleware('csrf');
-    $r->addRoute('POST', '/admin/security/save', 'AdminSecurityController@save')
-        ->addMiddleware('auth')->addMiddleware('permission:a')->addMiddleware('csrf');
-    $r->addRoute(['GET', 'POST'], '/admin/site-settings', 'AdminSiteController@index')
-        ->addMiddleware('auth')->addMiddleware('permission:a')->addMiddleware('csrf');
-    $r->addRoute('POST', '/admin/site-settings/save', 'AdminSiteController@save')
-        ->addMiddleware('auth')->addMiddleware('permission:a')->addMiddleware('csrf');
-    $r->addRoute(['GET', 'POST'], '/admin/payments', 'AdminController@paymentSettings')
-        ->addMiddleware('auth')->addMiddleware('permission:a')->addMiddleware('csrf');
-    $r->addRoute(['GET', 'POST'], '/admin/bans/settings', 'AdminController@banSettings')
-        ->addMiddleware('auth')->addMiddleware('permission:a')->addMiddleware('csrf');
-    $r->addRoute('GET', '/admin/theme-editor', 'AdminThemeEditorController@editor')
-        ->addMiddleware('auth')->addMiddleware('permission:a');
-    $r->addRoute('GET', '/admin/theme-editor/get-file', 'AdminThemeEditorController@getFileContent')
-        ->addMiddleware('auth')->addMiddleware('permission:a');
-    $r->addRoute('POST', '/admin/theme-editor/save-file', 'AdminThemeEditorController@saveFileContent')
-        ->addMiddleware('auth')->addMiddleware('permission:a')->addMiddleware('csrf');
-    $r->addRoute('POST', '/admin/theme-editor/create', 'AdminThemeEditorController@create')
-        ->addMiddleware('auth')->addMiddleware('permission:a')->addMiddleware('csrf');
-    $r->addRoute('POST', '/admin/theme-editor/delete', 'AdminThemeEditorController@delete')
-        ->addMiddleware('auth')->addMiddleware('permission:a')->addMiddleware('csrf');
+    $routes->add('admin_dashboard', new Route('/admin', [
+        '_controller' => 'AdminController@index',
+        '_middleware' => ['auth', 'permission:a'],
+    ]));
+    $routes->add('admin_users', new Route('/admin/users', [
+        '_controller' => 'AdminController@users',
+        '_middleware' => ['auth', 'permission:a'],
+    ]));
+    $routes->add('admin_user_edit', new Route('/admin/users/edit/{id}', [
+        '_controller' => 'AdminController@userEdit',
+        '_middleware' => ['auth', 'permission:a', 'csrf'],
+    ], ['id' => '\d+'], methods: ['GET', 'POST']));
+    $routes->add('admin_logs', new Route('/admin/logs', [
+        '_controller' => 'AdminController@logs',
+        '_middleware' => ['auth', 'permission:a'],
+    ]));
+    $routes->add('admin_stats_registrations', new Route('/admin/stats/registrations', [
+        '_controller' => 'AdminController@statsRegistrations',
+        '_middleware' => ['auth', 'permission:a'],
+    ]));
 
-    // Админка: новости
-    $r->addRoute('GET', '/admin/news', 'AdminNewsController@index')
-        ->addMiddleware('auth')->addMiddleware('permission:b');
-    $r->addRoute(['GET', 'POST'], '/admin/news/create', 'AdminNewsController@form')
-        ->addMiddleware('auth')->addMiddleware('permission:b')->addMiddleware('csrf');
-    $r->addRoute(['GET', 'POST'], '/admin/news/edit/{id:\d+}', 'AdminNewsController@form')
-        ->addMiddleware('auth')->addMiddleware('permission:b')->addMiddleware('csrf');
-    $r->addRoute('POST', '/admin/news/delete/{id:\d+}', 'AdminNewsController@delete')
-        ->addMiddleware('auth')->addMiddleware('permission:b')->addMiddleware('csrf');
+    $routes->add('admin_groups', new Route('/admin/groups', [
+        '_controller' => 'AdminUserGroupController@index',
+        '_middleware' => ['auth', 'permission:a'],
+    ]));
+    $routes->add('admin_groups_add', new Route('/admin/groups/add', [
+        '_controller' => 'AdminUserGroupController@form',
+        '_middleware' => ['auth', 'permission:a', 'csrf'],
+    ], methods: ['GET', 'POST']));
+    $routes->add('admin_groups_edit', new Route('/admin/groups/edit/{id}', [
+        '_controller' => 'AdminUserGroupController@form',
+        '_middleware' => ['auth', 'permission:a', 'csrf'],
+    ], ['id' => '\d+'], methods: ['GET', 'POST']));
+    $routes->add('admin_groups_delete', new Route('/admin/groups/delete/{id}', [
+        '_controller' => 'AdminUserGroupController@delete',
+        '_middleware' => ['auth', 'permission:a', 'csrf'],
+    ], ['id' => '\d+']));
 
-    // Пользовательские разделы: баланс, платежи, мониторинг, форум, новости, чат, баны
-    $r->addRoute('GET', '/balance', 'BalanceController@index')->addMiddleware('auth');
-    $r->addRoute('GET', '/balance/history', 'BalanceController@history')->addMiddleware('auth');
-    $r->addRoute('GET', '/payment', 'PaymentController@index')->addMiddleware('auth');
-    $r->addRoute('POST', '/payment/yoomoney', 'PaymentController@yoomoneyForm')
-        ->addMiddleware('auth')->addMiddleware('csrf');
-    $r->addRoute('POST', '/payment/yoomoney/notify', 'PaymentController@yoomoneyNotify');
-    $r->addRoute('GET', '/payment/success', 'PaymentController@success')->addMiddleware('auth');
-    $r->addRoute('GET', '/monitor', 'MonitorController@index');
-    $r->addRoute('GET', '/monitor/data', 'MonitorController@data')
-        ->addMiddleware('rate_limit:api_monitor');
+    $routes->add('admin_server_settings', new Route('/admin/server-settings', [
+        '_controller' => 'AdminServerSettingsController@index',
+        '_middleware' => ['auth', 'permission:a'],
+    ]));
+    $routes->add('admin_server_settings_add', new Route('/admin/server-settings/add', [
+        '_controller' => 'AdminServerSettingsController@form',
+        '_middleware' => ['auth', 'permission:a', 'csrf'],
+    ], methods: ['GET', 'POST']));
+    $routes->add('admin_server_settings_edit', new Route('/admin/server-settings/edit/{id}', [
+        '_controller' => 'AdminServerSettingsController@form',
+        '_middleware' => ['auth', 'permission:a', 'csrf'],
+    ], ['id' => '\d+'], methods: ['GET', 'POST']));
+    $routes->add('admin_server_settings_delete', new Route('/admin/server-settings/delete/{id}', [
+        '_controller' => 'AdminServerSettingsController@delete',
+        '_middleware' => ['auth', 'permission:a', 'csrf'],
+    ], ['id' => '\d+']));
+    $routes->add('admin_server_settings_test', new Route('/admin/server-settings/test/{id}', [
+        '_controller' => 'AdminServerSettingsController@testConnection',
+        '_middleware' => ['auth', 'permission:a'],
+    ], ['id' => '\d+']));
 
-    $r->addRoute('GET', '/forum', 'ForumController@index');
-    $r->addRoute('GET', '/forum/forum/{id:\d+}', 'ForumController@forum');
-    $r->addRoute('GET', '/forum/thread/{id:\d+}', 'ForumController@thread');
-    $r->addRoute('GET', '/forum/forum/{id:\d+}/create', 'ForumController@createThreadForm')
-        ->addMiddleware('auth');
-    $r->addRoute('POST', '/forum/thread/create', 'ForumController@createThread')
-        ->addMiddleware('auth')->addMiddleware('csrf');
-    $r->addRoute('POST', '/forum/post/create', 'ForumController@createPost')
-        ->addMiddleware('auth')->addMiddleware('csrf');
-    $r->addRoute('POST', '/forum/like', 'ForumController@like')
-        ->addMiddleware('auth')->addMiddleware('csrf');
-    $r->addRoute(['GET', 'POST'], '/forum/thread/edit/{id:\d+}', 'ForumController@editThread')
-        ->addMiddleware('auth')->addMiddleware('csrf');
-    $r->addRoute('POST', '/forum/thread/delete/{id:\d+}', 'ForumController@deleteThread')
-        ->addMiddleware('auth')->addMiddleware('csrf');
-    $r->addRoute(['GET', 'POST'], '/forum/post/edit/{id:\d+}', 'ForumController@editPost')
-        ->addMiddleware('auth')->addMiddleware('csrf');
-    $r->addRoute('POST', '/forum/post/delete/{id:\d+}', 'ForumController@deletePost')
-        ->addMiddleware('auth')->addMiddleware('csrf');
-    $r->addRoute('GET', '/forum/search', 'ForumController@search');
+    $routes->add('admin_services', new Route('/admin/services', [
+        '_controller' => 'AdminServiceController@index',
+        '_middleware' => ['auth', 'permission:a'],
+    ]));
+    $routes->add('admin_services_add', new Route('/admin/services/add', [
+        '_controller' => 'AdminServiceController@form',
+        '_middleware' => ['auth', 'permission:a', 'csrf'],
+    ], methods: ['GET', 'POST']));
+    $routes->add('admin_services_edit', new Route('/admin/services/edit/{id}', [
+        '_controller' => 'AdminServiceController@form',
+        '_middleware' => ['auth', 'permission:a', 'csrf'],
+    ], ['id' => '\d+'], methods: ['GET', 'POST']));
+    $routes->add('admin_services_delete', new Route('/admin/services/delete/{id}', [
+        '_controller' => 'AdminServiceController@delete',
+        '_middleware' => ['auth', 'permission:a', 'csrf'],
+    ], ['id' => '\d+']));
+    $routes->add('admin_services_api_tariffs', new Route('/api/services/{id}/tariffs', [
+        '_controller' => 'AdminServiceController@apiTariffs',
+        '_middleware' => ['auth', 'permission:a'],
+    ], ['id' => '\d+']));
+    $routes->add('admin_services_api_update', new Route('/api/services/{id}', [
+        '_controller' => 'AdminServiceController@apiUpdateService',
+        '_middleware' => ['auth', 'permission:a', 'csrf'],
+    ], ['id' => '\d+'], methods: ['PUT']));
+    $routes->add('admin_services_api_tariff_update', new Route('/api/services/{sid}/tariffs/{id}', [
+        '_controller' => 'AdminServiceController@apiUpdateTariff',
+        '_middleware' => ['auth', 'permission:a', 'csrf'],
+    ], ['sid' => '\d+', 'id' => '\d+'], methods: ['PUT']));
 
-    $r->addRoute('GET', '/news', 'NewsController@index');
-    $r->addRoute('GET', '/news/{slug}', 'NewsController@show');
+    $routes->add('admin_user_services', new Route('/admin/users/{id}/services', [
+        '_controller' => 'AdminUserServiceController@listForUser',
+        '_middleware' => ['auth', 'permission:a'],
+    ], ['id' => '\d+']));
+    $routes->add('admin_user_services_add', new Route('/admin/users/{id}/services/add', [
+        '_controller' => 'AdminUserServiceController@addForm',
+        '_middleware' => ['auth', 'permission:a', 'csrf'],
+    ], ['id' => '\d+'], methods: ['GET', 'POST']));
+    $routes->add('admin_user_services_edit', new Route('/admin/users/{id}/services/edit/{usid}', [
+        '_controller' => 'AdminUserServiceController@editForm',
+        '_middleware' => ['auth', 'permission:a', 'csrf'],
+    ], ['id' => '\d+', 'usid' => '\d+'], methods: ['GET', 'POST']));
+    $routes->add('admin_user_services_delete', new Route('/admin/users/{id}/services/delete/{usid}', [
+        '_controller' => 'AdminUserServiceController@delete',
+        '_middleware' => ['auth', 'permission:a', 'csrf'],
+    ], ['id' => '\d+', 'usid' => '\d+']));
 
-    $r->addRoute('GET', '/bans', 'BanController@index');
-    $r->addRoute('POST', '/bans/request', 'BanController@requestUnban')
-        ->addMiddleware('auth')->addMiddleware('csrf');
-    $r->addRoute('POST', '/bans/paid', 'BanController@paidUnban')
-        ->addMiddleware('auth')->addMiddleware('csrf');
+    $routes->add('admin_forum_categories', new Route('/admin/forum/categories', [
+        '_controller' => 'AdminForumController@categories',
+        '_middleware' => ['auth', 'permission:a'],
+    ]));
+    $routes->add('admin_forum_categories_add', new Route('/admin/forum/categories/add', [
+        '_controller' => 'AdminForumController@categoryForm',
+        '_middleware' => ['auth', 'permission:a', 'csrf'],
+    ], methods: ['GET', 'POST']));
+    $routes->add('admin_forum_categories_edit', new Route('/admin/forum/categories/edit/{id}', [
+        '_controller' => 'AdminForumController@categoryForm',
+        '_middleware' => ['auth', 'permission:a', 'csrf'],
+    ], ['id' => '\d+'], methods: ['GET', 'POST']));
+    $routes->add('admin_forum_categories_delete', new Route('/admin/forum/categories/delete/{id}', [
+        '_controller' => 'AdminForumController@categoryDelete',
+        '_middleware' => ['auth', 'permission:a', 'csrf'],
+    ], ['id' => '\d+']));
+    $routes->add('admin_forum_categories_sort', new Route('/admin/forum/categories/sort', [
+        '_controller' => 'AdminForumController@sortCategories',
+        '_middleware' => ['auth', 'permission:a', 'csrf'],
+    ]));
+    $routes->add('admin_forum_categories_forums', new Route('/admin/forum/categories/{categoryId}/forums', [
+        '_controller' => 'AdminForumController@forums',
+        '_middleware' => ['auth', 'permission:a'],
+    ], ['categoryId' => '\d+']));
+    $routes->add('admin_forum_category_forum_add', new Route('/admin/forum/categories/{categoryId}/forums/add', [
+        '_controller' => 'AdminForumController@forumForm',
+        '_middleware' => ['auth', 'permission:a', 'csrf'],
+    ], ['categoryId' => '\d+'], methods: ['GET', 'POST']));
+    $routes->add('admin_forum_category_forum_edit', new Route('/admin/forum/categories/{categoryId}/forums/edit/{fid}', [
+        '_controller' => 'AdminForumController@forumForm',
+        '_middleware' => ['auth', 'permission:a', 'csrf'],
+    ], ['categoryId' => '\d+', 'fid' => '\d+'], methods: ['GET', 'POST']));
+    $routes->add('admin_forum_category_forum_delete', new Route('/admin/forum/categories/{categoryId}/forums/delete/{fid}', [
+        '_controller' => 'AdminForumController@forumDelete',
+        '_middleware' => ['auth', 'permission:a', 'csrf'],
+    ], ['categoryId' => '\d+', 'fid' => '\d+']));
+    $routes->add('admin_forum_forums_sort', new Route('/admin/forum/forums/sort', [
+        '_controller' => 'AdminForumController@sortForums',
+        '_middleware' => ['auth', 'permission:a', 'csrf'],
+    ]));
 
-    // Управление услугами и тарифами
-    $r->addRoute('GET', '/admin/services', 'AdminServiceController@index')
-        ->addMiddleware('auth')->addMiddleware('permission:a');
-    $r->addRoute(['GET', 'POST'], '/admin/services/add', 'AdminServiceController@form')
-        ->addMiddleware('auth')->addMiddleware('permission:a')->addMiddleware('csrf');
-    $r->addRoute(['GET', 'POST'], '/admin/services/edit/{id:\d+}', 'AdminServiceController@form')
-        ->addMiddleware('auth')->addMiddleware('permission:a')->addMiddleware('csrf');
-    $r->addRoute('POST', '/admin/services/delete/{id:\d+}', 'AdminServiceController@delete')
-        ->addMiddleware('auth')->addMiddleware('permission:a')->addMiddleware('csrf');
-    $r->addRoute('POST', '/admin/services/{id:\d+}/tariffs/add', 'AdminServiceController@createTariff')
-        ->addMiddleware('auth')->addMiddleware('permission:a')->addMiddleware('csrf');
-    $r->addRoute('POST', '/admin/services/{id:\d+}/tariffs/delete/{tid:\d+}', 'AdminServiceController@deleteTariff')
-        ->addMiddleware('auth')->addMiddleware('permission:a')->addMiddleware('csrf');
+    $routes->add('admin_news', new Route('/admin/news', [
+        '_controller' => 'AdminNewsController@index',
+        '_middleware' => ['auth', 'permission:a'],
+    ]));
+    $routes->add('admin_news_create', new Route('/admin/news/create', [
+        '_controller' => 'AdminNewsController@form',
+        '_middleware' => ['auth', 'permission:a', 'csrf'],
+    ], methods: ['GET', 'POST']));
+    $routes->add('admin_news_edit', new Route('/admin/news/edit/{id}', [
+        '_controller' => 'AdminNewsController@form',
+        '_middleware' => ['auth', 'permission:a', 'csrf'],
+    ], ['id' => '\d+'], methods: ['GET', 'POST']));
+    $routes->add('admin_news_delete', new Route('/admin/news/delete/{id}', [
+        '_controller' => 'AdminNewsController@delete',
+        '_middleware' => ['auth', 'permission:a', 'csrf'],
+    ], ['id' => '\d+']));
 
-    $r->addRoute('GET', '/stats', 'StatisticsController@index');
-    $r->addRoute('GET', '/stats/player/{id:\d+}', 'StatisticsController@player');
+    $routes->add('admin_site_settings', new Route('/admin/site-settings', [
+        '_controller' => 'AdminSiteController@index',
+        '_middleware' => ['auth', 'permission:a', 'csrf'],
+    ], methods: ['GET', 'POST']));
+    $routes->add('admin_site_settings_save', new Route('/admin/site-settings/save', [
+        '_controller' => 'AdminSiteController@save',
+        '_middleware' => ['auth', 'permission:a', 'csrf'],
+    ]));
+    $routes->add('admin_security', new Route('/admin/security', [
+        '_controller' => 'AdminSecurityController@index',
+        '_middleware' => ['auth', 'permission:a', 'csrf'],
+    ], methods: ['GET', 'POST']));
+    $routes->add('admin_security_save', new Route('/admin/security/save', [
+        '_controller' => 'AdminSecurityController@save',
+        '_middleware' => ['auth', 'permission:a', 'csrf'],
+    ]));
+    $routes->add('admin_seo', new Route('/admin/seo', [
+        '_controller' => 'AdminSeoController@index',
+        '_middleware' => ['auth', 'permission:a', 'csrf'],
+    ], methods: ['GET', 'POST']));
+    $routes->add('admin_seo_regenerate', new Route('/admin/seo/regenerate', [
+        '_controller' => 'AdminSeoController@regenerateSitemap',
+        '_middleware' => ['auth', 'permission:a', 'csrf'],
+    ]));
+    $routes->add('admin_payments', new Route('/admin/payments', [
+        '_controller' => 'AdminController@paymentSettings',
+        '_middleware' => ['auth', 'permission:a', 'csrf'],
+    ], methods: ['GET', 'POST']));
+    $routes->add('admin_bans_settings', new Route('/admin/bans/settings', [
+        '_controller' => 'AdminController@banSettings',
+        '_middleware' => ['auth', 'permission:a', 'csrf'],
+    ], methods: ['GET', 'POST']));
+    $routes->add('admin_themes', new Route('/admin/themes', [
+        '_controller' => 'AdminController@themes',
+        '_middleware' => ['auth', 'permission:a', 'csrf'],
+    ], methods: ['GET', 'POST']));
+    $routes->add('admin_theme', new Route('/admin/theme', [
+        '_controller' => 'AdminController@themeSettings',
+        '_middleware' => ['auth', 'permission:a', 'csrf'],
+    ], methods: ['GET', 'POST']));
+    $routes->add('admin_modules', new Route('/admin/modules', [
+        '_controller' => 'AdminModuleController@index',
+        '_middleware' => ['auth', 'permission:a'],
+    ]));
+    $routes->add('admin_modules_toggle', new Route('/admin/modules/toggle', [
+        '_controller' => 'AdminModuleController@toggle',
+        '_middleware' => ['auth', 'permission:a', 'csrf'],
+    ]));
+    $routes->add('admin_theme_editor', new Route('/admin/theme-editor', [
+        '_controller' => 'AdminThemeEditorController@editor',
+        '_middleware' => ['auth', 'permission:a'],
+    ]));
+    $routes->add('admin_theme_editor_get_file', new Route('/admin/theme-editor/get-file', [
+        '_controller' => 'AdminThemeEditorController@getFileContent',
+        '_middleware' => ['auth', 'permission:a'],
+    ]));
+    $routes->add('admin_theme_editor_save_file', new Route('/admin/theme-editor/save-file', [
+        '_controller' => 'AdminThemeEditorController@saveFileContent',
+        '_middleware' => ['auth', 'permission:a', 'csrf'],
+    ]));
+    $routes->add('admin_theme_editor_create', new Route('/admin/theme-editor/create', [
+        '_controller' => 'AdminThemeEditorController@create',
+        '_middleware' => ['auth', 'permission:a', 'csrf'],
+    ]));
+    $routes->add('admin_theme_editor_delete', new Route('/admin/theme-editor/delete', [
+        '_controller' => 'AdminThemeEditorController@delete',
+        '_middleware' => ['auth', 'permission:a', 'csrf'],
+    ]));
 
-    $r->addRoute('GET', '/chat/messages', 'ChatController@fetchMessages');
-    $r->addRoute('POST', '/chat/send', 'ChatController@sendMessage')
-        ->addMiddleware('auth')->addMiddleware('csrf')->addMiddleware('rate_limit:chat_send');
-    $r->addRoute('DELETE', '/chat/message/{id:\d+}', 'ChatController@deleteMessage')
-        ->addMiddleware('auth')->addMiddleware('permission:c')->addMiddleware('csrf');
-
-    $r->addRoute('GET', '/online/data', 'OnlineController@data');
-    $r->addRoute('GET', '/api/forum/last-topics', 'ForumController@lastTopics');
-    $r->addRoute('GET', '/api/bans/last-bans', 'BanController@lastBans');
-    $r->addRoute('GET', '/sitemap.xml', 'SitemapController@index');
-    $r->addRoute('GET', '/api/services/{id:\d+}/tariffs', 'AdminServiceController@apiTariffs')
-        ->addMiddleware('auth')->addMiddleware('permission:a');
-    $r->addRoute('PUT', '/api/services/{id:\d+}', 'AdminServiceController@apiUpdateService')
-        ->addMiddleware('auth')->addMiddleware('permission:a')->addMiddleware('csrf');
-    $r->addRoute('PUT', '/api/services/{sid:\d+}/tariffs/{id:\d+}', 'AdminServiceController@apiUpdateTariff')
-        ->addMiddleware('auth')->addMiddleware('permission:a')->addMiddleware('csrf');
-
-    // Системные маршруты
-    $r->addRoute('POST', '/cron', 'CronController@run')->addMiddleware('rate_limit:cron');
+    $routes->add('admin_upload_image', new Route('/admin/upload-image', [
+        '_controller' => 'AdminController@uploadImage',
+        '_middleware' => ['auth', 'permission:c', 'csrf', 'rate_limit:upload_image'],
+    ]));
 };

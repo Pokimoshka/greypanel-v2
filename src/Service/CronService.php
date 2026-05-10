@@ -4,23 +4,30 @@ declare(strict_types=1);
 
 namespace GreyPanel\Service;
 
-use GreyPanel\Interface\Repository\VipUserRepositoryInterface;
+use GreyPanel\Interface\Repository\OnlineRepositoryInterface;
 use GreyPanel\Interface\Service\CronServiceInterface;
+use GreyPanel\Interface\Service\MonitorServiceInterface;
+use GreyPanel\Interface\Service\SeoServiceInterface;
+use GreyPanel\Interface\Service\SettingsServiceInterface;
+use GreyPanel\Repository\UserServiceRepository;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\Lock\LockFactory;
 
 final class CronService implements CronServiceInterface
 {
-    private string $lockFile;
+    private string $lastRunFile;
     private int $interval;
 
     public function __construct(
-        private VipUserRepositoryInterface $vipUserRepo,
+        private UserServiceRepository $userServiceRepo,
         private MonitorServiceInterface $monitorService,
         private SettingsServiceInterface $settings,
         private SeoServiceInterface $seoService,
+        private OnlineRepositoryInterface $onlineRepo,
+        private LockFactory $lockFactory,
         private ?LoggerInterface $logger = null
     ) {
-        $this->lockFile = __DIR__ . '/../../var/last_cron_run.txt';
+        $this->lastRunFile = __DIR__ . '/../../var/last_cron_run.txt';
         $this->interval = 300;
     }
 
@@ -32,14 +39,15 @@ final class CronService implements CronServiceInterface
 
     public function run(): void
     {
-        $unlock = $this->acquireLock();
-        if (!$unlock) {
+        $lock = $this->lockFactory->createLock('cron-run', 60);
+
+        if (!$lock->acquire()) {
             $this->logger?->warning('Cron already running, skipping');
             return;
         }
 
         if (!$this->isDue()) {
-            $unlock();
+            $lock->release();
             return;
         }
 
@@ -48,8 +56,8 @@ final class CronService implements CronServiceInterface
         try {
             $this->logger?->info('Cron started');
 
-            $deleted = $this->vipUserRepo->deleteExpired();
-            $this->logger?->info('Deleted expired VIPs', ['count' => $deleted]);
+            $deleted = $this->userServiceRepo->deleteExpired();
+            $this->logger?->info('Deleted expired user services', ['count' => $deleted]);
 
             $this->monitorService->updateAllServers();
             $this->logger?->info('Monitor servers updated');
@@ -58,39 +66,25 @@ final class CronService implements CronServiceInterface
                 $this->seoService->saveSitemap();
             }
 
+            $deletedOnline = $this->onlineRepo->deleteExpired(300);
+            $this->logger?->info('Deleted old online entries', ['count' => $deletedOnline]);
+
             $this->logger?->info('Cron finished');
         } finally {
-            $unlock();
+            $lock->release();
         }
     }
 
     private function getLastRun(): int
     {
-        if (!file_exists($this->lockFile)) {
+        if (!file_exists($this->lastRunFile)) {
             return 0;
         }
-        return (int)file_get_contents($this->lockFile);
+        return (int)file_get_contents($this->lastRunFile);
     }
 
     private function setLastRun(int $timestamp): void
     {
-        file_put_contents($this->lockFile, $timestamp);
-    }
-
-    private function acquireLock(): ?\Closure
-    {
-        $lockFile = __DIR__ . '/../../var/cron.lock';
-        $fp = fopen($lockFile, 'w');
-        if (!$fp) {
-            return null;
-        }
-        if (flock($fp, LOCK_EX | LOCK_NB)) {
-            return function () use ($fp) {
-                flock($fp, LOCK_UN);
-                fclose($fp);
-            };
-        }
-        fclose($fp);
-        return null;
+        file_put_contents($this->lastRunFile, $timestamp);
     }
 }

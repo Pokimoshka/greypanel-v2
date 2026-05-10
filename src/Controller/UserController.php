@@ -4,54 +4,68 @@ declare(strict_types=1);
 
 namespace GreyPanel\Controller;
 
+use GreyPanel\Core\JsonResponse;
 use GreyPanel\Core\RedirectResponse;
 use GreyPanel\Core\Request;
 use GreyPanel\Core\Response;
 use GreyPanel\Core\View;
+use GreyPanel\Dto\ProfileUpdateDto;
 use GreyPanel\Interface\Repository\UserRepositoryInterface;
+use GreyPanel\Interface\Service\SessionServiceInterface;
 use GreyPanel\Service\AuthService;
 use GreyPanel\Service\AvatarService;
-use GreyPanel\Service\SessionService;
+use GreyPanel\Service\LocaleManager;
 use GreyPanel\Service\SiteService;
+use Symfony\Component\Cache\Adapter\FilesystemAdapter;
+use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
+use Symfony\Contracts\Cache\ItemInterface;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
-class UserController
+class UserController extends AbstractController
 {
     public function __construct(
         private AuthService $auth,
         private UserRepositoryInterface $userRepo,
         private AvatarService $avatarService,
-        private SessionService $session,
-        private SiteService $siteService
+        private SessionServiceInterface $session,
+        private SiteService $siteService,
+        private LocaleManager $localeManager,
+        SerializerInterface $serializer,
+        ValidatorInterface $validator,
+        TranslatorInterface $translator
     ) {
+        parent::__construct($serializer, $validator, $translator);
     }
 
-    public function profile(Request $request): Response
+    public function profile(Request $request, ?int $id = null): Response
     {
-        if (!$this->session->getUserId()) {
+        if ($id === null && !$this->session->isLoggedIn()) {
             return new RedirectResponse('/login');
         }
 
-        $user = $this->auth->getUserById($this->session->getUserId());
+        if ($id === null) {
+            $id = $this->session->getUser()->getId();
+        }
+
+        $user = $this->userRepo->findById($id);
         if (!$user) {
-            session_destroy();
-            return new RedirectResponse('/login');
+            return new Response('Пользователь не найден', 404);
         }
 
-        $html = View::render('user/profile.tpl', [
-            'user' => $user,
-        ]);
-        return new Response($html);
+        return new Response(View::render('user/profile.tpl', ['user' => $user]));
     }
 
     public function settings(Request $request): Response
     {
-        if (!isset($_SESSION['user_id'])) {
+        if (!$this->session->isLoggedIn()) {
             return new RedirectResponse('/login');
         }
 
-        $user = $this->auth->getUserById($_SESSION['user_id']);
+        $userId = $this->session->getUser()?->getId();
+        $user = $this->auth->getUserById($userId);
         if (!$user) {
-            session_destroy();
+            $this->session->clear();
             return new RedirectResponse('/login');
         }
 
@@ -59,85 +73,81 @@ class UserController
         $success = null;
 
         if ($request->isPost()) {
-            $email = trim($request->post('email'));
-            $password = $request->post('password');
-            $passwordConfirm = $request->post('password_confirm');
-            $avatar = $request->files()['avatar'] ?? null;
+            $dto = new ProfileUpdateDto([
+                'email' => $request->postString('email'),
+                'password' => $request->postString('password'),
+                'password_confirm' => $request->postString('password_confirm'),
+            ]);
 
-            if (!empty($email)) {
-                if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-                    $error = 'Некорректный email';
-                } elseif ($email !== $user->getEmail()) {
-                    $existing = $this->userRepo->findByEmail($email);
-                    if ($existing && $existing->getId() !== $user->getId()) {
-                        $error = 'Этот email уже используется';
-                    } else {
-                        $user->setEmail($email);
-                    }
+            $violations = $this->validator->validate($dto);
+            $errors = [];
+            foreach ($violations as $v) {
+                $errors[$v->getPropertyPath()] = $v->getMessage();
+            }
+
+            if (!empty($dto->password) && $dto->password !== $dto->passwordConfirm) {
+                $errors['password'] = $this->translator->trans('profile.password_mismatch', [], 'validators');
+            }
+
+            if ($dto->email && $dto->email !== $user->getEmail()) {
+                $existing = $this->userRepo->findByEmail($dto->email);
+                if ($existing && $existing->getId() !== $user->getId()) {
+                    $errors['email'] = $this->translator->trans('profile.email_taken', [], 'validators');
                 }
             }
 
-            if (!empty($password) && !empty($passwordConfirm)) {
-                if (strlen($password) < 4) {
-                    $error = 'Пароль должен быть не менее 4 символов';
-                } elseif ($password !== $passwordConfirm) {
-                    $error = 'Пароли не совпадают';
-                } else {
-                    $this->userRepo->updatePassword($user->getId(), $password);
-                    $success = 'Пароль успешно изменён';
+            if (!empty($errors)) {
+                $error = reset($errors);
+            } else {
+                if ($dto->email) {
+                    $user->setEmail($dto->email);
                 }
-            }
-
-            $avatarFile = $request->files()['avatar'] ?? null;
-
-            if ($avatarFile instanceof \Symfony\Component\HttpFoundation\File\UploadedFile &&
-                $avatarFile->getError() === UPLOAD_ERR_OK) {
-
-                $validationError = $this->avatarService->validate($avatarFile);
-
-                if ($validationError === null) {
-                    $this->avatarService->deleteOldAvatar($user->getAvatar());
-                    $newAvatarPath = $this->avatarService->resizeAndSave($avatarFile, $user->getId());
-                    $user->setAvatar($newAvatarPath);
-                    $this->userRepo->update($user);
-                    $_SESSION['user']['avatar'] = $newAvatarPath;
-                    $_SESSION['user']['updated_at'] = $user->getUpdatedAt();
-                    $success = $success ? $success . ' Аватар обновлён.' : 'Аватар обновлён.';
-                    return new RedirectResponse('/settings?success=avatar');
-                } else {
-                    $error = $validationError;
+                if ($dto->password) {
+                    $this->userRepo->updatePassword($user->getId(), $dto->password);
+                    $success = $this->translator->trans('settings.password_changed');
                 }
-            }
 
-            if (!$error) {
+                $lang = $request->postString('lang');
+                if (in_array($lang, ['ru', 'en'])) {
+                    $user->setLang($lang);
+                    $success = $this->translator->trans('settings.language_changed');
+                }
                 $this->userRepo->update($user);
-                $_SESSION['user']['email'] = $user->getEmail();
-                $_SESSION['user']['avatar'] = $user->getAvatar();
                 if (!$success) {
-                    $success = 'Настройки сохранены';
+                    $success = $this->translator->trans('settings.settings_saved');
                 }
             }
         }
 
-        $html = View::render('user/settings.tpl', [
+        return new Response(View::render('user/settings.tpl', [
             'user' => $user,
             'error' => $error,
             'success' => $success,
-        ]);
-        return new Response($html);
+        ]));
     }
 
     public function referrals(Request $request): Response
     {
-        $userId = $this->session->getUserId();
+        $userId = $this->session->getUser()?->getId();
         $referrals = $this->userRepo->getReferrals($userId);
         $earnings = $this->userRepo->getReferralEarnings($userId);
         $refLink = $this->siteService->getSiteUrl() . '/register?ref=' . $userId;
-        $html = View::render('user/referrals.tpl', [
+        return new Response(View::render('user/referrals.tpl', [
             'referrals' => $referrals,
             'earnings' => $earnings,
             'ref_link' => $refLink,
-        ]);
-        return new Response($html);
+        ]));
+    }
+
+    public function topDonators(Request $request): JsonResponse
+    {
+        $cache = new FilesystemAdapter('widget_donators', 0, ROOT_DIR . '/var/cache');
+        $donators = $cache->get('top_donators', function (ItemInterface $item) use ($request) {
+            $item->expiresAfter(300);
+            $limit = ($request->getInt('limit'));
+            return $this->userRepo->findTopDonators($limit);
+        });
+
+        return $this->json($donators);
     }
 }

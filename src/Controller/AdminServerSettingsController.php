@@ -10,14 +10,18 @@ use GreyPanel\Core\Response;
 use GreyPanel\Core\View;
 use GreyPanel\Interface\Repository\MonitorServerRepositoryInterface;
 use GreyPanel\Interface\Service\EncryptionServiceInterface;
+use GreyPanel\Interface\Service\SessionServiceInterface;
 use GreyPanel\Service\MonitorService;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 class AdminServerSettingsController
 {
     public function __construct(
         private MonitorServerRepositoryInterface $repo,
         private MonitorService $monitorService,
-        private EncryptionServiceInterface $encryption
+        private SessionServiceInterface $session,
+        private EncryptionServiceInterface $encryption,
+        private TranslatorInterface $translator
     ) {
     }
 
@@ -31,54 +35,56 @@ class AdminServerSettingsController
 
     public function form(Request $request, ?int $id = null): Response
     {
-        if ($id !== null) {
-            $server = $this->repo->findById($id);
-            if (!$server) {
-                return new RedirectResponse('/admin/server-settings');
-            }
-        } else {
-            $server = null;
+        $server = $id !== null ? $this->repo->findById($id) : null;
+
+        if (!$server && $id !== null) {
+            return new RedirectResponse('/admin/server-settings');
         }
 
         if ($request->isPost()) {
             $baseData = [
-                'type'       => $request->post('type', 'halflife'),
-                'ip'         => trim($request->post('ip')),
-                'c_port'     => (int)$request->post('c_port'),
-                'q_port'     => (int)$request->post('q_port'),
-                's_port'     => (int)$request->post('s_port'),
-                'disabled'   => (int)$request->post('disabled', 0),
+                'type'     => $request->postString('type', 'halflife'),
+                'ip'       => $request->postString('ip'),
+                'c_port'   => $request->postInt('c_port'),
+                'q_port'   => $request->postInt('q_port'),
+                's_port'   => $request->postInt('s_port'),
+                'disabled' => $request->postInt('disabled', 0),
             ];
 
             $settings = [
-                'privilege_storage'   => (int)$request->post('privilege_storage', 1),
-                'stats_engine'        => (int)$request->post('stats_engine', 1),
-                'amxbans_db_host'     => $request->post('amxbans_db_host'),
-                'amxbans_db_user'     => $request->post('amxbans_db_user'),
-                'amxbans_db_name'     => $request->post('amxbans_db_name'),
-                'amxbans_db_prefix'   => $request->post('amxbans_db_prefix'),
-                'csstats_db_host'     => $request->post('csstats_db_host'),
-                'csstats_db_user'     => $request->post('csstats_db_user'),
-                'csstats_db_name'     => $request->post('csstats_db_name'),
-                'aes_stats_db_host'   => $request->post('aes_stats_db_host'),
-                'aes_stats_db_user'   => $request->post('aes_stats_db_user'),
-                'aes_stats_db_name'   => $request->post('aes_stats_db_name'),
-                'ftp_host'            => $request->post('ftp_host'),
-                'ftp_user'            => $request->post('ftp_user'),
-                'ftp_path'            => $request->post('ftp_path'),
+                'privilege_storage'   => $request->postInt('privilege_storage', 1),
+                'stats_engine'        => $request->postInt('stats_engine', 1),
+                'banlist_db_host'     => $request->postString('banlist_db_host'),
+                'banlist_db_user'     => $request->postString('banlist_db_user'),
+                'banlist_db_name'     => $request->postString('banlist_db_name'),
+                'banlist_db_prefix'   => $request->postString('banlist_db_prefix'),
+                'csstats_db_host'     => $request->postString('csstats_db_host'),
+                'csstats_db_user'     => $request->postString('csstats_db_user'),
+                'csstats_db_name'     => $request->postString('csstats_db_name'),
+                'aes_stats_db_host'   => $request->postString('aes_stats_db_host'),
+                'aes_stats_db_user'   => $request->postString('aes_stats_db_user'),
+                'aes_stats_db_name'   => $request->postString('aes_stats_db_name'),
+                'ftp_host'            => $request->postString('ftp_host'),
+                'ftp_user'            => $request->postString('ftp_user'),
+                'ftp_path'            => $request->postString('ftp_path'),
             ];
 
-            if ($pass = $request->post('amxbans_db_pass')) {
-                $settings['amxbans_db_pass'] = $this->encryption->encrypt($pass);
+            $amxPrefix = trim($request->postString('banlist_db_prefix', ''));
+            if ($amxPrefix !== '' && !str_ends_with($amxPrefix, '_')) {
+                $amxPrefix .= '_';
             }
-            if ($pass = $request->post('csstats_db_pass')) {
+            $settings['banlist_db_prefix'] = $amxPrefix;
+
+            if ($pass = $request->postString('banlist_db_pass')) {
+                $settings['banlist_db_pass'] = $this->encryption->encrypt($pass);
+            }
+            if ($pass = $request->postString('csstats_db_pass')) {
                 $settings['csstats_db_pass'] = $this->encryption->encrypt($pass);
             }
-            if ($pass = $request->post('aes_stats_db_pass')) {
+            if ($pass = $request->postString('aes_stats_db_pass')) {
                 $settings['aes_stats_db_pass'] = $this->encryption->encrypt($pass);
             }
-
-            if ($pass = $request->post('ftp_pass')) {
+            if ($pass = $request->postString('ftp_pass')) {
                 $settings['ftp_pass'] = $this->encryption->encrypt($pass);
             }
 
@@ -91,14 +97,34 @@ class AdminServerSettingsController
             }
 
             $this->monitorService->updateServerStatus($id);
-
             $this->monitorService->clearCache();
+            $this->session->setFlash('success', $this->translator->trans('admin.server_saved'));
 
             return new RedirectResponse('/admin/server-settings');
         }
+        $serverData = null;
+        if ($server !== null) {
+            $serverData = $server;
+
+            $sensitive = [
+                'banlist_db_pass',
+                'csstats_db_pass',
+                'aes_stats_db_pass',
+                'ftp_pass',
+                'password',
+                'secret',
+            ];
+
+            foreach ($sensitive as $field) {
+                if (array_key_exists($field, $serverData)) {
+                    $serverData[$field] = '';
+                }
+            }
+        }
 
         return new Response(View::render('server_settings/form.tpl', [
-            'server' => $server,
+            'server' => $serverData,
+            'id'     => $id,
         ]));
     }
 

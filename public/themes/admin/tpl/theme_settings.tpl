@@ -1,9 +1,9 @@
 {% extends "base.tpl" %}
 
-{% block title %}Управление темами{% endblock %}
+{% block title %}{{ trans('admin.themes') }}{% endblock %}
 
 {% block content %}
-<h1>Темы оформления</h1>
+<h1>{{ trans('admin.themes_list') }}</h1>
 <div class="row">
     {% for theme in themes %}
     <div class="col-md-4 mb-4">
@@ -11,26 +11,26 @@
             {% if theme.screenshot %}
             <img src="{{ theme.screenshot }}" class="card-img-top" alt="{{ theme.title }}">
             {% else %}
-            <div class="card-img-top bg-secondary text-white text-center py-5">No preview</div>
+            <div class="card-img-top bg-secondary text-white text-center py-5">{{ trans('admin.no_preview') }}</div>
             {% endif %}
             <div class="card-body">
                 <h5 class="card-title">{{ theme.title }}</h5>
                 <p class="card-text">{{ theme.description }}</p>
-                <p class="card-text"><small class="text-muted">Версия: {{ theme.version }}, автор: {{ theme.author }}</small></p>
+                <p class="card-text"><small class="text-muted">{{ trans('admin.version') }}: {{ theme.version }}, {{ trans('admin.author') }}: {{ theme.author }}</small></p>
             </div>
             <div class="card-footer">
             {% if theme.name == active %}
                 <div class="d-flex justify-content-between align-items-center">
-                    <span class="badge bg-success">Активна</span>
+                    <span class="badge bg-success">{{ trans('admin.active_theme') }}</span>
                     <a href="{{ url('admin/theme-editor') }}" class="btn btn-sm btn-primary">
-                        <i class="fas fa-edit"></i> Редактировать
+                        <i class="fas fa-edit"></i> {{ trans('admin.edit_theme') }}
                     </a>
                 </div>
             {% else %}
                 <form method="post" action="/admin/themes">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                     <input type="hidden" name="theme" value="{{ theme.name }}">
-                    <button type="submit" class="btn btn-primary btn-sm">Активировать</button>
+                    <button type="submit" class="btn btn-primary btn-sm">{{ trans('admin.activate') }}</button>
                 </form>
             {% endif %}
             </div>
@@ -38,4 +38,8 @@
     </div>
     {% endfor %}
 </div>
+{% endblock %}
+
+{% block scripts %}
+    {{ parent() }}
 {% endblock %}

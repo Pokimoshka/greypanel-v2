@@ -8,26 +8,35 @@ use GreyPanel\Core\JsonResponse;
 use GreyPanel\Core\Request;
 use GreyPanel\Core\Response;
 use GreyPanel\Core\View;
-use GreyPanel\Interface\Service\SessionServiceInterface;
+use GreyPanel\Interface\Service\PermissionServiceInterface;
 use GreyPanel\Interface\Service\ThemeServiceInterface;
+use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
-final class AdminThemeEditorController
+final class AdminThemeEditorController extends AbstractController
 {
     private string $themesPath;
     private string $activeTheme;
     private array $allowedExtensions = ['tpl', 'html', 'twig', 'css', 'js', 'json', 'txt', 'md'];
+    private PermissionServiceInterface $permissionService;
 
     public function __construct(
         private ThemeServiceInterface $themeService,
-        private SessionServiceInterface $session
+        PermissionServiceInterface $permissionService,
+        SerializerInterface $serializer,
+        ValidatorInterface $validator,
+        TranslatorInterface $translator
     ) {
+        parent::__construct($serializer, $validator, $translator);
         $this->themesPath = __DIR__ . '/../../public/themes';
         $this->activeTheme = $this->themeService->getActiveTheme();
+        $this->permissionService = $permissionService;
     }
 
     private function checkAccess(): void
     {
-        if ($this->session->getUserGroup() < 4) {
+        if (!$this->permissionService->hasPermission('a')) {
             throw new \RuntimeException('Access denied', 403);
         }
     }
@@ -37,7 +46,6 @@ final class AdminThemeEditorController
         return $this->themesPath . '/' . $this->activeTheme;
     }
 
-    // === Новый двухпанельный редактор ===
     public function editor(Request $request): Response
     {
         $this->checkAccess();
@@ -79,55 +87,52 @@ final class AdminThemeEditorController
         ]));
     }
 
-    // === Получение содержимого файла (AJAX) ===
     public function getFileContent(Request $request): JsonResponse
     {
         $this->checkAccess();
         $file = $request->get('file');
         if (!$file) {
-            return new JsonResponse(['error' => 'No file specified'], 400);
+            return $this->json(['error' => 'No file specified'], 400);
         }
 
         try {
             $fullPath = $this->resolvePath($file);
         } catch (\RuntimeException $e) {
-            return new JsonResponse(['error' => $e->getMessage()], 403);
+            return $this->json(['error' => $e->getMessage()], 403);
         }
 
         if (!is_file($fullPath)) {
-            return new JsonResponse(['error' => 'File not found'], 404);
+            return $this->json(['error' => 'File not found'], 404);
         }
 
         $ext = pathinfo($fullPath, PATHINFO_EXTENSION);
         if (!in_array($ext, $this->allowedExtensions)) {
-            return new JsonResponse(['error' => 'Extension not allowed'], 403);
+            return $this->json(['error' => 'Extension not allowed'], 403);
         }
 
         $content = file_get_contents($fullPath);
-        return new JsonResponse(['content' => $content, 'ext' => $ext]);
+        return $this->json(['content' => $content, 'ext' => $ext]);
     }
 
-    // === Сохранение содержимого файла (AJAX) ===
     public function saveFileContent(Request $request): JsonResponse
     {
         $this->checkAccess();
-        $file = $request->post('file');
-        $content = $request->post('content');
+        $file = $request->postString('file');
+        $content = $request->postString('content');
         if (!$file) {
-            return new JsonResponse(['error' => 'No file specified'], 400);
+            return $this->json(['error' => 'No file specified'], 400);
         }
 
         try {
             $fullPath = $this->resolvePath($file);
         } catch (\RuntimeException $e) {
-            return new JsonResponse(['error' => $e->getMessage()], 403);
+            return $this->json(['error' => $e->getMessage()], 403);
         }
 
         if (!is_file($fullPath)) {
-            return new JsonResponse(['error' => 'File not found'], 404);
+            return $this->json(['error' => 'File not found'], 404);
         }
 
-        // Бэкап
         $backupDir = $this->getThemePath() . '/.backups';
         if (!is_dir($backupDir)) {
             mkdir($backupDir, 0755, true);
@@ -135,64 +140,75 @@ final class AdminThemeEditorController
         copy($fullPath, $backupDir . '/' . basename($file) . '.' . time() . '.bak');
 
         file_put_contents($fullPath, $content);
-        return new JsonResponse(['success' => true]);
+        return $this->json(['success' => true]);
     }
 
-    // === Остальные методы (создание, удаление) – как были ===
     public function create(Request $request): JsonResponse
     {
         $this->checkAccess();
-        $dir = $request->post('dir', '');
-        $name = trim($request->post('name'));
-        $type = $request->post('type');
+        $dir = $request->postString('dir', '');
+        $name = trim($request->postString('name'));
+        $type = $request->postString('type');
         if (!$name) {
-            return new JsonResponse(['error' => 'Name required'], 400);
+            return $this->json(['error' => 'Name required'], 400);
         }
 
-        // Проверяем, что родительская директория внутри темы
+        if ($type === 'folder') {
+            if (!preg_match('/^[a-zA-Z0-9_]+$/', $name)) {
+                return $this->json(['error' => 'Folder name can only contain letters, digits, underscores'], 400);
+            }
+        } else {
+            if (!preg_match('/^[a-zA-Z0-9_.-]+$/', $name)) {
+                return $this->json(['error' => 'File name contains invalid characters'], 400);
+            }
+            $ext = pathinfo($name, PATHINFO_EXTENSION);
+            if (!in_array($ext, $this->allowedExtensions)) {
+                return $this->json(['error' => 'Extension not allowed'], 403);
+            }
+        }
+
         try {
             $parentPath = $dir ? $this->resolvePath($dir) : $this->getThemePath();
         } catch (\RuntimeException $e) {
-            return new JsonResponse(['error' => $e->getMessage()], 403);
+            return $this->json(['error' => $e->getMessage()], 403);
         }
 
         $fullPath = $parentPath . '/' . $name;
         if (file_exists($fullPath)) {
-            return new JsonResponse(['error' => 'Already exists'], 400);
+            return $this->json(['error' => 'Already exists'], 400);
         }
 
         if ($type === 'folder') {
-            // Разрешаем только имена папок без расширений: буквы, цифры, подчёркивание
             if (!preg_match('/^[a-zA-Z0-9_]+$/', $name)) {
-                return new JsonResponse(['error' => 'Folder name can only contain letters, digits, underscores'], 400);
+                return $this->json(['error' => 'Folder name can only contain letters, digits, underscores'], 400);
             }
             mkdir($fullPath, 0755, true);
         } else {
             $ext = pathinfo($fullPath, PATHINFO_EXTENSION);
             if (!in_array($ext, $this->allowedExtensions)) {
-                return new JsonResponse(['error' => 'Extension not allowed'], 403);
+                return $this->json(['error' => 'Extension not allowed'], 403);
             }
             file_put_contents($fullPath, '');
         }
-        return new JsonResponse(['success' => true]);
+        return $this->json(['success' => true]);
     }
 
     public function delete(Request $request): JsonResponse
     {
         $this->checkAccess();
-        $file = $request->post('file');
+        $file = $request->postString('file');
         if (!$file) {
-            return new JsonResponse(['error' => 'File not specified'], 400);
+            return $this->json(['error' => 'File not specified'], 400);
         }
 
         try {
             $fullPath = $this->resolvePath($file);
         } catch (\RuntimeException $e) {
-            return new JsonResponse(['error' => $e->getMessage()], 403);
+            return $this->json(['error' => $e->getMessage()], 403);
         }
 
         if (!file_exists($fullPath)) {
-            return new JsonResponse(['error' => 'Not found'], 404);
+            return $this->json(['error' => 'Not found'], 404);
         }
 
         if (is_dir($fullPath)) {
@@ -200,7 +216,7 @@ final class AdminThemeEditorController
         } else {
             unlink($fullPath);
         }
-        return new JsonResponse(['success' => true]);
+        return $this->json(['success' => true]);
     }
 
     private function deleteDir(string $dir): void

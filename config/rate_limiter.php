@@ -7,19 +7,19 @@ return [
         'id' => 'login',
         'policy' => 'sliding_window',
         'limit' => 10,
-        'interval' => '15 minutes',   // строка, не число
+        'interval' => '15 minutes',
     ],
     'register' => [
         'id' => 'register',
         'policy' => 'sliding_window',
         'limit' => 5,
-        'interval' => '1 hour',       // строка
+        'interval' => '1 hour',
     ],
     'chat_send' => [
         'id' => 'chat_send',
         'policy' => 'token_bucket',
         'limit' => 20,
-        'rate' => ['interval' => '1 minute'], // вложенный массив для token_bucket
+        'rate' => ['interval' => '1 minute'],
     ],
     'vip_activate' => [
         'id' => 'vip_activate',

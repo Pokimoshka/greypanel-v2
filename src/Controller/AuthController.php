@@ -8,12 +8,14 @@ use GreyPanel\Core\RedirectResponse;
 use GreyPanel\Core\Request;
 use GreyPanel\Core\Response;
 use GreyPanel\Core\View;
+use GreyPanel\Exception\AuthenticationException;
 use GreyPanel\Interface\Repository\LogRepositoryInterface;
 use GreyPanel\Interface\Repository\UserRepositoryInterface;
 use GreyPanel\Interface\Service\AuthServiceInterface;
 use GreyPanel\Interface\Service\SessionServiceInterface;
 use GreyPanel\Interface\Service\SettingsServiceInterface;
 use GreyPanel\Service\RecaptchaService;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 final class AuthController
 {
@@ -23,110 +25,117 @@ final class AuthController
         private SessionServiceInterface $session,
         private UserRepositoryInterface $userRepo,
         private RecaptchaService $recaptcha,
-        private SettingsServiceInterface $settings
+        private SettingsServiceInterface $settings,
+        private TranslatorInterface $translator
     ) {
     }
 
     public function login(Request $request): Response
     {
+        $recaptchaEnabled = $this->settings->getBool('recaptcha_enabled', false);
+        $recaptchaSiteKey = $this->settings->get('recaptcha_site_key', '');
+
         if ($request->isPost()) {
-            // Проверка reCAPTCHA (только при POST)
-            $recaptchaEnabled = $this->settings->getBool('recaptcha_enabled', false);
             if ($recaptchaEnabled) {
                 $recaptchaResponse = $request->post('g-recaptcha-response');
-                if (!$this->recaptcha->verify($recaptchaResponse, $_SERVER['REMOTE_ADDR'])) {
+                if (!$this->recaptcha->verify($recaptchaResponse, $request->getClientIp())) {
                     return new Response(View::render('auth/login.tpl', [
-                        'error' => 'Пожалуйста, подтвердите, что вы не робот.',
-                        'recaptcha_site_key' => $this->settings->get('recaptcha_site_key', '')
+                        'error' => $this->translator->trans('auth.captcha_required'),
+                        'recaptcha_enabled' => $recaptchaEnabled,
+                        'recaptcha_site_key' => $recaptchaSiteKey,
                     ]));
                 }
             }
 
-            $login = $request->post('username');
-            $password = $request->post('password');
-            $remember = (bool)$request->post('remember');
+            $login = $request->postString('username');
+            $password = $request->postString('password');
+            $remember = $request->postBool('remember');
 
-            $result = $this->auth->login($login, $password);
-            if ($result instanceof \GreyPanel\Model\User) {
-                session_regenerate_id(true);
-                $this->session->setUser($result);
-                $_SESSION['user']['updated_at'] = $result->getUpdatedAt();
-                $this->logRepo->add($result->getId(), 'login', 'Пользователь вошёл');
-
-                if ($remember) {
-                    $token = $this->auth->setRememberToken($result);
-                    setcookie('remember_token', $token, time() + 86400 * 30, '/', '', false, true);
-                }
-
-                return new RedirectResponse('/');
+            try {
+                $user = $this->auth->login($login, $password);
+            } catch (AuthenticationException $e) {
+                return new Response(View::render('auth/login.tpl', [
+                    'error' => $e->getMessage(),
+                    'recaptcha_enabled' => $recaptchaEnabled,
+                    'recaptcha_site_key' => $recaptchaSiteKey,
+                ]));
             }
 
-            return new Response(View::render('auth/login.tpl', [
-                'error' => $result,
-                'recaptcha_site_key' => $this->settings->get('recaptcha_site_key', '')
-            ]));
+            $this->session->setUser($user);
+            $this->logRepo->add($user->getId(), 'login', $this->translator->trans('auth.logged_in'));
+
+            if ($remember) {
+                $token = $this->auth->setRememberToken($user);
+                setcookie('remember_token', $token, time() + 86400 * 30, '/', '', false, true);
+            }
+
+            return new RedirectResponse('/');
         }
 
-        // GET запрос – показываем форму
         return new Response(View::render('auth/login.tpl', [
-            'recaptcha_site_key' => $this->settings->get('recaptcha_site_key', '')
+            'recaptcha_enabled' => $recaptchaEnabled,
+            'recaptcha_site_key' => $recaptchaSiteKey,
         ]));
     }
 
     public function register(Request $request): Response
     {
+        $recaptchaEnabled = $this->settings->getBool('recaptcha_enabled', false);
+        $recaptchaSiteKey = $this->settings->get('recaptcha_site_key', '');
+
         if ($request->get('ref') && !$this->session->isLoggedIn()) {
             $refId = (int)$request->get('ref');
             if ($this->userRepo->findById($refId)) {
-                $_SESSION['referral'] = $refId;
+                $this->session->setReferralId($refId);
             }
         }
 
         if ($request->isPost()) {
-            // Проверка reCAPTCHA
-            $recaptchaEnabled = $this->settings->getBool('recaptcha_enabled', false);
             if ($recaptchaEnabled) {
                 $recaptchaResponse = $request->post('g-recaptcha-response');
-                if (!$this->recaptcha->verify($recaptchaResponse, $_SERVER['REMOTE_ADDR'])) {
+                if (!$this->recaptcha->verify($recaptchaResponse, $request->getClientIp())) {
                     return new Response(View::render('auth/register.tpl', [
-                        'error' => 'Пожалуйста, подтвердите, что вы не робот.',
-                        'recaptcha_site_key' => $this->settings->get('recaptcha_site_key', '')
+                        'error' => $this->translator->trans('auth.captcha_required'),
+                        'recaptcha_enabled' => $recaptchaEnabled,
+                        'recaptcha_site_key' => $recaptchaSiteKey,
                     ]));
                 }
             }
 
-            $username = $request->post('username');
-            $email = $request->post('email');
-            $password = $request->post('password');
-            $password2 = $request->post('password2');
-            $ip = $_SERVER['REMOTE_ADDR'];
-            $referralId = $_SESSION['referral'] ?? 0;
+            $username = $request->postString('username');
+            $email = $request->postString('email');
+            $password = $request->postString('password');
+            $password2 = $request->postString('password2');
+            $ip = (string)$request->getClientIp();
+            $referralId = $this->session->getReferralId() ?? 0;
 
-            $result = $this->auth->register($username, $email, $password, $password2, $ip, $referralId);
-            if ($result instanceof \GreyPanel\Model\User) {
-                session_regenerate_id(true);
-                $this->session->setUser($result);
-                $this->logRepo->add($result->getId(), 'register', 'Пользователь зарегистрировался');
-                unset($_SESSION['referral']);
-                return new RedirectResponse('/');
+            try {
+                $user = $this->auth->register($username, $email, $password, $password2, $ip, $referralId);
+            } catch (AuthenticationException $e) {
+                return new Response(View::render('auth/register.tpl', [
+                    'error' => $e->getMessage(),
+                    'username' => $username,
+                    'email' => $email,
+                    'recaptcha_enabled' => $recaptchaEnabled,
+                    'recaptcha_site_key' => $recaptchaSiteKey,
+                ]));
             }
 
-            return new Response(View::render('auth/register.tpl', [
-                'error' => $result,
-                'username' => $username,
-                'email' => $email,
-                'recaptcha_site_key' => $this->settings->get('recaptcha_site_key', '')
-            ]));
+            $this->session->setUser($user);
+            $this->session->clearReferralId();
+            $this->logRepo->add($user->getId(), 'register', $this->translator->trans('auth.registered'));
+            return new RedirectResponse('/');
         }
 
         return new Response(View::render('auth/register.tpl', [
-            'recaptcha_site_key' => $this->settings->get('recaptcha_site_key', '')
+            'recaptcha_enabled' => $recaptchaEnabled,
+            'recaptcha_site_key' => $recaptchaSiteKey,
         ]));
     }
 
     public function logout(Request $request): Response
     {
-        $userId = $this->session->getUserId();
+        $userId = $this->session->getUser()?->getId();
         if ($userId) {
             $user = $this->auth->getUserById($userId);
             if ($user) {

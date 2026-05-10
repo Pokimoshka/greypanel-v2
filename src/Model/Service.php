@@ -29,7 +29,6 @@ class Service
         $this->groupId = isset($data['group_id']) ? (int)$data['group_id'] : null;
     }
 
-    // Getters
     public function getId(): ?int
     {
         return $this->id;
@@ -63,7 +62,6 @@ class Service
         return $this->updatedAt;
     }
 
-    // Setters
     public function setName(string $name): self
     {
         $this->name = $name;

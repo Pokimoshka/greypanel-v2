@@ -37,7 +37,7 @@ final class MonitorServerRepository implements MonitorServerRepositoryInterface
     {
         $this->db->query(
             "INSERT INTO {$this->table} (type, ip, c_port, q_port, s_port, disabled, 
-                privilege_storage, stats_engine, amxbans_db_host, amxbans_db_user, amxbans_db_pass, amxbans_db_name, amxbans_db_prefix,
+                privilege_storage, stats_engine, banlist_db_host, banlist_db_user, banlist_db_pass, banlist_db_name, banlist_db_prefix,
                 csstats_db_host, csstats_db_user, csstats_db_pass, csstats_db_name,
                 aes_stats_db_host, aes_stats_db_user, aes_stats_db_pass, aes_stats_db_name,
                 ftp_host, ftp_user, ftp_pass, ftp_path,
@@ -46,7 +46,7 @@ final class MonitorServerRepository implements MonitorServerRepositoryInterface
             [
                 $data['type'], $data['ip'], $data['c_port'], $data['q_port'], $data['s_port'], $data['disabled'],
                 $data['privilege_storage'] ?? 1, $data['stats_engine'] ?? 1,
-                $data['amxbans_db_host'] ?? null, $data['amxbans_db_user'] ?? null, $data['amxbans_db_pass'] ?? null, $data['amxbans_db_name'] ?? null, $data['amxbans_db_prefix'] ?? null,
+                $data['banlist_db_host'] ?? null, $data['banlist_db_user'] ?? null, $data['banlist_db_pass'] ?? null, $data['banlist_db_name'] ?? null, $data['banlist_db_prefix'] ?? null,
                 $data['csstats_db_host'] ?? null, $data['csstats_db_user'] ?? null, $data['csstats_db_pass'] ?? null, $data['csstats_db_name'] ?? null,
                 $data['aes_stats_db_host'] ?? null, $data['aes_stats_db_user'] ?? null, $data['aes_stats_db_pass'] ?? null, $data['aes_stats_db_name'] ?? null,
                 $data['ftp_host'] ?? null, $data['ftp_user'] ?? null, $data['ftp_pass'] ?? null, $data['ftp_path'] ?? null,
@@ -68,7 +68,7 @@ final class MonitorServerRepository implements MonitorServerRepositoryInterface
     {
         $allowed = [
             'privilege_storage', 'stats_engine', 'csstats_table',
-            'amxbans_db_host', 'amxbans_db_user', 'amxbans_db_pass', 'amxbans_db_name', 'amxbans_db_prefix',
+            'banlist_db_host', 'banlist_db_user', 'banlist_db_pass', 'banlist_db_name', 'banlist_db_prefix',
             'csstats_db_host', 'csstats_db_user', 'csstats_db_pass', 'csstats_db_name',
             'aes_stats_db_host', 'aes_stats_db_user', 'aes_stats_db_pass', 'aes_stats_db_name',
             'ftp_host', 'ftp_user', 'ftp_pass', 'ftp_path'

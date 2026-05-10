@@ -1,0 +1,699 @@
+language:
+  name: 'English'
+
+# General
+site:
+  title: 'GreyPanel'
+  description: 'Modern game server management panel'
+  welcome: 'Welcome to %site_name%!'
+
+nav:
+  navigation: 'Navigation'
+  home: 'Home'
+  forum: 'Forum'
+  news: 'News'
+  monitor: 'Monitor'
+  stats: 'Statistics'
+  bans: 'Ban List'
+  vip: 'VIP'
+  login: 'Login'
+  register: 'Register'
+  logout: 'Logout'
+  profile: 'Profile'
+  balance: 'Balance'
+  settings: 'Settings'
+  admin: 'Admin'
+  create_thread: 'Create Thread'
+  top_up: 'Top Up Balance'
+  site: 'To site'
+  language: 'Language'
+
+home:
+  chat:
+    title: 'General Chat'
+    placeholder: 'Write a message...'
+    send: 'Send'
+    empty: 'No messages. Be the first!'
+    login_required: 'Log in to chat.'
+  monitor:
+    title: 'Server Monitor'
+    offline: 'No active servers'
+    players: 'Players'
+    map: 'Map'
+    connect: 'Connect'
+    details: 'Details'
+    loading: 'Loading...'
+  welcome_block:
+    guest_buttons:
+      login: 'Login'
+      register: 'Register'
+
+forum:
+  title: 'Forum'
+  search: 'Search'
+  back: 'Back to forums'
+  back_to_list: 'Back to topics'
+  create_thread: 'Create Thread'
+  replies: 'Replies'
+  views: 'Views'
+  last_post: 'Last Post'
+  no_threads: 'No threads yet. Be the first!'
+  no_forums: 'No forums in this category'
+  empty: 'Forum is empty'
+  closed: 'Thread closed'
+  reply:
+    title: 'Reply'
+    send: 'Send'
+    login_required: 'Log in to reply'
+  thread:
+    author: 'Author'
+    created: 'Created'
+    edited: 'edited'
+    quote: 'Quote'
+    edit: 'Edit'
+    delete: 'Delete'
+  create:
+    title_label: 'Title'
+    content_label: 'Message'
+    submit: 'Create Thread'
+  edit:
+    title: 'Edit Thread'
+    submit: 'Save'
+  section: "Section"
+  topics: "Topics"
+  last_message: "Last message"
+  no_messages: "No messages"
+  empty_hint: "Check back later or be the first author!"
+  topic: "Topic"
+  no_replies: "No replies"
+  reply_placeholder: "Your message..."
+  reply_empty: "Enter a message"
+  search_placeholder: "Enter search query (min. 3 characters)"
+  search_min: "Enter at least 3 characters."
+  found: "Found"
+  not_found: "Nothing found."
+  create_thread_in: "Create thread in"
+  markdown_hint: "Markdown supported."
+  edit_thread: "Edit thread"
+  edit_post: "Edit post"
+  content_empty: 'Message cannot be empty'
+  delete_thread_confirm: 'Are you sure you want to delete this thread?'
+  delete: 'Delete'
+
+news:
+  title: 'News'
+  read_more: 'Read more'
+  published: 'Published'
+  no_news: 'No news yet'
+  back: 'All news'
+  edit: 'Edit'
+  no_news_hint: "Check back later!"
+
+monitor:
+  title: 'Server Monitor'
+  no_servers: 'No active servers'
+  loading: 'Loading data...'
+  status: 'Status'
+  server: 'Server'
+  players: 'Players'
+  map: 'Map'
+  connect: 'Connect'
+  offline: 'Offline'
+  online: 'Online'
+  unavailable: "Monitoring temporarily unavailable."
+
+stats:
+  title: 'Player Ranking'
+  unavailable: 'Statistics temporarily unavailable'
+  rank: 'Rank'
+  player: 'Player'
+  steam_id: 'Steam ID'
+  kills: 'Kills'
+  deaths: 'Deaths'
+  kd: 'K/D'
+  hs: 'HS%'
+  time: 'Time'
+  search: 'Search by nickname or Steam ID'
+  apply: 'Apply'
+  sort: 'Sort'
+  no_data: 'No data'
+  back: "Back to ranking"
+  main: "Main"
+  additional: "Additional"
+  game_time: "Game time"
+  last_seen: "Last seen"
+  shots: "Shots"
+  hits: "Hits"
+  defuses: "Defuses"
+  plants: "Bomb plants"
+  explosions: "Explosions"
+  skill: "Skill"
+  rank_pos: "Rank position"
+  unavailable_hint: "Statistics integration not configured on servers."
+  contact_admin: "Contact the administrator."
+
+bans:
+  title: 'Ban List'
+  search_placeholder: 'Search by nickname, IP or reason'
+  status_all: 'All statuses'
+  status_active: 'Active'
+  status_expired: 'Expired'
+  status_unbanned: 'Unbanned'
+  status_paid: 'Paid unban'
+  apply: 'Apply'
+  player: 'Player'
+  admin: 'Admin'
+  reason: 'Reason'
+  date: 'Date'
+  expires: 'Expires'
+  server: 'Server'
+  status: 'Status'
+  actions: 'Actions'
+  request_unban: 'Request unban'
+  paid_unban: 'Buy unban'
+  no_bans: 'No bans found'
+  no_reason: "No reason given"
+  demo_prompt: "Enter demo link (if any):"
+  request_created: "Request created! Open the thread?"
+  paid_confirm_prefix: "Write off"
+  paid_success: "Ban removed successfully! Page will reload."
+  unauthorized: 'Authorization required'
+  not_found: 'Ban not found'
+  forum_not_set: 'Forum for unban requests is not configured'
+  create_thread_failed: 'Failed to create thread'
+  paid_disabled: 'Paid unban is disabled'
+  insufficient_funds: 'Insufficient funds'
+  delete_failed: 'Failed to delete ban'
+
+balance:
+  title: 'Balance'
+  your_balance: 'Your balance'
+  total_recharge: 'Total topped up'
+  history: 'Transaction history'
+  top_up: 'Top up balance'
+  yoomoney: 'YooMoney'
+  other_methods: 'Other methods in development'
+  history_empty: 'No transactions'
+  amount: 'Amount'
+  type: 'Type'
+  description: 'Description'
+  date: 'Date'
+  replenishment: "Replenishment"
+  write_off: "Write-off"
+  recent: "Recent transactions"
+  choose_method: "Choose top-up method:"
+  go_to_balance: "Go to balance"
+
+auth:
+  login: 'Login'
+  register: 'Registration'
+  username_email: 'Username or Email'
+  username: 'Username'
+  email: 'Email'
+  password: 'Password'
+  password_confirm: 'Confirm password'
+  remember_me: 'Remember me'
+  login_button: 'Log in'
+  register_button: 'Register'
+  no_account: 'No account?'
+  has_account: 'Already have an account?'
+  login_link: 'Register'
+  register_link: 'Log in'
+  captcha_required: 'Please confirm you are not a robot.'
+  logged_in: 'User logged in'
+  registered: 'User registered'
+  empty_fields: 'All fields must be filled'
+  username_length: 'Username must be between 3 and 32 characters'
+  password_length: 'Password must be at least 8 characters'
+  password_complexity: 'Password must contain lowercase, uppercase letters and digits'
+  username_taken: 'Username already taken'
+  account_banned: 'Your account is blocked'
+  login_failed: 'Invalid username or password'
+  email_invalid: 'Invalid email'
+  email_taken: 'User with this email already exists'
+  password_mismatch: 'Passwords do not match'
+
+profile:
+  title: 'Profile'
+  stats: 'Statistics'
+  threads: 'Forum threads'
+  posts: 'Posts'
+  likes: 'Likes'
+  referral: 'Referral program'
+  referral_desc: 'Invite friends and get 10% of their top-ups.'
+  referral_link: 'Your referral link'
+  copy: 'Copy'
+  referrals: 'Referred users'
+  no_referrals: 'No referrals'
+  earnings: 'Earned'
+  copy_success: "Link copied!"
+  copy_error: "Failed to copy. Copy manually."
+  registration_date: "Registration date"
+
+settings:
+  title: 'Account settings'
+  email: 'Email'
+  new_password: 'New password'
+  password_confirm: 'Confirm new password'
+  avatar: 'Avatar'
+  save: 'Save'
+  password_placeholder: "Leave empty to keep unchanged"
+  email_invalid: 'Invalid email'
+  email_taken: 'This email is already in use'
+  password_short: 'Password must be at least 8 characters'
+  password_weak: 'Password must contain lowercase, uppercase letters and digits'
+  password_mismatch: 'Passwords do not match'
+  password_changed: 'Password changed successfully'
+  avatar_updated: 'Avatar updated.'
+  avatar_error: 'Failed to save avatar: %message%'
+  language_changed: 'Language changed'
+  settings_saved: 'Settings saved'
+
+avatar:
+  upload_error: 'File upload error.'
+  too_big: 'File too large (max 2 MB).'
+  invalid_type: 'Only JPEG, PNG, GIF, WEBP are allowed.'
+
+errors:
+  404: 'Page not found'
+  405: 'Method not allowed'
+  429: 'Too many requests'
+  500: 'Internal server error'
+  try_again: 'Try again later'
+  back: 'Go back'
+  unknown: "Unknown error"
+  network: "Network error"
+
+payment:
+  success: "Payment successful!"
+  success_text: "Money added to your balance."
+  redirecting: "Redirecting to payment system..."
+  redirect_manual: "If not redirected, click the button below."
+  go_to_pay: "Go to payment"
+  invalid_amount: 'Invalid amount'
+
+# Admin – все ключи в одной секции
+admin:
+  title: 'Control Panel'
+  dashboard: 'Dashboard'
+  users: 'Users'
+  groups: 'Groups'
+  services: 'Services'
+  tariffs: 'Tariffs'
+  servers: 'Servers'
+  forum: 'Forum'
+  news: 'News'
+  themes: 'Themes'
+  modules: 'Modules'
+  seo: 'SEO'
+  payments: 'Payments'
+  logs: 'Logs'
+  settings: 'Site settings'
+  security: 'Security'
+  editor: 'Theme editor'
+  menu: 'Menu'
+  pages: 'Pages'
+  quick_actions: 'Quick actions'
+  save: 'Save'
+  cancel: 'Cancel'
+  delete: 'Delete'
+  edit: 'Edit'
+  add: 'Add'
+  search: 'Search'
+  forum_categories: 'Forum Categories'
+  forum_sections: 'Category Sections'
+  add_category: 'Add Category'
+  add_section: 'Add Section'
+  edit_category: 'Edit Category'
+  edit_section: 'Edit Section'
+  sort_order: 'Sort Order'
+  actions: 'Actions'
+  move_hint: 'Drag rows to change order'
+  no_categories: 'No categories'
+  no_sections: 'No sections in this category'
+  group_name: 'Group Name'
+  flags: 'Flags (permissions)'
+  flags_hint: 'Letters from a to z. Each letter grants specific permissions.'
+  is_default: 'Default Group'
+  is_default_hint: 'Assigned to new users'
+  add_group: 'Add Group'
+  edit_group: 'Edit Group'
+  no_groups: 'No groups'
+  server_settings: 'Server Settings'
+  main_params: 'Main Parameters'
+  type: 'Server Type'
+  ip: 'IP Address'
+  port: 'Port (game)'
+  query_port: 'Query Port'
+  rcon_port: 'RCON Port'
+  disable: 'Disable (hide from monitor)'
+  privilege_integration: 'Where to save purchased services'
+  banlist_connection: 'AmxBans Connection'
+  ftp_connection: 'FTP Connection (users.ini)'
+  stats_integration: 'Statistics'
+  stats_engine: 'Stats Engine'
+  db_host: 'DB Host'
+  db_user: 'DB User'
+  db_password: 'DB Password'
+  db_name: 'DB Name'
+  db_prefix: 'Table Prefix'
+  leave_empty: 'Leave empty to keep unchanged'
+  test_connection: 'Test Connection'
+  service_name: 'Service Name'
+  service_description: 'Description'
+  rights: 'Permissions (flags)'
+  servers_available: 'Servers where available'
+  group_restriction: 'Group Restriction'
+  all_groups: 'All Groups'
+  create_service: 'Create Service'
+  add_tariff: 'Add Tariff'
+  tariff_duration: 'Duration (days)'
+  tariff_price: 'Price (₽)'
+  tariff_active: 'Active'
+  select_service: 'Select a service first'
+  no_services: 'No services'
+  no_tariffs: 'No tariffs'
+  user_list: 'User List'
+  search_placeholder: 'Search by nickname or email'
+  group: 'Group'
+  balance: 'Balance'
+  banned: 'Banned'
+  edit_user: 'Edit'
+  yoomoney_settings: 'YooMoney Settings'
+  wallet: 'Wallet Number'
+  secret_key: 'Secret Key'
+  url_notifications: 'Notification URL'
+  copy: 'Copy'
+  recaptcha_settings: 'Google reCAPTCHA'
+  enable: 'Enable reCAPTCHA'
+  site_key: 'Site Key'
+  secret_key_field: 'Secret Key'
+  meta_tags: 'Meta Tags'
+  description: 'Description'
+  keywords: 'Keywords'
+  sitemap: 'Sitemap'
+  robots: 'robots.txt'
+  regenerate: 'Regenerate Now'
+  seo_settings: 'SEO Settings'
+  modules_list: 'Module Management'
+  enabled: 'Enabled'
+  news_list: 'News List'
+  heading: 'Title'
+  slug: 'Slug (URL)'
+  content: 'Content'
+  published: 'Publish'
+  author: 'Author'
+  views: 'Views'
+  add_news: 'Add News'
+  edit_news: 'Edit News'
+  delete_news: 'Delete'
+  file_tree: 'Theme Files'
+  new_file: 'New File'
+  new_folder: 'New Folder'
+  preview: 'Preview'
+  insert_block: 'Insert Block'
+  blocks_modal: 'Select Block'
+  current_file: 'No file selected'
+  file_saved: 'File saved'
+  themes_list: 'Themes'
+  active_theme: 'Active'
+  activate: 'Activate'
+  edit_theme: 'Edit'
+  site_name_field: 'Site Name'
+  protocol: 'Site Protocol'
+  manual_url: 'Full URL (optional)'
+  current_url: 'Current URL'
+  debug_mode: 'Debug Mode'
+  session_lifetime: 'Session Lifetime'
+  session_name: 'Session Cookie Name'
+  save_settings: 'Save All Settings'
+  theme_editor: 'Theme Editor'
+  loading: 'Loading'
+  close: 'Close'
+  current_folder: 'Current Folder'
+  name: 'Name'
+  size: 'Size'
+  modified: 'Modified'
+  enter_file_name: 'File name (with extension, e.g. header.tpl):'
+  enter_folder_name: 'Folder name:'
+  delete_item_confirm: 'Delete {path}?'
+  error_occurred: 'An error occurred'
+  no_preview: 'No preview'
+  version: 'Version'
+  username: 'Username'
+  email: 'Email'
+  new_password: 'New password'
+  issue_service: 'Issue Service'
+  back_to_services: 'Back to services'
+  service: 'Service'
+  tariff: 'Tariff'
+  select_service_first: 'Select a service first'
+  bind_type: 'Bind Type'
+  nick_password: 'Nick + Password'
+  password: 'Password'
+  nick: 'Nick'
+  activate_on_servers: 'Servers to activate'
+  issue: 'Issue'
+  days: 'days'
+  load_error: 'Load error'
+  of_user: 'of user'
+  expiry_date: 'Expiry Date'
+  expiry_hint: 'Leave empty for permanent service'
+  user_services: 'User Services'
+  back_to_users: 'Back to users'
+  tariff_days: 'Days'
+  forever: 'Forever'
+  expired: 'Expired'
+  confirm_delete_service: 'Delete service?'
+  group_on_purchase: 'Group upon purchase'
+  no_change: 'Do not change'
+  services_list: 'Service list'
+  tariffs_of_service: 'Service tariffs'
+  service_updated: 'Service updated'
+  network_error: 'Network error'
+  tariff_updated: 'Tariff updated'
+  confirm_delete_tariff: 'Delete tariff?'
+  edit_tariff: 'Edit tariff'
+  for_service: 'for service'
+  install_warning: 'Warning!'
+  install_warning_text: 'The /install folder still exists. Delete it for security.'
+  confirm_delete: 'Are you sure you want to delete?'
+  edit_service: 'Edit service'
+  main_settings: "Main settings"
+  extended_settings: "Extended settings"
+  site_name_hint: "Displayed in page titles, meta tags, footer."
+  protocol_auto: "Auto (detect from request)"
+  protocol_hint: "If «Auto» is selected, the protocol of the current request will be used."
+  manual_url_hint: "If provided, this URL will be used instead of the automatically detected one."
+  current_url_display: "Current URL"
+  debug_mode_hint: "Enable only for debugging!"
+  session_lifetime_hint: "Default is 7200 (2 hours). You need to re-login after changing."
+  session_name_hint: "Only Latin letters, digits, underscores."
+  in_category: "in category"
+  save_order: "Save order"
+  all_time: "All time"
+  forum_threads: "Forum threads"
+  total_threads: "Total threads"
+  now_online: "Online now"
+  registrations_7_days: "Registrations for 7 days"
+  recent_activity: "Recent activity"
+  all_logs: "All logs"
+  action: "Action"
+  guest: "Guest"
+  no_records: "No records"
+  recent_users: "Recent users"
+  no_users: "No users"
+  all_users: "All users"
+  registrations: "Registrations"
+  module: "Module"
+  status: "Status"
+  chat: "Chat"
+  bans: "Ban List"
+  edit_server: "Edit server"
+  add_server: "Add server"
+  none: "None"
+  ban_list_auto: "Ban list will be automatically connected from this server."
+  ftp_password: "FTP password"
+  stats_db_connection: "Statistics database connection"
+  table_name: "Table name"
+  privileges: "Privileges"
+  no_servers: "No servers"
+  rights_hint: "String of flags to be issued on the server (AMX/SourceMod)."
+  group_restriction_hint: "Leave empty to make the service available to everyone."
+  active: "Active"
+  select_forum: "Select forum"
+  enable_ban_list: "Enable ban list"
+  unban_forum: "Forum ID for unban requests"
+  paid_unban_price: "Paid unban price (RUB)"
+  ban_settings: "AMXBans Settings"
+  yoomoney: "YooMoney"
+  secret_key_hint: "Current key is hidden. Enter a new one only if you want to change."
+  url_notifications_hint: "In your YooMoney dashboard, set the following HTTP notification URL:"
+  yoomoney_notify_hint: "Insert this URL into the «Notification URL» field in your app settings at"
+  enable_recaptcha: "Enable reCAPTCHA on login and registration forms"
+  get_keys_hint: "Get keys at"
+  enable_sitemap: "Enable sitemap.xml"
+  done: "Done"
+  error: "Error"
+  offline: "Offline"
+  online: "Online"
+  monitor: "Monitor"
+  tariffs_for: "Service tariffs"
+  stats: "Statistics"
+  back_to_categories: "Back to categories"
+  icon: "Icon"
+  group_not_found: 'Group not found'
+  cannot_assign_higher_group: 'You cannot assign a group with higher privileges than yours.'
+  user_edited: 'Edited user ID: %id%'
+  balance_change: 'Balance changed by admin'
+  payment_settings_saved: 'Payment settings saved'
+  ban_settings_saved: 'Ban list settings saved'
+  upload_no_file: 'File not uploaded'
+  upload_invalid_extension: 'Only images (JPG, PNG, GIF, WEBP) are allowed'
+  upload_dir_failed: 'Could not create upload directory'
+  upload_server_error: 'Server error: %message%'
+  category_saved: 'Category saved'
+  category_deleted: 'Category deleted'
+  forum_saved: 'Forum saved'
+  forum_deleted: 'Forum deleted'
+  news_created: 'News created'
+  news_updated: 'News updated'
+  news_deleted: 'News deleted'
+  news_create_failed: 'Failed to create news'
+  seo_settings_saved: 'SEO settings saved'
+  server_saved: 'Server saved'
+  service_name_required: 'Service name is required'
+  service_created: 'Service created'
+  service_deleted: 'Service deleted'
+  service_update_error: 'Service update error'
+  tariff_update_error: 'Tariff update error'
+  tariff_invalid: 'Duration and price must be positive'
+  tariff_created: 'Tariff added'
+  tariff_deleted: 'Tariff deleted'
+  site_settings_saved: 'Settings saved. Re-login to apply session changes.'
+  group_name_required: 'Group name is required'
+  group_created: 'Group created'
+  group_updated: 'Group updated'
+  group_deleted: 'Group deleted'
+  service_or_tariff_not_found: 'Service or tariff not found'
+  password_required: 'Password is required'
+  service_issued: 'Service issued successfully'
+  service_activation_failed: 'Service activation failed'
+  user_service_deleted: 'User service deleted'
+  service_expiry_updated: 'Service expiry updated.'
+  service_made_permanent: 'Service made permanent.'
+  default_language: 'Default language'
+  default_language_hint: 'Used when the language is not determined otherwise.'
+  chart_registrations: 'Registrations'
+  seo_regenerated: 'Sitemap regenerated successfully'
+  seo_regenerate_error: 'Sitemap regeneration error'
+  sort_order_saved: 'Order saved'
+  module_toggle_error: 'Error updating module status'
+  user: 'User'
+  details: 'Details'
+  date: 'Date'
+
+widgets:
+  online: 'Online now'
+  top_donators: 'Top donors'
+  last_topics: 'Latest topics'
+  last_bans: 'Latest bans'
+  all_topics: 'All topics'
+  all_bans: 'All bans'
+  collapse: 'Collapse/Expand'
+  no_users: "No active users"
+  no_data: "No data"
+  no_topics: "No topics"
+  no_bans: "No bans"
+
+chat:
+  unauthorized: 'Authorization required'
+  message_empty: 'Message cannot be empty'
+  forbidden: 'Access denied'
+  send_error: 'Error sending message'
+
+online:
+  just_now: 'just now'
+  min_ago: '%count% min ago'
+  hour_ago: '%count% h ago'
+
+editor:
+  link_title: 'Insert Link'
+  image_title: 'Insert Image'
+  emoji_title: 'Emoji'
+  image_error: 'Image upload error'
+
+theme_editor:
+  file_saved: 'File saved'
+  error_occurred: 'An error occurred'
+  confirm_delete: 'Delete {path}?'
+
+footer:
+  navigation: 'Navigation'
+  contacts: 'Contacts'
+  copyright: '© %year% %site_name%. All rights reserved.'
+
+common:
+  yes: 'Yes'
+  no: 'No'
+sidebar:
+  collapse: 'Collapse'
+  expand: 'Expand'
+theme:
+  light: 'Light'
+  dark: 'Dark'
+  auto: 'Auto'
+
+install:
+  title: 'GreyPanel Installation'
+  step1_title: 'Step 1: Environment Check'
+  step2_title: 'Step 2: Database'
+  step3_title: 'Step 3: Administrator'
+  step4_title: 'Step 4: Finish'
+  requirement: 'Requirement'
+  status: 'Status'
+  all_ok: 'All requirements met'
+  not_ok: 'Some requirements not met'
+  continue: 'Continue'
+  check_again: 'Check again'
+  db_host: 'Host'
+  db_name: 'DB Name'
+  db_user: 'User'
+  db_pass: 'Password'
+  db_prefix: 'Table prefix'
+  test_connection: 'Test connection'
+  db_success: 'Connection successful'
+  change: 'Change'
+  connect_error: 'Connection error'
+  admin_username: 'Admin login'
+  admin_email: 'Email'
+  admin_password: 'Password'
+  admin_password2: 'Confirm password'
+  admin_required: 'All fields are required'
+  password_mismatch: 'Passwords do not match'
+  password_length: 'Password must be at least 12 characters'
+  password_complexity: 'Password must contain lowercase, uppercase, digits and special character'
+  email_invalid: 'Invalid email'
+  state_lost: 'Installation data lost, start over'
+  tables_exist: 'Tables already exist, cannot install'
+  migration_missing: 'Migration file not found'
+  install_error: 'Installation error'
+  env_write_error: 'Could not write .env file'
+  install_text: 'Click «Install» to complete'
+  install_button: 'Install'
+  prefix_invalid: 'Invalid prefix (only latin letters, digits, _)'
+  writable: 'Writable check'
+  menu:
+    forum: 'Forum'
+    forum_desc: 'Forum section'
+    vip: 'VIP'
+    vip_desc: 'VIP privileges'
+    bans: 'Bans'
+    bans_desc: 'Ban list'
+    stats: 'Statistics'
+    stats_desc: 'Player ranking'
+    auth: 'Authorization'
+    auth_desc: 'Login/Registration'
+  default_group_user: 'User'
+  default_group_admin: 'Administrator'
+  error_occurred: 'An error occurred'

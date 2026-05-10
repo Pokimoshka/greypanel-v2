@@ -16,12 +16,11 @@ class CacheService
         $this->cache = new FilesystemAdapter($namespace, 0, __DIR__ . '/../../var/cache');
     }
 
-    public function get(string $key, callable $callback, int $ttl = 3600)
+    public function get(string $key, callable $callback, int $ttl = 3600): mixed
     {
         return $this->cache->get($key, function (ItemInterface $item) use ($callback, $ttl) {
             $item->expiresAfter($ttl);
 
-            // Проверяем, сколько параметров ожидает коллбек
             $reflection = new \ReflectionFunction($callback);
             if ($reflection->getNumberOfParameters() > 0) {
                 return $callback($item);

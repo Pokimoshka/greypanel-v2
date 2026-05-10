@@ -1,7 +1,9 @@
 parameters:
-    level: 5
+    bootstrapFiles:
+        - phpstan-bootstrap.php
+    level: max
     paths:
         - src
-    excludePaths:
-        analyseAndScan:
-            - src/Core/Database.php
+        - config
+        - bin
+        - public/index.php

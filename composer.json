@@ -17,7 +17,18 @@
         "league/flysystem-ftp": "^3.31",
         "xpaw/php-source-query-class": "^6.0",
         "league/commonmark": "^2.6",
-        "symfony/mime": "^8.0"
+        "symfony/mime": "^8.0",
+        "symfony/translation": "^8.0",
+        "symfony/yaml": "^8.0",
+        "symfony/validator": "^8.0",
+        "twig/string-extra": "^3.24",
+        "twig/intl-extra": "^3.24",
+        "symfony/lock": "^8.0",
+        "symfony/serializer": "^8.0",
+        "symfony/property-access": "^8.0",
+        "symfony/html-sanitizer": "^8.0",
+        "symfony/routing": "^8.0",
+        "symfony/dependency-injection": "^8.0"
     },
     "require-dev": {
         "symfony/var-dumper": "^7.2",
@@ -33,6 +44,9 @@
         "optimize-autoloader": true
     },
     "scripts": {
-        "phpstan": "vendor/bin/phpstan analyse"
+        "phpstan": "vendor/bin/phpstan analyse --memory-limit=2048M",
+        "phpstan-report": "vendor\\bin\\phpstan analyse --memory-limit=2048M --error-format=raw > phpstan_report.txt",
+        "phpstan-clear-result-cache": "vendor/bin/phpstan clear-result-cache",
+        "fix": "php-cs-fixer fix --config=.php-cs-fixer.dist.php"
     }
 }

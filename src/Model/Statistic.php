@@ -15,7 +15,7 @@ class Statistic
     public int $shots;
     public int $hits;
     public float $skill;
-    public int $gameTime; // в секундах
+    public int $gameTime;
     public int $lastSeen;
     public int $rank;
     public int $teamkills;
@@ -29,7 +29,6 @@ class Statistic
     public int $winct;
     public int $connects;
 
-    // Дополнительные поля для некоторых драйверов
     public ?int $suicides = null;
     public ?string $skillName = null;
     public ?string $skillColor = null;
@@ -75,7 +74,9 @@ class Statistic
 
     public function getGameTimeFormatted(): string
     {
-        if ($this->gameTime < 60) return "{$this->gameTime} сек";
+        if ($this->gameTime < 60) {
+            return "{$this->gameTime} сек";
+        }
         $hours = intdiv($this->gameTime, 3600);
         $minutes = intdiv($this->gameTime % 3600, 60);
         return $hours ? "{$hours} ч {$minutes} мин" : "{$minutes} мин";
@@ -83,7 +84,9 @@ class Statistic
 
     public function getLastSeenFormatted(): string
     {
-        if ($this->lastSeen == 0) return 'Давно';
+        if ($this->lastSeen == 0) {
+            return 'Давно';
+        }
         return date('d.m.Y H:i', $this->lastSeen);
     }
 }

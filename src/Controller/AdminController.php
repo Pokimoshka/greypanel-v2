@@ -16,12 +16,17 @@ use GreyPanel\Interface\Repository\MoneyLogRepositoryInterface;
 use GreyPanel\Interface\Repository\OnlineRepositoryInterface;
 use GreyPanel\Interface\Repository\UserRepositoryInterface;
 use GreyPanel\Interface\Service\EncryptionServiceInterface;
+use GreyPanel\Interface\Service\PermissionServiceInterface;
+use GreyPanel\Interface\Service\SessionServiceInterface;
 use GreyPanel\Interface\Service\SettingsServiceInterface;
 use GreyPanel\Interface\Service\ThemeServiceInterface;
 use GreyPanel\Repository\UserGroupRepository;
-use GreyPanel\Service\SessionService;
+use GreyPanel\Service\ImageUploadService;
+use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
-class AdminController
+class AdminController extends AbstractController
 {
     public function __construct(
         private UserRepositoryInterface $userRepo,
@@ -32,10 +37,17 @@ class AdminController
         private ThemeServiceInterface $themeService,
         private ForumForumRepositoryInterface $forumForumRepo,
         private OnlineRepositoryInterface $onlineRepo,
-        private SessionService $session,
+        private SessionServiceInterface $session,
         private EncryptionServiceInterface $encryption,
-        private UserGroupRepository $groupRepo
+        private UserGroupRepository $groupRepo,
+        private PermissionServiceInterface $permissionService,
+        private ImageUploadService $imageUploadService,
+        TranslatorInterface $translator,
+        SerializerInterface $serializer,
+        ValidatorInterface $validator
     ) {
+        $this->translator = $translator;
+        parent::__construct($serializer, $validator, $translator);
     }
 
     public function index(Request $request): Response
@@ -48,7 +60,6 @@ class AdminController
         $recentLogs = $this->logRepo->findPaginated(1, 5);
         $recentUsers = $this->userRepo->findAllPaginated(1, 5);
 
-        // Проверяем, существует ли папка install (относительно корня проекта)
         $installPath = ROOT_DIR . '/install';
         $installExists = is_dir($installPath);
 
@@ -66,12 +77,12 @@ class AdminController
 
     public function users(Request $request): Response
     {
-        $page = (int)$request->get('page', 1);
+        $page = $request->getInt('page', 1);
         $perPage = 20;
-        $search = trim($request->get('search', ''));
+        $search = trim($request->getString('search', ''));
 
         if ($search) {
-            $users = $this->userRepo->search($search, $page, $perPage);
+            $users = $this->userRepo->findBySearchPaginated($search, $page, $perPage);
             $total = $this->userRepo->countSearch($search);
         } else {
             $users = $this->userRepo->findAllPaginated($page, $perPage);
@@ -100,23 +111,22 @@ class AdminController
         if ($request->isPost()) {
             $oldMoney = $user->getMoney();
 
-            $newGroupId = (int)$request->post('group_id');
-            $money = (int)$request->post('money');
-            $banned = (bool)$request->post('banned');
-            $newPassword = $request->post('password');
+            $newGroupId = $request->postInt('group_id');
+            $money = $request->postInt('money');
+            $banned = $request->postBool('banned');
+            $newPassword = $request->postString('password');
 
             $newGroup = $this->groupRepo->findById($newGroupId);
             if (!$newGroup) {
-                $_SESSION['flash_error'] = 'Группа не найдена';
+                $this->session->setFlash('error', $this->translator->trans('admin.group_not_found'));
                 return new RedirectResponse('/admin/users');
             }
 
-            // Проверка на повышение прав через PermissionService
-            $adminFlags = $_SESSION['user_flags'] ?? '';
+            $adminFlags = $this->permissionService->getFlags();
             $targetFlags = $newGroup->getFlags();
             foreach (str_split($targetFlags) as $c) {
                 if (!str_contains($adminFlags, $c)) {
-                    $_SESSION['flash_error'] = 'Вы не можете назначить группу с правами выше ваших.';
+                    $this->session->setFlash('error', $this->translator->trans('admin.cannot_assign_higher_group'));
                     return new RedirectResponse('/admin/users');
                 }
             }
@@ -130,13 +140,17 @@ class AdminController
             }
 
             $this->userRepo->update($user);
-            $this->logRepo->add($this->session->getUserId(), 'edit_user', "Редактирован пользователь ID: {$id}");
+            $this->logRepo->add(
+                $this->session->getUser()->getId(),
+                'edit_user',
+                $this->translator->trans('admin.user_edited', ['%id%' => $id])
+            );
 
             $diff = $money - $oldMoney;
             if ($diff != 0) {
                 $type = ($diff > 0) ? 0 : 1;
                 $amount = abs($diff);
-                $title = 'Изменение баланса администратором';
+                $title = $this->translator->trans('admin.balance_change');
                 $this->moneyLogRepo->add($user->getId(), $amount, $title, $type);
             }
 
@@ -151,7 +165,7 @@ class AdminController
 
     public function logs(Request $request): Response
     {
-        $page = (int)$request->get('page', 1);
+        $page = $request->getInt('page', 1);
         $perPage = 30;
         $logs = $this->logRepo->findPaginated($page, $perPage);
         $total = $this->logRepo->count();
@@ -167,13 +181,15 @@ class AdminController
     public function paymentSettings(Request $request): Response
     {
         if ($request->isPost()) {
-            $wallet = trim($request->post('yoomoney_wallet'));
-            $secret = trim($request->post('yoomoney_secret'));
+            $wallet = trim($request->postString('yoomoney_wallet'));
+            $secret = trim($request->postString('yoomoney_secret'));
+
             if ($secret !== '') {
                 $encryptedSecret = $this->encryption->encrypt($secret);
                 $this->settings->set('yoomoney_secret', $encryptedSecret);
             }
             $this->settings->set('yoomoney_wallet', $wallet);
+            $this->session->setFlash('success', $this->translator->trans('admin.payment_settings_saved'));
             return new RedirectResponse('/admin/payments');
         }
 
@@ -191,7 +207,7 @@ class AdminController
     public function themes(Request $request): Response
     {
         if ($request->isPost()) {
-            $theme = $request->post('theme');
+            $theme = $request->postString('theme');
             if ($this->themeService->setActiveTheme($theme)) {
                 return new RedirectResponse('/admin/themes?success=1');
             } else {
@@ -212,7 +228,7 @@ class AdminController
     public function themeSettings(Request $request): Response
     {
         if ($request->isPost()) {
-            $theme = $request->post('theme');
+            $theme = $request->postString('theme');
             $this->themeService->setActiveTheme($theme);
             return new RedirectResponse('/admin/theme');
         }
@@ -228,28 +244,29 @@ class AdminController
     public function banSettings(Request $request): Response
     {
         if ($request->isPost()) {
-            $this->settings->set('amxbans_active', $request->post('amxbans_active') ? '1' : '0');
-            $this->settings->set('amxbans_host', $request->post('amxbans_host'));
-            $this->settings->set('amxbans_db', $request->post('amxbans_db'));
-            $this->settings->set('amxbans_user', $request->post('amxbans_user'));
-            if ($pass = $request->post('amxbans_pass')) {
+            $this->settings->set('banlist_active', $request->postBool('banlist_active') ? '1' : '0');
+            $this->settings->set('banlist_host', $request->postString('banlist_host'));
+            $this->settings->set('banlist_db', $request->postString('banlist_db'));
+            $this->settings->set('banlist_user', $request->postString('banlist_user'));
+            if ($pass = $request->postString('banlist_pass')) {
                 $encrypted = $this->encryption->encrypt($pass);
-                $this->settings->set('amxbans_pass', $encrypted);
+                $this->settings->set('banlist_pass', $encrypted);
             }
-            $this->settings->set('amxbans_prefix', $request->post('amxbans_prefix'));
-            $this->settings->set('amxbans_forum', $request->post('amxbans_forum'));
-            $this->settings->set('buy_razban', $request->post('buy_razban'));
+            $this->settings->set('banlist_prefix', $request->postString('banlist_prefix'));
+            $this->settings->set('banlist_forum', $request->postString('banlist_forum'));
+            $this->settings->set('buy_razban', $request->postString('buy_razban'));
+            $this->session->setFlash('success', $this->translator->trans('admin.ban_settings_saved'));
             return new RedirectResponse('/admin/bans/settings');
         }
 
         $settings = [
-            'amxbans_active' => $this->settings->get('amxbans_active'),
-            'amxbans_host' => $this->settings->get('amxbans_host'),
-            'amxbans_db' => $this->settings->get('amxbans_db'),
-            'amxbans_user' => $this->settings->get('amxbans_user'),
-            'amxbans_pass' => $this->settings->get('amxbans_pass'),
-            'amxbans_prefix' => $this->settings->get('amxbans_prefix'),
-            'amxbans_forum' => $this->settings->get('amxbans_forum'),
+            'banlist_active' => $this->settings->get('banlist_active'),
+            'banlist_host' => $this->settings->get('banlist_host'),
+            'banlist_db' => $this->settings->get('banlist_db'),
+            'banlist_user' => $this->settings->get('banlist_user'),
+            'banlist_pass' => $this->settings->get('banlist_pass'),
+            'banlist_prefix' => $this->settings->get('banlist_prefix'),
+            'banlist_forum' => $this->settings->get('banlist_forum'),
             'buy_razban' => $this->settings->get('buy_razban'),
         ];
 
@@ -265,7 +282,7 @@ class AdminController
     public function statsRegistrations(Request $request): JsonResponse
     {
         $data = $this->userRepo->getRegistrationsLastDays(7);
-        return new JsonResponse($data);
+        return $this->json($data);
     }
 
     public function uploadImage(Request $request): JsonResponse
@@ -273,46 +290,14 @@ class AdminController
         try {
             $file = $request->files()['image'] ?? null;
             if (!$file || $file->getError() !== UPLOAD_ERR_OK) {
-                return new JsonResponse(['error' => 'Файл не загружен'], 400);
+                return $this->json(['error' => $this->translator->trans('admin.upload_no_file')], 400);
             }
 
-            // Проверка MIME через finfo (без finfo_close, т.к. объект освободится сам)
-            $finfo = finfo_open(FILEINFO_MIME_TYPE);
-            $mime = finfo_file($finfo, $file->getPathname());
-            $allowedMimes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-            if (!in_array($mime, $allowedMimes)) {
-                return new JsonResponse(['error' => 'Разрешены только изображения (JPEG, PNG, GIF, WEBP)'], 400);
-            }
-
-            $uploadDir = __DIR__ . '/../../public/uploads/';
-            if (!is_dir($uploadDir) && !mkdir($uploadDir, 0755, true)) {
-                throw new \RuntimeException('Не удалось создать директорию для загрузок');
-            }
-
-            $filename = uniqid() . '.webp';
-            $targetPath = $uploadDir . $filename;
-
-            // Создаём менеджер с драйвером GD (или Imagick, если предпочитаете)
-            $manager = \Intervention\Image\ImageManager::usingDriver(
-                \Intervention\Image\Drivers\Imagick\Driver::class
-            );
-
-            // Декодируем загруженный файл
-            $image = $manager->decodeSplFileInfo($file);
-
-            // Изменяем размер (максимальная ширина 1200, высота пропорционально)
-            $image->scale(width: 1200);
-
-            // Кодируем в WebP с качеством 85
-            $encoded = $image->encodeUsingFormat(\Intervention\Image\Format::WEBP, quality: 85);
-
-            // Сохраняем на диск
-            $encoded->save($targetPath);
-
-            return new JsonResponse(['url' => '/uploads/' . $filename]);
+            $url = $this->imageUploadService->upload($file, 'uploads');
+            return $this->json(['url' => $url]);
         } catch (\Throwable $e) {
             error_log('Upload error: ' . $e->getMessage());
-            return new JsonResponse(['error' => 'Ошибка сервера: ' . $e->getMessage()], 500);
+            return $this->json(['error' => $this->translator->trans('admin.upload_server_error', ['%message%' => $e->getMessage()])], 500);
         }
     }
 }

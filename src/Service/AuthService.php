@@ -4,54 +4,46 @@ declare(strict_types=1);
 
 namespace GreyPanel\Service;
 
+use GreyPanel\Dto\RegisterDto;
+use GreyPanel\Exception\AuthenticationException;
 use GreyPanel\Interface\Repository\UserRepositoryInterface;
 use GreyPanel\Interface\Service\AuthServiceInterface;
 use GreyPanel\Model\User;
 use GreyPanel\Model\UserGroup;
 use GreyPanel\Repository\UserGroupRepository;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 final class AuthService implements AuthServiceInterface
 {
-    private UserRepositoryInterface $userRepo;
-    private UserGroupRepository $groupRepo;
-    private PermissionService $permissionService;
-
     public function __construct(
-        UserRepositoryInterface $userRepo,
-        UserGroupRepository $groupRepo,
-        PermissionService $permissionService
+        private UserRepositoryInterface $userRepo,
+        private UserGroupRepository $groupRepo,
+        private TranslatorInterface $translator,
+        private ValidatorInterface $validator
     ) {
-        $this->userRepo = $userRepo;
-        $this->groupRepo = $groupRepo;
-        $this->permissionService = $permissionService;
     }
 
-    public function register(string $username, string $email, string $password, string $passwordConfirm, string $ip, int $referralId = 0): User|string
+    public function register(string $username, string $email, string $password, string $passwordConfirm, string $ip, int $referralId = 0): User
     {
-        if (empty($username) || empty($email) || empty($password)) {
-            return 'Заполните все поля';
-        }
-        if ($password !== $passwordConfirm) {
-            return 'Пароли не совпадают';
-        }
-        if (strlen($username) < 3 || strlen($username) > 32) {
-            return 'Логин должен быть от 3 до 32 символов';
-        }
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            return 'Некорректный email';
-        }
-        if (strlen($password) < 4) {
-            return 'Пароль должен быть не менее 4 символов';
-        }
-        if ($this->userRepo->findByUsername($username)) {
-            return 'Пользователь с таким ником уже существует';
-        }
-        if ($this->userRepo->findByEmail($email)) {
-            return 'Пользователь с таким email уже существует';
+        $dto = new RegisterDto(compact('username', 'email', 'password'));
+
+        $violations = $this->validator->validate($dto);
+        $errors = [];
+        foreach ($violations as $v) {
+            $errors[$v->getPropertyPath()] = $v->getMessage();
         }
 
+        if ($password !== $passwordConfirm) {
+            $errors['password'] = $this->translator->trans('auth.password_mismatch', [], 'validators');
+        }
         if ($referralId && !$this->userRepo->findById($referralId)) {
             $referralId = 0;
+        }
+
+        if (!empty($errors)) {
+            $firstError = reset($errors);
+            throw new AuthenticationException($firstError);
         }
 
         $defaultGroup = $this->groupRepo->findDefault();
@@ -62,7 +54,7 @@ final class AuthService implements AuthServiceInterface
                 'is_default' => true,
             ]);
             $this->groupRepo->create($defaultGroup);
-            $defaultGroup = $this->groupRepo->findDefault(); // получить с ID
+            $defaultGroup = $this->groupRepo->findDefault();
         }
 
         $user = new User([
@@ -77,25 +69,25 @@ final class AuthService implements AuthServiceInterface
         ]);
         $user->setGroup($defaultGroup);
         $userId = $this->userRepo->create($user, $password, $referralId);
-        $this->permissionService->loadUserPermissions($userId);
+
         return $this->userRepo->findById($userId);
     }
 
-    public function login(string $login, string $password): User|string
+    public function login(string $login, string $password): User
     {
         $data = $this->userRepo->findByLoginWithHash($login);
         if (!$data) {
-            return 'Неверный логин или пароль';
+            throw new AuthenticationException($this->translator->trans('auth.login_failed'));
         }
         $user = $data['user'];
         $hash = $data['hash'];
         if (!password_verify($password, $hash)) {
-            return 'Неверный логин или пароль';
+            throw new AuthenticationException($this->translator->trans('auth.login_failed'));
         }
         if ($user->isBanned()) {
-            return 'Ваш аккаунт заблокирован';
+            throw new AuthenticationException($this->translator->trans('auth.account_banned'));
         }
-        $this->permissionService->loadUserPermissions($user);
+
         return $user;
     }
 

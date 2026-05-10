@@ -2,86 +2,28 @@
 
 declare(strict_types=1);
 
-use GreyPanel\Command\CronCommand;
-use GreyPanel\Controller\AdminController;
-use GreyPanel\Controller\AdminForumController;
-use GreyPanel\Controller\AdminModuleController;
-use GreyPanel\Controller\AdminNewsController;
-use GreyPanel\Controller\AdminSeoController;
-use GreyPanel\Controller\AdminServerSettingsController;
-use GreyPanel\Controller\AdminUserGroupController;
-use GreyPanel\Controller\AuthController;
-use GreyPanel\Controller\BalanceController;
-use GreyPanel\Controller\BanController;
-use GreyPanel\Controller\ChatController;
-use GreyPanel\Controller\CronController;
-use GreyPanel\Controller\ForumController;
-use GreyPanel\Controller\HomeController;
-use GreyPanel\Controller\MonitorController;
-use GreyPanel\Controller\NewsController;
-use GreyPanel\Controller\OnlineController;
-use GreyPanel\Controller\PaymentController;
-use GreyPanel\Controller\SitemapController;
-use GreyPanel\Controller\UserController;
+use GreyPanel\Core\Config;
 use GreyPanel\Core\Container;
 use GreyPanel\Core\Database;
-use GreyPanel\Interface\Repository\ChatRepositoryInterface;
-use GreyPanel\Interface\Repository\ForumCategoryRepositoryInterface;
-use GreyPanel\Interface\Repository\ForumForumRepositoryInterface;
-use GreyPanel\Interface\Repository\ForumLikeRepositoryInterface;
-use GreyPanel\Interface\Repository\ForumPostRepositoryInterface;
-use GreyPanel\Interface\Repository\ForumReadRepositoryInterface;
-use GreyPanel\Interface\Repository\ForumThreadRepositoryInterface;
-use GreyPanel\Interface\Repository\LogRepositoryInterface;
-use GreyPanel\Interface\Repository\MoneyLogRepositoryInterface;
-use GreyPanel\Interface\Repository\MonitorServerRepositoryInterface;
-use GreyPanel\Interface\Repository\NewsRepositoryInterface;
 use GreyPanel\Interface\Repository\OnlineRepositoryInterface;
-use GreyPanel\Interface\Repository\PaymentRepositoryInterface;
 use GreyPanel\Interface\Repository\UserRepositoryInterface;
-use GreyPanel\Interface\Service\AuthServiceInterface;
-use GreyPanel\Interface\Service\AvatarServiceInterface;
-use GreyPanel\Interface\Service\BanServiceInterface;
-use GreyPanel\Interface\Service\ChatServiceInterface;
-use GreyPanel\Interface\Service\CronServiceInterface;
 use GreyPanel\Interface\Service\EncryptionServiceInterface;
-use GreyPanel\Interface\Service\ForumServiceInterface;
-use GreyPanel\Interface\Service\MarkdownServiceInterface;
-use GreyPanel\Interface\Service\ModuleServiceInterface;
-use GreyPanel\Interface\Service\MonitorServiceInterface;
-use GreyPanel\Interface\Service\NewsServiceInterface;
-use GreyPanel\Interface\Service\SeoServiceInterface;
+use GreyPanel\Interface\Service\PermissionServiceInterface;
 use GreyPanel\Interface\Service\SessionServiceInterface;
 use GreyPanel\Interface\Service\SettingsServiceInterface;
 use GreyPanel\Interface\Service\ThemeServiceInterface;
-use GreyPanel\Middleware\CsrfMiddleware;
+use GreyPanel\Middleware\LocaleMiddleware;
 use GreyPanel\Middleware\RateLimitMiddleware;
-use GreyPanel\Repository\ChatRepository;
-use GreyPanel\Repository\ForumCategoryRepository;
-use GreyPanel\Repository\ForumForumRepository;
-use GreyPanel\Repository\ForumLikeRepository;
-use GreyPanel\Repository\ForumPostRepository;
-use GreyPanel\Repository\ForumReadRepository;
-use GreyPanel\Repository\ForumThreadRepository;
-use GreyPanel\Repository\LogRepository;
-use GreyPanel\Repository\MoneyLogRepository;
-use GreyPanel\Repository\MonitorServerRepository;
-use GreyPanel\Repository\NewsRepository;
-use GreyPanel\Repository\OnlineRepository;
-use GreyPanel\Repository\PaymentRepository;
-use GreyPanel\Repository\ServiceRepository;
-use GreyPanel\Repository\ServiceServerRepository;
-use GreyPanel\Repository\TariffRepository;
-use GreyPanel\Repository\UserGroupRepository;
-use GreyPanel\Repository\UserRepository;
-use GreyPanel\Repository\UserServiceRepository;
 use GreyPanel\Service\AuthService;
 use GreyPanel\Service\AvatarService;
 use GreyPanel\Service\BanService;
+use GreyPanel\Service\CacheService;
 use GreyPanel\Service\ChatService;
 use GreyPanel\Service\CronService;
 use GreyPanel\Service\EncryptionService;
 use GreyPanel\Service\ForumService;
+use GreyPanel\Service\ImageUploadService;
+use GreyPanel\Service\LocaleManager;
 use GreyPanel\Service\MarkdownService;
 use GreyPanel\Service\ModuleService;
 use GreyPanel\Service\MonitorService;
@@ -93,155 +35,449 @@ use GreyPanel\Service\ServiceActivationService;
 use GreyPanel\Service\SessionService;
 use GreyPanel\Service\SettingsService;
 use GreyPanel\Service\SiteService;
+use GreyPanel\Service\StatisticsService;
 use GreyPanel\Service\ThemeService;
+use GreyPanel\Validator\Constraints\UniqueEmailValidator;
+use GreyPanel\Validator\Constraints\UniqueUsernameValidator;
+use Intervention\Image\Drivers\Imagick\Driver;
+use Intervention\Image\ImageManager;
 use Monolog\Handler\RotatingFileHandler;
 use Monolog\Logger;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\HtmlSanitizer\HtmlSanitizer;
+use Symfony\Component\HtmlSanitizer\HtmlSanitizerConfig;
+use Symfony\Component\Lock\LockFactory;
+use Symfony\Component\Lock\Store\FlockStore;
+use Symfony\Component\Serializer\Encoder\JsonEncoder;
+use Symfony\Component\Serializer\Normalizer\DateTimeNormalizer;
+use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
+use Symfony\Component\Serializer\Serializer;
+use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Translation\Loader\YamlFileLoader;
+use Symfony\Component\Translation\Translator;
+use Symfony\Component\Validator\Constraint;
+use Symfony\Component\Validator\ConstraintValidatorFactoryInterface;
+use Symfony\Component\Validator\ConstraintValidatorInterface;
+use Symfony\Component\Validator\Validation;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 return function (Container $container) {
-    $container->singleton(Database::class, function () {
+    $container->singleton(Config::class, function () {
+        return new Config($_ENV);
+    });
+
+    $container->singleton(Database::class, function (Container $c) {
+        $config = $c->get(Config::class);
         return new Database([
-            'DB_HOST' => $_ENV['DB_HOST'],
-            'DB_NAME' => $_ENV['DB_NAME'],
-            'DB_USER' => $_ENV['DB_USER'],
-            'DB_PASS' => $_ENV['DB_PASS'],
-            'DB_CHARSET' => $_ENV['DB_CHARSET'],
-            'DB_PREFIX' => $_ENV['DB_PREFIX'],
+            'DB_HOST'    => $config->get('DB_HOST'),
+            'DB_NAME'    => $config->get('DB_NAME'),
+            'DB_USER'    => $config->get('DB_USER'),
+            'DB_PASS'    => $config->get('DB_PASS'),
+            'DB_CHARSET' => $config->get('DB_CHARSET'),
+            'DB_PREFIX'  => $config->get('DB_PREFIX'),
         ]);
     });
 
-    // Репозитории
-    $container->bind(UserRepositoryInterface::class, function ($c) {
-        return new UserRepository(
-            $c->get(Database::class),
-            $c->get(UserGroupRepository::class)
-        );
-    });
-    $container->singleton(UserGroupRepository::class);
-    $container->bind(LogRepositoryInterface::class, LogRepository::class);
-    $container->bind(MoneyLogRepositoryInterface::class, MoneyLogRepository::class);
-    $container->bind(BanServiceInterface::class, BanService::class);
-    $container->bind(MonitorServerRepositoryInterface::class, MonitorServerRepository::class);
-    $container->bind(ForumCategoryRepositoryInterface::class, ForumCategoryRepository::class);
-    $container->bind(ForumForumRepositoryInterface::class, ForumForumRepository::class);
-    $container->bind(ForumThreadRepositoryInterface::class, ForumThreadRepository::class);
-    $container->bind(ForumPostRepositoryInterface::class, ForumPostRepository::class);
-    $container->bind(ForumLikeRepositoryInterface::class, ForumLikeRepository::class);
-    $container->bind(ForumReadRepositoryInterface::class, ForumReadRepository::class);
-    $container->bind(PaymentRepositoryInterface::class, PaymentRepository::class);
-    $container->bind(OnlineRepositoryInterface::class, OnlineRepository::class);
-    $container->bind(ChatRepositoryInterface::class, ChatRepository::class);
-    $container->bind(NewsRepositoryInterface::class, NewsRepository::class);
-
-    // Новые репозитории для услуг и тарифов
-    $container->singleton(ServiceRepository::class);
-    $container->singleton(TariffRepository::class);
-    $container->singleton(UserServiceRepository::class);
-    $container->singleton(ServiceServerRepository::class);
-
-    // Сервисы
-    $container->bind(AuthServiceInterface::class, AuthService::class);
-    $container->bind(MonitorServiceInterface::class, MonitorService::class);
-    $container->singleton(SettingsServiceInterface::class, SettingsService::class);
-    $container->singleton(EncryptionServiceInterface::class, function ($c) {
-        return new EncryptionService($_ENV['ENCRYPTION_KEY']);
-    });
-    $container->bind(ForumServiceInterface::class, ForumService::class);
-    $container->bind(ThemeServiceInterface::class, ThemeService::class);
-    $container->bind(AvatarServiceInterface::class, AvatarService::class);
-    $container->bind(MarkdownServiceInterface::class, MarkdownService::class);
-    $container->bind(CronServiceInterface::class, CronService::class);
-    $container->bind(SessionServiceInterface::class, SessionService::class);
-    $container->bind(CsrfMiddleware::class, function ($c) {
-        return new CsrfMiddleware($c->get(SessionServiceInterface::class));
-    });
-    $container->singleton(ModuleServiceInterface::class, ModuleService::class);
-    $container->bind(SeoServiceInterface::class, function ($c) {
-        return new SeoService(
-            $c->get(Database::class),
-            $c->get(SettingsService::class),
-            $c->get(SiteService::class)
-        );
-    });
-    $container->bind(ChatServiceInterface::class, ChatService::class);
-    $container->bind(NewsServiceInterface::class, NewsService::class);
-    $container->singleton(RecaptchaService::class);
-    $container->singleton(SiteService::class);
-
-    $container->singleton(PermissionService::class, function ($c) {
-        return new PermissionService($c->get(UserGroupRepository::class));
-    });
-
-    $container->singleton(ServiceActivationService::class, function ($c) {
-        return new ServiceActivationService(
-            $c->get(MonitorServerRepositoryInterface::class),
-            $c->get(ServiceServerRepository::class),
-            $c->get(EncryptionServiceInterface::class),
-            $c->get(UserServiceRepository::class),
-            $c->get(LoggerInterface::class),
-            $c->get(UserRepository::class),
-            $c->get(UserGroupRepository::class)
-        );
-    });
-    $container->bind(\GreyPanel\Service\StatisticsService::class);
-
-    // Контроллеры
-    $container->bind(UserController::class);
-    $container->bind(AuthController::class);
-    $container->bind(HomeController::class);
-    $container->bind(ForumController::class);
-    $container->bind(AdminController::class, function ($c) {
-        return new AdminController(
+    $container->singleton(SessionServiceInterface::class, function (Container $c) {
+        return new SessionService(
             $c->get(UserRepositoryInterface::class),
-            $c->get(ForumThreadRepositoryInterface::class),
-            $c->get(LogRepositoryInterface::class),
-            $c->get(SettingsServiceInterface::class),
-            $c->get(MoneyLogRepositoryInterface::class),
-            $c->get(ThemeServiceInterface::class),
-            $c->get(ForumForumRepositoryInterface::class),
-            $c->get(OnlineRepositoryInterface::class),
-            $c->get(SessionService::class),
-            $c->get(EncryptionServiceInterface::class),
-            $c->get(UserGroupRepository::class),
-            $c->get(PermissionService::class)
+            $c->get(SettingsServiceInterface::class)
         );
     });
-    $container->bind(AdminUserGroupController::class);
-    $container->bind(AdminServerSettingsController::class);
-    $container->bind(AdminForumController::class);
-    $container->bind(AdminModuleController::class);
-    $container->bind(AdminSeoController::class);
-    $container->bind(AdminNewsController::class);
-    $container->bind(BanController::class);
-    $container->bind(BalanceController::class);
-    $container->bind(MonitorController::class);
-    $container->bind(PaymentController::class);
-    $container->bind(OnlineController::class);
-    $container->bind(CronController::class);
-    $container->bind(SitemapController::class);
-    $container->bind(ChatController::class);
-    $container->bind(NewsController::class);
-    $container->bind(AdminServiceController::class);
-    $container->bind(StatisticsController::class);
 
-    $container->bind(CronCommand::class);
+    $container->singleton(PermissionServiceInterface::class, function (Container $c) {
+        return new PermissionService($c->get(SessionServiceInterface::class));
+    });
 
-    // Логгер
+    $container->singleton(PermissionService::class, function (Container $c) {
+        return $c->get(PermissionServiceInterface::class);
+    });
+
+    $container->singleton(EncryptionService::class, function (Container $c) {
+        $config = $c->get(Config::class);
+        return new EncryptionService($config->get('ENCRYPTION_KEY'));
+    });
+    $container->singleton(EncryptionServiceInterface::class, function (Container $c) {
+        return $c->get(EncryptionService::class);
+    });
+
     $container->singleton(LoggerInterface::class, function () {
         $logger = new Logger('grey');
         $logger->pushHandler(new RotatingFileHandler(
-            __DIR__ . '/../var/logs/app.log',
+            ROOT_DIR . '/var/logs/app.log',
             30,
             Logger::DEBUG
         ));
         return $logger;
     });
 
-    // Rate Limiter
+    $container->singleton(TranslatorInterface::class, function () {
+        $translator = new Translator('ru');
+        $translator->addLoader('yaml', new YamlFileLoader());
+        $transDir = ROOT_DIR . '/resources/translations/';
+        foreach (glob($transDir . 'messages.*.yaml') as $file) {
+            if (preg_match('/messages\.(\w+)\.yaml$/', basename($file), $matches)) {
+                $translator->addResource('yaml', $file, $matches[1]);
+            }
+        }
+        foreach (glob($transDir . 'validators.*.yaml') as $file) {
+            if (preg_match('/validators\.(\w+)\.yaml$/', basename($file), $matches)) {
+                $translator->addResource('yaml', $file, $matches[1], 'validators');
+            }
+        }
+        return $translator;
+    });
+
+    $container->singleton(Translator::class, function (Container $c) {
+        return $c->get(TranslatorInterface::class);
+    });
+
+    $container->singleton(LocaleManager::class, function () {
+        $transDir = ROOT_DIR . '/resources/translations/';
+        $locales = [];
+        foreach (glob($transDir . 'messages.*.yaml') as $file) {
+            if (preg_match('/messages\.(\w+)\.yaml$/', basename($file), $matches)) {
+                $locales[] = $matches[1];
+            }
+        }
+        return new LocaleManager($locales);
+    });
+
+    $container->singleton(LocaleMiddleware::class, function (Container $c) {
+        return new LocaleMiddleware(
+            $c->get(TranslatorInterface::class),
+            $c->get(SessionServiceInterface::class),
+            $c->get(UserRepositoryInterface::class),
+            $c->get(SettingsServiceInterface::class),
+            $c->get(LocaleManager::class)
+        );
+    });
+
     $rateLimiterConfig = require __DIR__ . '/rate_limiter.php';
-    foreach ($rateLimiterConfig as $key => $config) {
-        $container->singleton('rate_limit.' . $key, function () use ($config, $key) {
-            return new RateLimitMiddleware($key, $config);
+    foreach ($rateLimiterConfig as $key => $configItem) {
+        $container->singleton('rate_limit.' . $key, function () use ($configItem, $key, $container) {
+            return new RateLimitMiddleware(
+                $key,
+                $configItem,
+                $container->get(SessionServiceInterface::class)
+            );
         });
     }
+
+    $container->bind(UniqueUsernameValidator::class);
+    $container->bind('unique.username', UniqueUsernameValidator::class);
+    $container->bind(UniqueEmailValidator::class);
+    $container->bind('unique.email', UniqueEmailValidator::class);
+
+    $container->singleton(ConstraintValidatorFactoryInterface::class, function (Container $c) {
+        return new class ($c) implements ConstraintValidatorFactoryInterface {
+            public function __construct(private Container $container)
+            {
+            }
+            public function getInstance(Constraint $constraint): ConstraintValidatorInterface
+            {
+                $className = $constraint->validatedBy();
+                if (class_exists($className)) {
+                    return $this->container->get($className);
+                }
+                return $this->container->get($className);
+            }
+        };
+    });
+
+    $container->singleton(ValidatorInterface::class, function (Container $c) {
+        return Validation::createValidatorBuilder()
+            ->enableAttributeMapping()
+            ->setTranslationDomain('validators')
+            ->setConstraintValidatorFactory($c->get(ConstraintValidatorFactoryInterface::class))
+            ->getValidator();
+    });
+
+    $container->singleton(HtmlSanitizer::class, function () {
+        $config = (new HtmlSanitizerConfig())
+            ->allowSafeElements()
+            ->allowStaticElements()
+            ->allowRelativeLinks()
+            ->allowRelativeMedias()
+            ->blockElement('script')
+            ->blockElement('style')
+            ->blockElement('iframe')
+            ->blockElement('object')
+            ->blockElement('embed')
+            ->blockElement('form')
+            ->blockElement('input')
+            ->blockElement('button');
+        return new HtmlSanitizer($config);
+    });
+
+    $container->singleton(LockFactory::class, function () {
+        return new LockFactory(new FlockStore(ROOT_DIR . '/var/lock'));
+    });
+
+    $container->singleton(SerializerInterface::class, function () {
+        return new Serializer(
+            [new DateTimeNormalizer(), new ObjectNormalizer()],
+            [new JsonEncoder()]
+        );
+    });
+
+    $container->singleton(SettingsServiceInterface::class, function (Container $c) {
+        return new SettingsService($c->get(Database::class));
+    });
+
+    $container->singleton(ThemeService::class, function (Container $c) {
+        return new ThemeService($c->get(Database::class));
+    });
+
+    $container->singleton(ImageUploadService::class);
+    $container->singleton(ModuleService::class, function (Container $c) {
+        return new ModuleService($c->get(Database::class));
+    });
+    $container->singleton(SiteService::class, function (Container $c) {
+        return new SiteService($c->get(SettingsServiceInterface::class));
+    });
+    $container->singleton(SeoService::class, function (Container $c) {
+        return new SeoService(
+            $c->get(Database::class),
+            $c->get(SettingsServiceInterface::class),
+            $c->get(SiteService::class)
+        );
+    });
+    $container->singleton(CronService::class, function (Container $c) {
+        return new CronService(
+            $c->get(\GreyPanel\Repository\UserServiceRepository::class),
+            $c->get(MonitorService::class),
+            $c->get(SettingsServiceInterface::class),
+            $c->get(SeoService::class),
+            $c->get(OnlineRepositoryInterface::class),
+            $c->get(LockFactory::class)
+        );
+    });
+
+    $container->singleton(MonitorService::class, function (Container $c) {
+        return new MonitorService(
+            $c->get(\GreyPanel\Repository\MonitorServerRepository::class)
+        );
+    });
+
+    $container->singleton(StatisticsService::class, function (Container $c) {
+        return new StatisticsService(
+            $c->get(\GreyPanel\Repository\MonitorServerRepository::class),
+            $c->get(EncryptionServiceInterface::class)
+        );
+    });
+
+    $container->singleton(BanService::class, function (Container $c) {
+        return new BanService(
+            $c->get(\GreyPanel\Repository\MonitorServerRepository::class),
+            $c->get(EncryptionServiceInterface::class)
+        );
+    });
+
+    $container->singleton(AuthService::class, function (Container $c) {
+        return new AuthService(
+            $c->get(UserRepositoryInterface::class),
+            $c->get(\GreyPanel\Repository\UserGroupRepository::class),
+            $c->get(TranslatorInterface::class),
+            $c->get(ValidatorInterface::class),
+            $c->get(PermissionServiceInterface::class)
+        );
+    });
+
+    $container->singleton(\GreyPanel\Interface\Service\AuthServiceInterface::class, function (Container $c) {
+        return $c->get(AuthService::class);
+    });
+
+    $container->singleton(ImageManager::class, function () {
+        return new ImageManager(Driver::class);
+    });
+
+    $container->singleton(AvatarService::class, function (Container $c) {
+        return new AvatarService(
+            $c->get(ImageManager::class),
+            $c->get(ValidatorInterface::class),
+            $c->get(TranslatorInterface::class),
+        );
+    });
+
+    $container->singleton(ChatService::class, function (Container $c) {
+        return new ChatService(
+            $c->get(\GreyPanel\Repository\ChatRepository::class),
+            $c->get(UserRepositoryInterface::class),
+            $c->get(MarkdownService::class),
+            $c->get(HtmlSanitizer::class)
+        );
+    });
+
+    $container->singleton(MarkdownService::class, function (Container $c) {
+        return new MarkdownService($c->get(HtmlSanitizer::class));
+    });
+
+    $container->singleton(ForumService::class, function (Container $c) {
+        return new ForumService(
+            $c->get(\GreyPanel\Repository\ForumCategoryRepository::class),
+            $c->get(\GreyPanel\Repository\ForumForumRepository::class),
+            $c->get(\GreyPanel\Repository\ForumThreadRepository::class),
+            $c->get(\GreyPanel\Repository\ForumPostRepository::class),
+            $c->get(\GreyPanel\Repository\ForumLikeRepository::class),
+            $c->get(\GreyPanel\Repository\ForumReadRepository::class),
+            $c->get(UserRepositoryInterface::class),
+            $c->get(MarkdownService::class),
+            $c->get(SessionServiceInterface::class),
+            $c->get(Database::class),
+            $c->get(LoggerInterface::class)
+        );
+    });
+
+    $container->singleton(NewsService::class, function (Container $c) {
+        return new NewsService(
+            $c->get(\GreyPanel\Repository\NewsRepository::class),
+            $c->get(MarkdownService::class)
+        );
+    });
+
+    $container->singleton(RecaptchaService::class, function (Container $c) {
+        return new RecaptchaService(
+            $c->get(SettingsServiceInterface::class),
+            $c->get(EncryptionServiceInterface::class)
+        );
+    });
+
+    $container->singleton(ServiceActivationService::class, function (Container $c) {
+        return new ServiceActivationService(
+            $c->get(\GreyPanel\Repository\MonitorServerRepository::class),
+            $c->get(\GreyPanel\Repository\ServiceServerRepository::class),
+            $c->get(EncryptionServiceInterface::class),
+            $c->get(\GreyPanel\Repository\UserServiceRepository::class),
+            $c->get(LoggerInterface::class),
+            $c->get(UserRepositoryInterface::class),
+            $c->get(\GreyPanel\Repository\UserGroupRepository::class),
+            $c->get(LockFactory::class)
+        );
+    });
+
+    $container->singleton(CacheService::class);
+
+    $container->singleton(\GreyPanel\Repository\ChatRepository::class, function (Container $c) {
+        return new \GreyPanel\Repository\ChatRepository($c->get(Database::class));
+    });
+    $container->singleton(\GreyPanel\Repository\ForumCategoryRepository::class, function (Container $c) {
+        return new \GreyPanel\Repository\ForumCategoryRepository($c->get(Database::class));
+    });
+    $container->singleton(\GreyPanel\Repository\ForumForumRepository::class, function (Container $c) {
+        return new \GreyPanel\Repository\ForumForumRepository($c->get(Database::class));
+    });
+    $container->singleton(\GreyPanel\Repository\ForumThreadRepository::class, function (Container $c) {
+        return new \GreyPanel\Repository\ForumThreadRepository($c->get(Database::class));
+    });
+    $container->singleton(\GreyPanel\Repository\ForumPostRepository::class, function (Container $c) {
+        return new \GreyPanel\Repository\ForumPostRepository($c->get(Database::class));
+    });
+    $container->singleton(\GreyPanel\Repository\ForumLikeRepository::class, function (Container $c) {
+        return new \GreyPanel\Repository\ForumLikeRepository($c->get(Database::class));
+    });
+    $container->singleton(\GreyPanel\Repository\ForumReadRepository::class, function (Container $c) {
+        return new \GreyPanel\Repository\ForumReadRepository($c->get(Database::class));
+    });
+    $container->singleton(\GreyPanel\Repository\MonitorServerRepository::class, function (Container $c) {
+        return new \GreyPanel\Repository\MonitorServerRepository($c->get(Database::class));
+    });
+    $container->singleton(\GreyPanel\Repository\NewsRepository::class, function (Container $c) {
+        return new \GreyPanel\Repository\NewsRepository($c->get(Database::class));
+    });
+    $container->singleton(\GreyPanel\Repository\OnlineRepository::class, function (Container $c) {
+        return new \GreyPanel\Repository\OnlineRepository($c->get(Database::class));
+    });
+    $container->singleton(\GreyPanel\Repository\PaymentRepository::class, function (Container $c) {
+        return new \GreyPanel\Repository\PaymentRepository($c->get(Database::class));
+    });
+    $container->singleton(\GreyPanel\Repository\ServiceRepository::class, function (Container $c) {
+        return new \GreyPanel\Repository\ServiceRepository($c->get(Database::class));
+    });
+    $container->singleton(\GreyPanel\Repository\ServiceServerRepository::class, function (Container $c) {
+        return new \GreyPanel\Repository\ServiceServerRepository($c->get(Database::class));
+    });
+    $container->singleton(\GreyPanel\Repository\TariffRepository::class, function (Container $c) {
+        return new \GreyPanel\Repository\TariffRepository($c->get(Database::class));
+    });
+    $container->singleton(\GreyPanel\Repository\UserGroupRepository::class, function (Container $c) {
+        return new \GreyPanel\Repository\UserGroupRepository($c->get(Database::class));
+    });
+    $container->singleton(\GreyPanel\Repository\UserServiceRepository::class, function (Container $c) {
+        return new \GreyPanel\Repository\UserServiceRepository($c->get(Database::class));
+    });
+    $container->singleton(UserRepositoryInterface::class, function (Container $c) {
+        return new \GreyPanel\Repository\UserRepository(
+            $c->get(Database::class),
+            $c->get(\GreyPanel\Repository\UserGroupRepository::class)
+        );
+    });
+    $container->singleton(OnlineRepositoryInterface::class, function (Container $c) {
+        return new \GreyPanel\Repository\OnlineRepository($c->get(Database::class));
+    });
+
+    $container->singleton(\GreyPanel\Interface\Repository\ChatRepositoryInterface::class, function (Container $c) {
+        return $c->get(\GreyPanel\Repository\ChatRepository::class);
+    });
+    $container->singleton(\GreyPanel\Interface\Repository\ForumCategoryRepositoryInterface::class, function (Container $c) {
+        return $c->get(\GreyPanel\Repository\ForumCategoryRepository::class);
+    });
+    $container->singleton(\GreyPanel\Interface\Repository\ForumForumRepositoryInterface::class, function (Container $c) {
+        return $c->get(\GreyPanel\Repository\ForumForumRepository::class);
+    });
+    $container->singleton(\GreyPanel\Interface\Repository\ForumThreadRepositoryInterface::class, function (Container $c) {
+        return $c->get(\GreyPanel\Repository\ForumThreadRepository::class);
+    });
+    $container->singleton(\GreyPanel\Interface\Repository\ForumPostRepositoryInterface::class, function (Container $c) {
+        return $c->get(\GreyPanel\Repository\ForumPostRepository::class);
+    });
+    $container->singleton(\GreyPanel\Interface\Repository\ForumLikeRepositoryInterface::class, function (Container $c) {
+        return $c->get(\GreyPanel\Repository\ForumLikeRepository::class);
+    });
+    $container->singleton(\GreyPanel\Interface\Repository\ForumReadRepositoryInterface::class, function (Container $c) {
+        return $c->get(\GreyPanel\Repository\ForumReadRepository::class);
+    });
+    $container->singleton(\GreyPanel\Interface\Repository\MonitorServerRepositoryInterface::class, function (Container $c) {
+        return $c->get(\GreyPanel\Repository\MonitorServerRepository::class);
+    });
+    $container->singleton(\GreyPanel\Interface\Repository\NewsRepositoryInterface::class, function (Container $c) {
+        return $c->get(\GreyPanel\Repository\NewsRepository::class);
+    });
+    $container->singleton(\GreyPanel\Interface\Repository\PaymentRepositoryInterface::class, function (Container $c) {
+        return $c->get(\GreyPanel\Repository\PaymentRepository::class);
+    });
+    $container->singleton(\GreyPanel\Interface\Repository\LogRepositoryInterface::class, function (Container $c) {
+        return $c->get(\GreyPanel\Repository\LogRepository::class);
+    });
+    $container->singleton(\GreyPanel\Interface\Repository\MoneyLogRepositoryInterface::class, function (Container $c) {
+        return $c->get(\GreyPanel\Repository\MoneyLogRepository::class);
+    });
+    $container->singleton(\GreyPanel\Interface\Service\BanServiceInterface::class, function (Container $c) {
+        return $c->get(BanService::class);
+    });
+    $container->singleton(\GreyPanel\Interface\Service\ChatServiceInterface::class, function (Container $c) {
+        return $c->get(ChatService::class);
+    });
+    $container->singleton(\GreyPanel\Interface\Service\ForumServiceInterface::class, function (Container $c) {
+        return $c->get(ForumService::class);
+    });
+    $container->singleton(\GreyPanel\Interface\Service\MarkdownServiceInterface::class, function (Container $c) {
+        return $c->get(MarkdownService::class);
+    });
+    $container->singleton(\GreyPanel\Interface\Service\MonitorServiceInterface::class, function (Container $c) {
+        return $c->get(MonitorService::class);
+    });
+    $container->singleton(\GreyPanel\Interface\Service\NewsServiceInterface::class, function (Container $c) {
+        return $c->get(NewsService::class);
+    });
+    $container->singleton(\GreyPanel\Interface\Service\SeoServiceInterface::class, function (Container $c) {
+        return $c->get(SeoService::class);
+    });
+    $container->singleton(ThemeServiceInterface::class, function (Container $c) {
+        return $c->get(ThemeService::class);
+    });
+    $container->singleton(\GreyPanel\Interface\Service\ModuleServiceInterface::class, function (Container $c) {
+        return $c->get(ModuleService::class);
+    });
 };

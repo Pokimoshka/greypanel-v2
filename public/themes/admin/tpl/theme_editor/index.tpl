@@ -1,21 +1,21 @@
 {% extends "base.tpl" %}
 
-{% block title %}Редактор шаблона{% endblock %}
-{% block page_title %}Редактор темы: {{ active_theme }}{% endblock %}
+{% block title %}{{ trans('admin.theme_editor') }}{% endblock %}
+{% block page_title %}{{ trans('admin.theme_editor') }}: {{ active_theme }}{% endblock %}
 
 {% block content %}
 <div class="card">
     <div class="card-header d-flex justify-content-between">
-        <span><i class="fas fa-folder-open me-2"></i>Текущая папка: /{{ current_dir }}</span>
+        <span><i class="fas fa-folder-open me-2"></i>{{ trans('admin.current_folder') }}: /{{ current_dir }}</span>
         <div>
-            <button class="btn btn-sm btn-success" onclick="createFile()"><i class="fas fa-file"></i> Новый файл</button>
-            <button class="btn btn-sm btn-info" onclick="createFolder()"><i class="fas fa-folder"></i> Новая папка</button>
+            <button class="btn btn-sm btn-success" onclick="createFile()"><i class="fas fa-file"></i> {{ trans('admin.new_file') }}</button>
+            <button class="btn btn-sm btn-info" onclick="createFolder()"><i class="fas fa-folder"></i> {{ trans('admin.new_folder') }}</button>
         </div>
     </div>
     <div class="table-responsive">
         <table class="table table-hover mb-0">
             <thead>
-                <tr><th>Имя</th><th>Размер</th><th>Изменён</th><th></th></tr>
+                <tr><th>{{ trans('admin.name') }}</th><th>{{ trans('admin.size') }}</th><th>{{ trans('admin.modified') }}</th><th>{{ trans('admin.actions') }}</th></tr>
             </thead>
             <tbody>
                 {% if current_dir %}
@@ -46,12 +46,15 @@
         </table>
     </div>
 </div>
+{% endblock %}
 
+{% block scripts %}
+    {{ parent() }}
 <script>
 const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
 
 function createFile() {
-    let name = prompt('Имя файла (с расширением, например header.tpl):');
+    let name = prompt('{{ trans("admin.enter_file_name") }}');
     if (!name) return;
     let form = new FormData();
     form.append('dir', '{{ current_dir }}');
@@ -60,10 +63,10 @@ function createFile() {
     form.append('csrf_token', csrfToken);
     fetch('/admin/theme-editor/create', { method: 'POST', body: form })
         .then(r => r.json())
-        .then(data => { if(data.success) location.reload(); else window.dispatchEvent(new CustomEvent('toast:error', { detail: 'Ошибка' })); });
+        .then(data => { if(data.success) location.reload(); else Toast.error('{{ trans("admin.error_occurred") }}'); });
 }
 function createFolder() {
-    let name = prompt('Имя папки:');
+    let name = prompt('{{ trans("admin.enter_folder_name") }}');
     if (!name) return;
     let form = new FormData();
     form.append('dir', '{{ current_dir }}');
@@ -72,16 +75,16 @@ function createFolder() {
     form.append('csrf_token', csrfToken);
     fetch('/admin/theme-editor/create', { method: 'POST', body: form })
         .then(r => r.json())
-        .then(data => { if(data.success) location.reload(); else window.dispatchEvent(new CustomEvent('toast:error', { detail: 'Ошибка' })); });
+        .then(data => { if(data.success) location.reload(); else Toast.error('{{ trans("admin.error_occurred") }}'); });
 }
 function deleteItem(path, isDir) {
-    if (!confirm('Удалить ' + (isDir ? 'папку' : 'файл') + ' ' + path + '?')) return;
+    if (!confirm('{{ trans("admin.delete_item_confirm") }}'.replace('{path}', path))) return;
     let form = new FormData();
     form.append('file', path);
     form.append('csrf_token', csrfToken);
     fetch('/admin/theme-editor/delete', { method: 'POST', body: form })
         .then(r => r.json())
-        .then(data => { if(data.success) location.reload(); else window.dispatchEvent(new CustomEvent('toast:error', { detail: 'Ошибка' })); });
+        .then(data => { if(data.success) location.reload(); else Toast.error('{{ trans("admin.error_occurred") }}'); });
 }
 </script>
 {% endblock %}

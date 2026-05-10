@@ -32,9 +32,7 @@ final class OnlineRepository implements OnlineRepositoryInterface
              ORDER BY o.last_activity DESC",
             [$expire]
         );
-        foreach ($users as &$user) {
-            $user['last_activity'] = $this->timeAgo($user['last_activity']);
-        }
+
         return $users;
     }
 
@@ -48,21 +46,10 @@ final class OnlineRepository implements OnlineRepositoryInterface
         );
     }
 
-    private function timeAgo(int $timestamp): string
+    public function deleteExpired(int $seconds = 300): int
     {
-        $diff = time() - $timestamp;
-        if ($diff < 60) {
-            return 'только что';
-        }
-        if ($diff < 3600) {
-            return round($diff / 60) . ' мин назад';
-        }
-        if ($diff < 86400) {
-            return round($diff / 3600) . ' ч назад';
-        }
-        if ($timestamp <= 0) {
-            return 'давно';
-        }
-        return date('d.m.Y H:i', $timestamp);
+        $expire = time() - $seconds;
+        $stmt = $this->db->query("DELETE FROM {$this->table} WHERE last_activity < ?", [$expire]);
+        return $stmt->rowCount();
     }
 }

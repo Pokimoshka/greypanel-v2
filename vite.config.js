@@ -6,12 +6,15 @@ export default defineConfig({
   build: {
     outDir: path.resolve(__dirname, 'public/assets'),
     copyPublicDir: false,
-    emptyOutDir: true,
+    emptyOutDir: false,
     manifest: 'manifest.json',
     rollupOptions: {
       input: {
         vendor: path.resolve(__dirname, 'resources/js/app.js'),
-        vendor_style: path.resolve(__dirname, 'resources/scss/style.scss')
+        admin: path.resolve(__dirname, 'resources/js/admin.js'),
+        vendor_style: path.resolve(__dirname, 'resources/scss/style.scss'),
+        'theme-default': path.resolve(__dirname, 'resources/js/theme-default.js'),
+        'theme-admin': path.resolve(__dirname, 'resources/js/theme-admin.js'),
       },
       output: {
         assetFileNames: 'css/[name].[hash].[ext]',

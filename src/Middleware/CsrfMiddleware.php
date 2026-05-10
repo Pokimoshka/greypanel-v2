@@ -20,7 +20,7 @@ class CsrfMiddleware
     public function handle(Request $request, callable $next): Response
     {
         if (in_array($request->getMethod(), ['POST', 'PUT', 'DELETE', 'PATCH'])) {
-            $token = $request->post('csrf_token')
+            $token = $request->postString('csrf_token')
                 ?? $request->get('csrf_token')
                 ?? $request->getRequest()->headers->get('X-CSRF-TOKEN');
 

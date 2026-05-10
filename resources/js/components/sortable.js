@@ -1,22 +1,25 @@
 import Sortable from 'sortablejs';
+import { api } from '../utils/api.js';
 
-export default (url, csrf = null) => ({
+export default (url) => ({
     init() {
-        const csrfToken = csrf || document.querySelector('meta[name="csrf-token"]').content;
         const el = this.$refs.sortableList;
+        if (!el) return;
         new Sortable(el, {
             animation: 150,
-            onEnd: async (evt) => {
+            onEnd: async () => {
                 const items = [...el.children].map((item, index) => ({
                     id: item.dataset.id,
-                    order: index
+                    order: index,
                 }));
-                await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ order: items, csrf_token: csrfToken })
-                });
-            }
+
+                const order = Object.fromEntries(items.map((i) => [i.id, i.order]));
+
+                const formData = new FormData();
+                formData.append('order', JSON.stringify(order));
+
+                await api.post(url, formData);
+            },
         });
-    }
+    },
 });

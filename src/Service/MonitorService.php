@@ -25,7 +25,7 @@ final class MonitorService implements MonitorServiceInterface
     public function getServers(): array
     {
         return $this->cache->get('servers_list', function (ItemInterface $item) {
-            $item->expiresAfter(30); // 30 секунд – свежие данные
+            $item->expiresAfter(30);
             $servers = $this->repo->findEnabled();
             $result = [];
             foreach ($servers as $server) {
@@ -84,22 +84,20 @@ final class MonitorService implements MonitorServiceInterface
             $serverName = $cache['HostName'] ?? $server['ip'];
             $map = $cache['Map'] ?? 'unknown';
             $players = ($cache['Players'] ?? 0) . '/' . ($cache['MaxPlayers'] ?? 0);
-            $statusHtml = '<span class="badge bg-success">ON</span>';
         } else {
             $serverName = $server['ip'];
             $map = '—';
             $players = '0/0';
-            $statusHtml = '<span class="badge bg-danger">OFF</span>';
         }
 
         return [
             'id' => $server['id'],
             'type' => $server['type'],
             'address' => $server['ip'] . ':' . $server['c_port'],
-            'server_name' => htmlspecialchars($serverName),
+            'server_name' => $serverName,
             'map' => htmlspecialchars($map),
             'players' => $players,
-            'status_html' => $statusHtml,
+            'online' => $online,
         ];
     }
 

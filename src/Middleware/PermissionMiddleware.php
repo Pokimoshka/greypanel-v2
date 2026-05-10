@@ -7,14 +7,14 @@ namespace GreyPanel\Middleware;
 use GreyPanel\Core\RedirectResponse;
 use GreyPanel\Core\Request;
 use GreyPanel\Core\Response;
-use GreyPanel\Service\PermissionService;
+use GreyPanel\Interface\Service\PermissionServiceInterface;
 
 class PermissionMiddleware
 {
-    private PermissionService $permissionService;
+    private PermissionServiceInterface $permissionService;
     private string $requiredPermission;
 
-    public function __construct(PermissionService $permissionService, string $requiredPermission)
+    public function __construct(PermissionServiceInterface $permissionService, string $requiredPermission)
     {
         $this->permissionService = $permissionService;
         $this->requiredPermission = $requiredPermission;

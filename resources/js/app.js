@@ -1,113 +1,47 @@
 import Alpine from 'alpinejs';
 import collapse from '@alpinejs/collapse';
-import 'bootstrap/dist/js/bootstrap.min.js';
-import Sortable from 'sortablejs';
-import EasyMDE from 'easymde';
-import { marked } from 'marked';
-import { markedHighlight } from 'marked-highlight';
-import hljs from 'highlight.js';
+import 'bootstrap';
 import 'highlight.js/styles/github-dark.css';
-import { markdownToBbcode } from './markdown-to-bbcode';
 
+import MarkdownEditor from './editor/MarkdownEditor';
+import './theme-editor.js';
+
+import onlineWidget from './components/onlineWidget';
+import lastTopicsWidget from './components/lastTopicsWidget';
+import lastBansWidget from './components/lastBansWidget';
+import topDonatorsWidget from './components/topDonatorsWidget';
+import collapsibleWidget from './components/collapsibleWidget';
 import chatWidget from './components/chat';
 import likeButton from './components/like';
 import modal from './components/modal';
 import monitorWidget from './components/monitor';
 import quote from './components/quote';
 import sortableList from './components/sortable';
-
-import { EditorView, basicSetup } from 'codemirror';
-import { html } from '@codemirror/lang-html';
-import { css } from '@codemirror/lang-css';
-import { javascript } from '@codemirror/lang-javascript';
-import { oneDark } from '@codemirror/theme-one-dark';
-import './theme-editor.js';
+import markdownEditor from './components/markdownEditor';
+import banActions from './components/banActions';
+import replyForm from './components/replyForm';
 import toast from './components/toast';
 
-window.Alpine = Alpine;
-window.Sortable = Sortable;
+import './utils/toast-global.js';
 
+Alpine.data('onlineWidget', onlineWidget);
+Alpine.data('lastTopicsWidget', lastTopicsWidget);
+Alpine.data('lastBansWidget', lastBansWidget);
+Alpine.data('topDonatorsWidget', topDonatorsWidget);
+Alpine.data('collapsibleWidget', collapsibleWidget);
 Alpine.data('chatWidget', chatWidget);
 Alpine.data('likeButton', likeButton);
 Alpine.data('modal', modal);
 Alpine.data('monitorWidget', monitorWidget);
 Alpine.data('quote', quote);
 Alpine.data('sortableList', sortableList);
+Alpine.data('markdownEditor', markdownEditor);
+Alpine.data('banActions', banActions);
+Alpine.data('replyForm', replyForm);
 Alpine.data('toast', toast);
 
 Alpine.plugin(collapse);
 
-Alpine.start();
-
-marked.use(markedHighlight({
-    langPrefix: 'hljs language-',
-    highlight(code, lang) {
-        if (lang && hljs.getLanguage(lang)) {
-            return hljs.highlight(code, { language: lang }).value;
-        }
-        return code;
-    }
-}));
-
-const editorToolbar = [
-    'bold', 'italic', 'heading', '|',
-    'quote', 'unordered-list', 'ordered-list', 'table', 'horizontal-rule', '|',
-    'link', 'image',
-    {
-        name: 'upload-image',
-        action: function(editor) {
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = 'image/*';
-            input.onchange = async () => {
-                const file = input.files[0];
-                if (!file) return;
-                const formData = new FormData();
-                formData.append('image', file);
-                formData.append('csrf_token', document.querySelector('meta[name="csrf-token"]').content);
-
-                try {
-                    const resp = await fetch('/admin/upload-image', {
-                        method: 'POST',
-                        body: formData
-                    });
-                    const data = await resp.json();
-                    if (data.url) {
-                        const cm = editor.codemirror;
-                        cm.replaceSelection(`![](${data.url})`);
-                    } else {
-                        window.dispatchEvent(new CustomEvent('toast:error', { detail: 'Ошибка загрузки' }));
-                    }
-                } catch (e) {
-                    window.dispatchEvent(new CustomEvent('toast:error', { detail: 'Ошибка соединения' }));
-                }
-            };
-            input.click();
-        },
-        className: 'fa fa-upload',
-        title: 'Загрузить изображение'
-    },
-    '|', 'preview', 'side-by-side', 'fullscreen', '|',
-    'guide'
-];
-
 document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('textarea.editor').forEach(el => {
-        const easyMDE = new EasyMDE({
-            element: el,
-            spellChecker: true,
-            status: ['lines', 'words', 'cursor'],
-            toolbar: editorToolbar,
-            previewRender: (plainText) => marked.parse(plainText),
-        });
-
-        const originalToTextArea = easyMDE.toTextArea;
-        easyMDE.toTextArea = function() {
-            const md = this.value();
-            el.value = markdownToBbcode(md);
-            originalToTextArea.call(this);
-        };
-
-        el.easyMDE = easyMDE;
-    });
+    Alpine.start();
 });

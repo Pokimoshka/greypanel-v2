@@ -1,14 +1,14 @@
 {% extends 'base.tpl' %}
 
-{% block title %}Форум — {{ site_name }}{% endblock %}
+{% block title %}{{ trans('forum.title') }} — {{ site_name }}{% endblock %}
 
 {% block content %}
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="mb-0" style="color: var(--accent-bright);">
-            <i class="fas fa-comments me-2"></i>Форум
+            <i class="fas fa-comments me-2"></i>{{ trans('forum.title') }}
         </h2>
         <a href="{{ url('/forum/search') }}" class="link-accent">
-            <i class="fas fa-search me-1"></i>Поиск
+            <i class="fas fa-search me-1"></i>{{ trans('forum.search') }}
         </a>
     </div>
 
@@ -25,9 +25,9 @@
                     <thead class="small text-secondary">
                         <tr>
                             <th style="width: 50px;"></th>
-                            <th>Раздел</th>
-                            <th style="width: 100px;">Темы</th>
-                            <th style="width: 35%;">Последнее сообщение</th>
+                            <th>{{ trans('forum.section') }}</th>
+                            <th style="width: 100px;">{{ trans('forum.topics') }}</th>
+                            <th style="width: 35%;">{{ trans('forum.last_message') }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -51,19 +51,19 @@
                                             {{ forum.last_thread.title }}
                                         </a>
                                         <span class="text-secondary">
-                                            {{ forum.last_thread.created_at|date('d.m.Y H:i') }}
+                                            {{ forum.last_thread.created_at|format_datetime('medium', 'short', locale=locale) }}
                                             {% if forum.last_thread.author_name %}
                                                 · {{ forum.last_thread.author_name }}
                                             {% endif %}
                                         </span>
                                     {% else %}
-                                        <span class="text-muted">Нет сообщений</span>
+                                        <span class="text-muted">{{ trans('forum.no_messages') }}</span>
                                     {% endif %}
                                 </td>
                             </tr>
                         {% else %}
                             <tr>
-                                <td colspan="4" class="text-center text-muted py-3">В этой категории нет разделов</td>
+                                <td colspan="4" class="text-center text-muted py-3">{{ trans('forum.no_forums') }}</td>
                             </tr>
                         {% endfor %}
                     </tbody>
@@ -73,8 +73,8 @@
     {% else %}
         <div class="widget-card p-4 text-center text-muted">
             <i class="fas fa-comments fa-3x mb-3" style="color: var(--accent);"></i>
-            <h5>Форум пока пуст</h5>
-            <p>Загляните позже или станьте первым автором!</p>
+            <h5>{{ trans('forum.empty') }}</h5>
+            <p>{{ trans('forum.empty_hint') }}</p>
         </div>
     {% endfor %}
 {% endblock %}

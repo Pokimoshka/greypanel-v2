@@ -13,6 +13,7 @@ use GreyPanel\Interface\Repository\UserRepositoryInterface;
 use GreyPanel\Interface\Service\BanServiceInterface;
 use GreyPanel\Interface\Service\SeoServiceInterface;
 use GreyPanel\Interface\Service\SessionServiceInterface;
+use GreyPanel\Interface\Service\SettingsServiceInterface;
 use GreyPanel\Service\CacheService;
 
 final class HomeController
@@ -23,7 +24,8 @@ final class HomeController
         private BanServiceInterface $banService,
         private OnlineRepositoryInterface $onlineRepo,
         private SessionServiceInterface $session,
-        private SeoServiceInterface $seoService
+        private SeoServiceInterface $seoService,
+        private SettingsServiceInterface $settings
     ) {
     }
 
@@ -41,9 +43,10 @@ final class HomeController
         $lastBans = $this->banService->getBans(1, 5);
         $onlineUsers = $this->onlineRepo->findOnlineUsers();
         $meta = $this->seoService->getMetaTags('Главная страница', 'Добро пожаловать на GreyPanel');
+        $siteName = $this->settings->get('site_name', 'GreyPanel');
 
         return new Response(View::render('home.tpl', [
-            'site_name' => $_ENV['SITE_NAME'] ?? 'GreyPanel',
+            'site_name' => $siteName,
             'app' => [
                 'user' => $this->session->getUser()
             ],

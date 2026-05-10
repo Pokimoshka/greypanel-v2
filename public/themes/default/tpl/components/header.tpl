@@ -14,23 +14,23 @@
                 {% if app.user %}
                 <div class="dropdown">
                     <button class="btn dropdown-toggle d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown" style="color: var(--text-primary);">
-                        <img src="{{ app.user.avatar }}" width="32" height="32" class="rounded-circle">
+                        <img src="{{ app.user.avatar|e('html_attr') }}" width="32" height="32" class="rounded-circle">
                         <span>{{ app.user.username }}</span>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end">
-                        <li><a class="dropdown-item" href="{{ url('/profile') }}"><i class="fas fa-user me-2"></i>Профиль</a></li>
-                        <li><a class="dropdown-item" href="{{ url('/balance') }}"><i class="fas fa-wallet me-2"></i>Баланс</a></li>
-                        <li><a class="dropdown-item" href="{{ url('/settings') }}"><i class="fas fa-cog me-2"></i>Настройки</a></li>
+                        <li><a class="dropdown-item" href="{{ url('/profile') }}"><i class="fas fa-user me-2"></i>{{ trans('nav.profile') }}</a></li>
+                        <li><a class="dropdown-item" href="{{ url('/balance') }}"><i class="fas fa-wallet me-2"></i>{{ trans('nav.balance') }}</a></li>
+                        <li><a class="dropdown-item" href="{{ url('/settings') }}"><i class="fas fa-cog me-2"></i>{{ trans('nav.settings') }}</a></li>
                         {% if has_permission('a') %}
                             <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="{{ url('/admin') }}"><i class="fas fa-shield-alt me-2"></i>Админка</a></li>
+                            <li><a class="dropdown-item" href="{{ url('/admin') }}"><i class="fas fa-shield-alt me-2"></i>{{ trans('nav.admin') }}</a></li>
                         {% endif %}
                         <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item text-danger" href="{{ url('/logout') }}"><i class="fas fa-sign-out-alt me-2"></i>Выход</a></li>
+                        <li><a class="dropdown-item text-danger" href="{{ url('/logout') }}"><i class="fas fa-sign-out-alt me-2"></i>{{ trans('nav.logout') }}</a></li>
                     </ul>
                 </div>
                 {% else %}
-                <a href="{{ url('/login') }}" class="btn btn-outline-light">Войти</a>
+                <a href="{{ url('/login') }}" class="btn btn-outline-light">{{ trans('nav.login') }}</a>
                 {% endif %}
             </div>
         </div>

@@ -69,4 +69,9 @@ class UserServiceRepository
         $stmt = $this->db->query("DELETE FROM {$this->table} WHERE expires_at <= ?", [$now]);
         return $stmt->rowCount();
     }
+
+    public function delete(int $id): void
+    {
+        $this->db->query("DELETE FROM {$this->table} WHERE id = ?", [$id]);
+    }
 }

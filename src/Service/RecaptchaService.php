@@ -18,11 +18,15 @@ class RecaptchaService
         $this->encryption = $encryption;
     }
 
-    public function verify(string $response, ?string $clientIp = null): bool
+    public function verify(?string $response, ?string $clientIp = null): bool
     {
         $enabled = $this->settings->getBool('recaptcha_enabled', false);
         if (!$enabled) {
-            return true; // Капча выключена – всегда успех
+            return true;
+        }
+
+        if (empty($response)) {
+            return false;
         }
 
         $encryptedSecret = $this->settings->get('recaptcha_secret_key', '');
@@ -33,7 +37,7 @@ class RecaptchaService
 
         try {
             $secretKey = $this->encryption->decrypt($encryptedSecret);
-            if ($secretKey === false || empty($secretKey)) {
+            if (empty($secretKey)) {
                 error_log('reCAPTCHA: failed to decrypt secret key');
                 return false;
             }

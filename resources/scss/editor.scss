@@ -1,0 +1,124 @@
+.EasyMDEContainer {
+    .editor-toolbar {
+        border-radius: 0.5rem 0.5rem 0 0;
+        border: 1px solid var(--border-color, #e2e8f0);
+        background: var(--bg-surface, #fff);
+        padding: 0.25rem 0.5rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.25rem;
+        align-items: center;
+
+        button {
+            background: transparent;
+            border: none;
+            color: var(--text-secondary, #64748b);
+            border-radius: 0.375rem;
+            transition: all 0.15s ease;
+
+            &:hover {
+                background: var(--accent, #c3073f);
+                color: #fff;
+            }
+            &.active {
+                background: var(--accent, #c3073f);
+                color: #fff;
+            }
+        }
+
+        i.separator {
+            display: inline-block;
+            width: 1px;
+            background: var(--border-color, #e2e8f0);
+            margin: 0 0.25rem;
+            height: 1.2em;
+            vertical-align: middle;
+        }
+    }
+
+    .CodeMirror {
+        border: 1px solid var(--border-color);
+        border-top: none;
+        border-radius: 0 0 0.5rem 0.5rem;
+        background: var(--card-bg, #fff);
+        color: var(--text-primary);
+    }
+
+    .editor-preview {
+        border: 1px solid var(--border-color);
+        border-top: none;
+        border-radius: 0 0 0.5rem 0.5rem;
+        background: var(--card-bg);
+        padding: 1rem;
+        color: var(--text-primary);
+
+        .xen-quote {
+            border-left: 4px solid var(--accent);
+            background: var(--bg-surface);
+            margin: 1rem 0;
+            border-radius: 0.5rem;
+            overflow: hidden;
+        }
+        .quote-header {
+            background: rgba(128, 128, 128, 0.1);
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--border-color);
+            a {
+                color: var(--accent);
+                font-weight: 600;
+            }
+        }
+        .quote-body {
+            padding: 0.75rem 1rem;
+        }
+    }
+
+    &.editor-dragover .CodeMirror {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(195, 7, 63, 0.25);
+    }
+
+    &.fullscreen {
+        position: fixed !important;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 2000;
+        background: var(--bg-body);
+
+        .editor-toolbar {
+            border-radius: 0;
+        }
+        .CodeMirror {
+            height: calc(100% - 50px);
+        }
+        .editor-preview {
+            height: calc(100% - 50px);
+            overflow-y: auto;
+        }
+    }
+}
+
+.EasyMDEContainer.fullscreen {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 2000;
+    background: var(--bg-body, #1a1a1d);
+    .CodeMirror {
+        height: 100%;
+    }
+    .editor-preview {
+        height: 100%;
+        overflow: auto;
+    }
+}
+
+.emoji-picker-container {
+    overflow: hidden;
+}

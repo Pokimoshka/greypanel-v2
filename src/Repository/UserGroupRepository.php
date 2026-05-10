@@ -56,7 +56,6 @@ class UserGroupRepository
 
     public function delete(int $id): void
     {
-        // Проверка, не используется ли группа в users
         $row = $this->db->fetchOne("SELECT COUNT(*) as cnt FROM {$this->db->table('users')} WHERE group_id = ?", [$id]);
         if ($row && $row['cnt'] > 0) {
             throw new \RuntimeException('Невозможно удалить группу, так как есть пользователи, состоящие в ней');

@@ -1,0 +1,21 @@
+auth:
+  empty_fields: 'Заполните все поля'
+  username_length: 'Логин должен быть от 3 до 32 символов'
+  email_invalid: 'Некорректный email'
+  password_length: 'Пароль должен быть не менее 8 символов'
+  password_complexity: 'Пароль должен содержать строчные, прописные буквы и цифры'
+  password_mismatch: 'Пароли не совпадают'
+  username_taken: 'Пользователь с таким ником уже существует'
+  email_taken: 'Пользователь с таким email уже существует'
+
+profile:
+  email_invalid: 'Некорректный email'
+  email_taken: 'Этот email уже используется'
+  password_short: 'Пароль должен быть не менее 8 символов'
+  password_weak: 'Пароль должен содержать строчные, прописные буквы и цифры'
+  password_mismatch: 'Пароли не совпадают'
+
+avatar:
+  upload_error: 'Ошибка загрузки файла.'
+  too_big: 'Файл слишком большой (макс. 2 МБ).'
+  invalid_type: 'Разрешены только JPEG, PNG, GIF, WEBP.'

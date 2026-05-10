@@ -9,12 +9,19 @@ use GreyPanel\Core\Request;
 use GreyPanel\Core\Response;
 use GreyPanel\Core\View;
 use GreyPanel\Service\ModuleService;
+use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
-class AdminModuleController
+class AdminModuleController extends AbstractController
 {
     public function __construct(
-        private ModuleService $moduleService
+        private ModuleService $moduleService,
+        SerializerInterface $serializer,
+        ValidatorInterface $validator,
+        TranslatorInterface $translator
     ) {
+        parent::__construct($serializer, $validator, $translator);
     }
 
     public function index(Request $request): Response
@@ -27,14 +34,14 @@ class AdminModuleController
 
     public function toggle(Request $request): JsonResponse
     {
-        $moduleName = $request->post('module');
-        $enabled = (bool)$request->post('enabled');
+        $moduleName = $request->postString('module');
+        $enabled = $request->postBool('enabled');
 
         if (!$moduleName) {
-            return new JsonResponse(['success' => false, 'error' => 'Module name required']);
+            return $this->json(['success' => false, 'error' => 'Module name required']);
         }
 
         $this->moduleService->setEnabled($moduleName, $enabled);
-        return new JsonResponse(['success' => true]);
+        return $this->json(['success' => true]);
     }
 }

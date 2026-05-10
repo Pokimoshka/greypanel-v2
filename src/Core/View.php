@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace GreyPanel\Core;
 
 use Twig\Environment;
+use Twig\Extra\Intl\IntlExtension;
+use Twig\Extra\String\StringExtension;
 use Twig\Loader\FilesystemLoader;
 use Twig\TwigFunction;
 
@@ -20,6 +22,8 @@ final class View
             'debug' => $debug,
             'autoescape' => 'html',
         ]);
+        self::$twig->addExtension(new StringExtension());
+        self::$twig->addExtension(new IntlExtension());
 
         if ($debug) {
             self::$twig->addExtension(new \Twig\Extension\DebugExtension());
@@ -38,6 +42,9 @@ final class View
         $map = [
             'vendor' => 'resources/js/app',
             'vendor_style' => 'resources/scss/style',
+            'theme-default' => 'resources/js/theme-default',
+            'theme-admin' => 'resources/js/theme-admin',
+            'admin'         => 'resources/js/admin',
         ];
 
         $manifestPath = __DIR__ . '/../../public/assets/manifest.json';
@@ -83,7 +90,7 @@ final class View
         return self::$twig;
     }
 
-    public static function addGlobal(string $name, $value): void
+    public static function addGlobal(string $name, mixed $value): void
     {
         self::getTwig()->addGlobal($name, $value);
     }

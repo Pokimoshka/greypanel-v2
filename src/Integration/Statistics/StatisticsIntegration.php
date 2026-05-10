@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace GreyPanel\Integration\Statistics;
 
 use GreyPanel\Model\Statistic;
-use GreyPanel\Model\Server;
 
 interface StatisticsIntegration
 {

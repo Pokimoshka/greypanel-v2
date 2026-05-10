@@ -3,6 +3,7 @@ import { html } from '@codemirror/lang-html';
 import { css } from '@codemirror/lang-css';
 import { javascript } from '@codemirror/lang-javascript';
 import { oneDark } from '@codemirror/theme-one-dark';
+import { api } from './utils/api.js';
 
 const ThemeEditor = {
     currentFile: null,
@@ -25,9 +26,14 @@ const ThemeEditor = {
 
         let language;
         switch (mode) {
-            case 'css': language = css(); break;
-            case 'js': language = javascript(); break;
-            default: language = html();
+            case 'css':
+                language = css();
+                break;
+            case 'js':
+                language = javascript();
+                break;
+            default:
+                language = html();
         }
 
         const view = new EditorView({
@@ -41,47 +47,48 @@ const ThemeEditor = {
                         textarea.value = view.state.doc.toString();
                         if (ThemeEditor.previewVisible) ThemeEditor.updatePreview();
                     }
-                })
+                }),
             ],
-            parent: container
+            parent: container,
         });
         ThemeEditor.editor = view;
         return view;
     },
 
-    loadFile(filePath) {
+    async loadFile(filePath) {
         ThemeEditor.currentFile = filePath;
-        document.getElementById('currentFileLabel').innerHTML = `<i class="fas fa-file-code"></i> ${filePath}`;
-        fetch(`/admin/theme-editor/get-file?file=${encodeURIComponent(filePath)}`)
-            .then(res => res.json())
-            .then(data => {
-                if (data.content !== undefined) {
-                    if (ThemeEditor.editor) {
-                        ThemeEditor.editor.dispatch({
-                            changes: { from: 0, to: ThemeEditor.editor.state.doc.length, insert: data.content }
-                        });
-                    } else {
-                        ThemeEditor.initEditor(data.content, data.ext);
-                    }
-                } else {
-                    window.dispatchEvent(new CustomEvent('toast:error', { detail: 'Ошибка загрузки файла' }));
-                }
-            });
+        document.getElementById('currentFileLabel').innerHTML =
+            `<i class="fas fa-file-code"></i> ${filePath}`;
+        const data = await api.get(
+            `/admin/theme-editor/get-file?file=${encodeURIComponent(filePath)}`
+        );
+        if (data.content !== undefined) {
+            if (ThemeEditor.editor) {
+                ThemeEditor.editor.dispatch({
+                    changes: {
+                        from: 0,
+                        to: ThemeEditor.editor.state.doc.length,
+                        insert: data.content,
+                    },
+                });
+            } else {
+                ThemeEditor.initEditor(data.content, data.ext);
+            }
+        } else {
+            Toast.error(window.__['theme_editor.error_occurred']);
+        }
     },
 
-    saveCurrentFile() {
+    async saveCurrentFile() {
         if (!ThemeEditor.currentFile || !ThemeEditor.editor) return;
         const content = ThemeEditor.editor.state.doc.toString();
         const formData = new FormData();
         formData.append('file', ThemeEditor.currentFile);
         formData.append('content', content);
-        formData.append('csrf_token', document.querySelector('meta[name="csrf-token"]').content);
-        fetch('/admin/theme-editor/save-file', { method: 'POST', body: formData })
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) window.dispatchEvent(new CustomEvent('toast:success', { detail: 'Файл сохранён' }));
-                else window.dispatchEvent(new CustomEvent('toast:error', { detail: 'Ошибка' }));
-            });
+        const data = await api.post('/admin/theme-editor/save-file', formData);
+        data.success
+            ? Toast.success(window.__['theme_editor.file_saved'])
+            : Toast.error(window.__['theme_editor.error_occurred']);
     },
 
     togglePreview() {
@@ -105,29 +112,21 @@ const ThemeEditor = {
         doc.close();
     },
 
-    loadDir(dir) {
-        fetch(`/admin/theme-editor?dir=${encodeURIComponent(dir)}`, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
-            .then(res => res.text())
-            .then(html => {
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(html, 'text/html');
-                const newTree = doc.querySelector('#dirContent').innerHTML;
-                document.getElementById('dirContent').innerHTML = newTree;
-                history.pushState({}, '', `/admin/theme-editor?dir=${dir}`);
-            });
+    async loadDir(dir) {
+        const text = await api.get(`/admin/theme-editor?dir=${encodeURIComponent(dir)}`);
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(text, 'text/html');
+        const newTree = doc.querySelector('#dirContent').innerHTML;
+        document.getElementById('dirContent').innerHTML = newTree;
+        history.pushState({}, '', `/admin/theme-editor?dir=${dir}`);
     },
 
-    // Блоки
     blocksData: null,
 
     async loadBlocks() {
-        const res = await fetch('/blocks.json');
-        if (res.ok) {
-            ThemeEditor.blocksData = await res.json();
-            ThemeEditor.renderBlocksModal();
-        } else {
-            document.getElementById('blocksList').innerHTML = '<div class="alert alert-danger">Ошибка загрузки блоков</div>';
-        }
+        const data = await api.get('/blocks.json');
+        ThemeEditor.blocksData = data;
+        ThemeEditor.renderBlocksModal();
     },
 
     renderBlocksModal() {
@@ -147,13 +146,17 @@ const ThemeEditor = {
         document.getElementById('blocksList').innerHTML = html;
     },
 
-    escapeJs(str) { return str.replace(/`/g, '\\`').replace(/\$/g, '\\$'); },
-    escapeHtml(str) { return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[m] || m); },
+    escapeJs(str) {
+        return str.replace(/`/g, '\\`').replace(/\$/g, '\\$');
+    },
+    escapeHtml(str) {
+        return str.replace(/[&<>]/g, (m) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[m] || m);
+    },
 
     insertBlockCode(code) {
         if (!ThemeEditor.editor) return;
         const transaction = ThemeEditor.editor.state.update({
-            changes: { from: ThemeEditor.editor.state.selection.main.head, insert: code }
+            changes: { from: ThemeEditor.editor.state.selection.main.head, insert: code },
         });
         ThemeEditor.editor.dispatch(transaction);
         ThemeEditor.closeModal();
@@ -180,9 +183,10 @@ const ThemeEditor = {
         if (backdrop) backdrop.remove();
     },
 
-    insertBlock() {
+    async insertBlock() {
         if (!ThemeEditor.blocksData) {
-            ThemeEditor.loadBlocks().then(() => ThemeEditor.openModal());
+            await ThemeEditor.loadBlocks();
+            ThemeEditor.openModal();
         } else {
             ThemeEditor.openModal();
         }
@@ -193,41 +197,38 @@ const ThemeEditor = {
         return urlParams.get('dir') || '';
     },
 
-    createFile() {
+    async createFile() {
         let name = prompt('Имя файла (с расширением, например header.tpl):');
         if (!name) return;
         let formData = new FormData();
         formData.append('dir', ThemeEditor.getCurrentDir());
         formData.append('name', name);
         formData.append('type', 'file');
-        formData.append('csrf_token', document.querySelector('meta[name="csrf-token"]').content);
-        fetch('/admin/theme-editor/create', { method: 'POST', body: formData })
-            .then(r => r.json())
-            .then(data => { if (data.success) location.reload(); else window.dispatchEvent(new CustomEvent('toast:error', { detail: 'Ошибка' })); });
+        const data = await api.post('/admin/theme-editor/create', formData);
+        if (data.success) location.reload();
+        else Toast.error(window.__['theme_editor.error_occurred']);
     },
 
-    createFolder() {
+    async createFolder() {
         let name = prompt('Имя папки:');
         if (!name) return;
         let formData = new FormData();
         formData.append('dir', ThemeEditor.getCurrentDir());
         formData.append('name', name);
         formData.append('type', 'folder');
-        formData.append('csrf_token', document.querySelector('meta[name="csrf-token"]').content);
-        fetch('/admin/theme-editor/create', { method: 'POST', body: formData })
-            .then(r => r.json())
-            .then(data => { if (data.success) location.reload(); else window.dispatchEvent(new CustomEvent('toast:error', { detail: 'Ошибка' })); });
+        const data = await api.post('/admin/theme-editor/create', formData);
+        if (data.success) location.reload();
+        else Toast.error(window.__['theme_editor.error_occurred']);
     },
 
-    deleteItem(path, isDir) {
-        if (!confirm('Удалить ' + (isDir ? 'папку' : 'файл') + ' ' + path + '?')) return;
+    async deleteItem(path, isDir) {
+        if (!confirm(window.__['theme_editor.confirm_delete'].replace('{path}', path))) return;
         let formData = new FormData();
         formData.append('file', path);
-        formData.append('csrf_token', document.querySelector('meta[name="csrf-token"]').content);
-        fetch('/admin/theme-editor/delete', { method: 'POST', body: formData })
-            .then(r => r.json())
-            .then(data => { if (data.success) location.reload(); else window.dispatchEvent(new CustomEvent('toast:error', { detail: 'Ошибка' })); });
-    }
+        const data = await api.post('/admin/theme-editor/delete', formData);
+        if (data.success) location.reload();
+        else Toast.error(window.__['theme_editor.error_occurred']);
+    },
 };
 
 window.ThemeEditor = ThemeEditor;

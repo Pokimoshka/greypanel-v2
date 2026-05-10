@@ -8,10 +8,14 @@ final class FlagsHelper
 {
     public static function normalize(string $flags): string
     {
-        if ($flags === '') {
-            return '';
+        $flags = mb_strtolower(trim($flags));
+        $chars = [];
+        foreach (str_split($flags) as $char) {
+            if (ctype_lower($char)) {
+                $chars[] = $char;
+            }
         }
-        $chars = array_unique(str_split($flags));
+        $chars = array_unique($chars);
         sort($chars, SORT_STRING);
         return implode('', $chars);
     }

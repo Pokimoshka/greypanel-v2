@@ -7,11 +7,16 @@ namespace GreyPanel\Controller;
 use GreyPanel\Core\Request;
 use GreyPanel\Core\Response;
 use GreyPanel\Core\View;
+use GreyPanel\Interface\Service\SeoServiceInterface;
 use GreyPanel\Service\StatisticsService;
 
 class StatisticsController
 {
-    public function __construct(private StatisticsService $statsService) {}
+    public function __construct(
+        private StatisticsService $statsService,
+        private SeoServiceInterface $seoService
+    ) {
+    }
 
     public function index(Request $request): Response
     {
@@ -21,11 +26,13 @@ class StatisticsController
 
         $page = (int)$request->get('page', 1);
         $sort = (int)$request->get('sort', 0);
-        $search = trim($request->get('search', ''));
+        $search = trim((string)$request->get('search', ''));
         $perPage = 25;
 
         $players = $this->statsService->getRanking($page, $perPage, $sort, $search ?: null);
         $total = $this->statsService->getTotalPlayers($search ?: null);
+
+        $meta = $this->seoService->getMetaTags('Статистика', 'Статистика игроков');
 
         return new Response(View::render('statistics/index.tpl', [
             'players' => $players,
@@ -35,6 +42,9 @@ class StatisticsController
             'sort' => $sort,
             'search' => $search,
             'sort_types' => $this->statsService->getSortTypes(),
+            'meta_title' => $meta['title'],
+            'meta_description' => $meta['description'],
+            'meta_keywords' => $meta['keywords'],
         ]));
     }
 

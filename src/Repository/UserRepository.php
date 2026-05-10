@@ -24,11 +24,12 @@ final class UserRepository implements UserRepositoryInterface
     /**
      * Создаёт объект User из массива БД с полной загрузкой группы.
      */
-    private function hydrateUser(array $row): ?User
+    private function hydrateUser(?array $row): ?User
     {
         if (!$row) {
             return null;
         }
+
         $user = new User($row);
         $group = $this->groupRepo->findById((int) $row['group_id']);
         $user->setGroup($group);
@@ -107,7 +108,7 @@ final class UserRepository implements UserRepositoryInterface
     {
         $sql = "UPDATE {$this->table} SET
                 username = ?, email = ?, group_id = ?, money = ?, all_money = ?, avatar = ?,
-                banned = ?, remember_token = ?, updated_at = ?, count_thread = ?, count_post = ?, count_like = ?
+                banned = ?, remember_token = ?, updated_at = ?, count_thread = ?, count_post = ?, count_like = ?, lang = ?
                 WHERE id = ?";
         $params = [
             $user->getUsername(),
@@ -122,7 +123,8 @@ final class UserRepository implements UserRepositoryInterface
             $user->getCountThread(),
             $user->getCountPost(),
             $user->getCountLike(),
-            $user->getId(),
+            $user->getLang(),
+            $user->getId()
         ];
         $this->db->query($sql, $params);
     }

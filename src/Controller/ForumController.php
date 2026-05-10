@@ -13,10 +13,16 @@ use GreyPanel\Interface\Repository\ForumForumRepositoryInterface;
 use GreyPanel\Interface\Repository\ForumPostRepositoryInterface;
 use GreyPanel\Interface\Repository\ForumThreadRepositoryInterface;
 use GreyPanel\Interface\Service\ForumServiceInterface;
+use GreyPanel\Interface\Service\PermissionServiceInterface;
+use GreyPanel\Interface\Service\SeoServiceInterface;
 use GreyPanel\Interface\Service\SessionServiceInterface;
-use GreyPanel\Service\PermissionService;
+use Symfony\Component\Cache\Adapter\FilesystemAdapter;
+use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
+use Symfony\Contracts\Cache\ItemInterface;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
-final class ForumController
+final class ForumController extends AbstractController
 {
     public function __construct(
         private ForumServiceInterface $forumService,
@@ -24,24 +30,29 @@ final class ForumController
         private ForumThreadRepositoryInterface $threadRepo,
         private ForumPostRepositoryInterface $postRepo,
         private SessionServiceInterface $session,
-        private PermissionService $permissionService
+        private SeoServiceInterface $seoService,
+        private PermissionServiceInterface $permissionService,
+        SerializerInterface $serializer,
+        ValidatorInterface $validator,
+        TranslatorInterface $translator
     ) {
+        parent::__construct($serializer, $validator, $translator);
     }
 
     public function index(Request $request): Response
     {
         $categories = $this->forumService->getCategoriesWithForums();
-        return new Response(View::render('forum/index.tpl', ['categories' => $categories]));
+        $meta = $this->seoService->getMetaTags('Форум', 'Разделы форума GreyPanel');
+        return new Response(View::render('forum/index.tpl', [
+            'categories' => $categories,
+            'meta_title' => $meta['title'],
+            'meta_description' => $meta['description'],
+            'meta_keywords' => $meta['keywords'],
+        ]));
     }
 
-    public function forum(Request $request, $id): Response
+    public function forum(Request $request, int $id): Response
     {
-        if ($id !== null && is_numeric($id)) {
-            $id = (int)$id;
-        } else {
-            $id = null;
-        }
-
         $forum = $this->forumRepo->findById($id);
         if (!$forum) {
             return new RedirectResponse('/forum');
@@ -51,6 +62,7 @@ final class ForumController
         $perPage = 20;
         $threads = $this->forumService->getThreadsByForum($id, $page, $perPage);
         $total = $this->forumService->getThreadsCount($id);
+        $meta = $this->seoService->getMetaTags($forum['title'], $forum['description']);
 
         return new Response(View::render('forum/forum.tpl', [
             'forum' => $forum,
@@ -58,17 +70,14 @@ final class ForumController
             'total' => $total,
             'page' => $page,
             'per_page' => $perPage,
+            'meta_title' => $meta['title'],
+            'meta_description' => $meta['description'],
+            'meta_keywords' => $meta['keywords'],
         ]));
     }
 
-    public function thread(Request $request, $id): Response
+    public function thread(Request $request, int $id): Response
     {
-        if ($id !== null && is_numeric($id)) {
-            $id = (int)$id;
-        } else {
-            $id = null;
-        }
-
         $page = (int)$request->get('page', 1);
         $perPage = 15;
 
@@ -79,24 +88,23 @@ final class ForumController
 
         $this->forumService->incrementViews($id);
         if ($this->session->isLoggedIn()) {
-            $this->forumService->markThreadRead($this->session->getUserId(), $id);
+            $this->forumService->markThreadRead($this->session->getUser()?->getId(), $id);
         }
+
+        $meta = $this->seoService->getMetaTags($thread['title'], mb_substr(strip_tags($thread['content']), 0, 150));
 
         return new Response(View::render('forum/thread.tpl', [
             'thread' => $thread,
             'page' => $page,
             'per_page' => $perPage,
+            'meta_title' => $meta['title'],
+            'meta_description' => $meta['description'],
+            'meta_keywords' => $meta['keywords'],
         ]));
     }
 
-    public function createThreadForm(Request $request, $forumId): Response
+    public function createThreadForm(Request $request, int $forumId): Response
     {
-        if ($forumId !== null && is_numeric($forumId)) {
-            $forumId = (int)$forumId;
-        } else {
-            $forumId = null;
-        }
-
         $forum = $this->forumRepo->findById($forumId);
         if (!$forum) {
             return new RedirectResponse('/forum');
@@ -110,10 +118,10 @@ final class ForumController
             return new RedirectResponse('/forum');
         }
 
-        $forumId = (int)$request->post('forum_id');
-        $title = trim($request->post('title'));
-        $content = trim($request->post('content'));
-        $userId = $this->session->getUserId();
+        $forumId = $request->postInt('forum_id');
+        $title = $request->postString('title');
+        $content = $request->postString('content');
+        $userId = $this->session->getUser()?->getId();
 
         if (empty($title) || empty($content)) {
             return new RedirectResponse("/forum/forum/{$forumId}/create");
@@ -126,36 +134,36 @@ final class ForumController
     public function createPost(Request $request): JsonResponse
     {
         if (!$request->isPost()) {
-            return new JsonResponse(['error' => 'Invalid method'], 405);
+            return $this->json(['error' => 'Invalid method'], 405);
         }
 
-        $threadId = (int)$request->post('thread_id');
-        $content = trim($request->post('content'));
-        $userId = $this->session->getUserId();
+        $threadId = $request->postInt('thread_id');
+        $content = trim($request->postString('content'));
+        $userId = $this->session->getUser()?->getId();
 
         if (empty($content)) {
-            return new JsonResponse(['error' => 'Content is empty']);
+            return $this->json(['error' => $this->translator->trans('forum.content_empty')]);
         }
 
         $postId = $this->forumService->createPost($threadId, $userId, $content);
-        return new JsonResponse(['success' => true, 'post_id' => $postId]);
+        return $this->json(['success' => true, 'post_id' => $postId]);
     }
 
     public function like(Request $request): JsonResponse
     {
         if (!$request->isPost()) {
-            return new JsonResponse(['error' => 'Invalid method'], 405);
+            return $this->json(['error' => 'Invalid method'], 405);
         }
 
-        $type = $request->post('type');
-        $targetId = (int)$request->post('target_id');
-        $userId = $this->session->getUserId();
+        $type = $request->postString('type');
+        $targetId = $request->postInt('target_id');
+        $userId = $this->session->getUser()?->getId();
 
         $result = $this->forumService->like($userId, $type, $targetId);
         if ($result) {
-            return new JsonResponse(['success' => true]);
+            return $this->json(['success' => true]);
         }
-        return new JsonResponse(['error' => 'Already liked']);
+        return $this->json(['error' => 'Already liked']);
     }
 
     public function editThreadForm(Request $request, int $id): Response
@@ -164,31 +172,25 @@ final class ForumController
         if (!$thread) {
             return new RedirectResponse('/forum');
         }
-        if ($thread['user_id'] != $this->session->getUserId() && !$this->permissionService->hasPermission('c')) {
+        if ($thread['user_id'] != $this->session->getUser()?->getId() && !$this->permissionService->hasPermission('c')) {
             return new RedirectResponse('/forum');
         }
         return new Response(View::render('forum/edit_thread.tpl', ['thread' => $thread]));
     }
 
-    public function editThread(Request $request, $id): Response
+    public function editThread(Request $request, int $id): Response
     {
-        if ($id !== null && is_numeric($id)) {
-            $id = (int)$id;
-        } else {
-            $id = null;
-        }
-
         $thread = $this->threadRepo->findById($id);
         if (!$thread) {
             return new RedirectResponse('/forum');
         }
-        if ($thread['user_id'] != $this->session->getUserId() && !$this->permissionService->hasPermission('c')) {
+        if ($thread['user_id'] != $this->session->getUser()?->getId() && !$this->permissionService->hasPermission('c')) {
             return new RedirectResponse('/forum');
         }
 
         if ($request->isPost()) {
-            $title = trim($request->post('title'));
-            $content = trim($request->post('content'));
+            $title = trim($request->postString('title'));
+            $content = trim($request->postString('content'));
             if (!empty($title) && !empty($content)) {
                 $this->threadRepo->update($id, $title, $content);
             }
@@ -198,63 +200,45 @@ final class ForumController
         return new Response(View::render('forum/edit_thread.tpl', ['thread' => $thread]));
     }
 
-    public function deleteThread(Request $request, $id): Response
+    public function deleteThread(Request $request, int $id): Response
     {
-        if ($id !== null && is_numeric($id)) {
-            $id = (int)$id;
-        } else {
-            $id = null;
-        }
-
         $thread = $this->threadRepo->findById($id);
         if (!$thread) {
             return new RedirectResponse('/forum');
         }
-        if ($thread['user_id'] != $this->session->getUserId() && !$this->permissionService->hasPermission('c')) {
+        if ($thread['user_id'] != $this->session->getUser()?->getId() && !$this->permissionService->hasPermission('c')) {
             return new RedirectResponse('/forum');
         }
         $this->threadRepo->deleteSoft($id);
         return new RedirectResponse("/forum/forum/{$thread['forum_id']}");
     }
 
-    public function editPostForm(Request $request, $id): Response
+    public function editPostForm(Request $request, int $id): Response
     {
-        if ($id !== null && is_numeric($id)) {
-            $id = (int)$id;
-        } else {
-            $id = null;
-        }
-
         $post = $this->postRepo->findById($id);
         if (!$post) {
             return new RedirectResponse('/forum');
         }
         $thread = $this->threadRepo->findById($post['thread_id']);
-        if ($thread['user_id'] != $this->session->getUserId() && !$this->permissionService->hasPermission('c')) {
+        if ($thread['user_id'] != $this->session->getUser()?->getId() && !$this->permissionService->hasPermission('c')) {
             return new RedirectResponse('/forum');
         }
         return new Response(View::render('forum/edit_post.tpl', ['post' => $post, 'thread' => $thread]));
     }
 
-    public function editPost(Request $request, $id): Response
+    public function editPost(Request $request, int $id): Response
     {
-        if ($id !== null && is_numeric($id)) {
-            $id = (int)$id;
-        } else {
-            $id = null;
-        }
-
         $post = $this->postRepo->findById($id);
         if (!$post) {
             return new RedirectResponse('/forum');
         }
         $thread = $this->threadRepo->findById($post['thread_id']);
-        if ($thread['user_id'] != $this->session->getUserId() && !$this->permissionService->hasPermission('c')) {
+        if ($thread['user_id'] != $this->session->getUser()?->getId() && !$this->permissionService->hasPermission('c')) {
             return new RedirectResponse('/forum');
         }
 
         if ($request->isPost()) {
-            $content = trim($request->post('content'));
+            $content = trim($request->postString('content'));
             if (!empty($content)) {
                 $this->postRepo->update($id, $content);
             }
@@ -264,20 +248,14 @@ final class ForumController
         return new Response(View::render('forum/edit_post.tpl', ['post' => $post, 'thread' => $thread]));
     }
 
-    public function deletePost(Request $request, $id): Response
+    public function deletePost(Request $request, int $id): Response
     {
-        if ($id !== null && is_numeric($id)) {
-            $id = (int)$id;
-        } else {
-            $id = null;
-        }
-
         $post = $this->postRepo->findById($id);
         if (!$post) {
             return new RedirectResponse('/forum');
         }
         $thread = $this->threadRepo->findById($post['thread_id']);
-        if ($thread['user_id'] != $this->session->getUserId() && !$this->permissionService->hasPermission('c')) {
+        if ($thread['user_id'] != $this->session->getUser()?->getId() && !$this->permissionService->hasPermission('c')) {
             return new RedirectResponse('/forum');
         }
         $this->postRepo->delete($id);
@@ -292,8 +270,8 @@ final class ForumController
 
     public function search(Request $request): Response
     {
-        $query = trim($request->get('q', ''));
-        $page = (int)$request->get('page', 1);
+        $query = trim($request->getString('q', ''));
+        $page = $request->getInt('page', 1);
         $perPage = 20;
 
         $results = [];
@@ -314,8 +292,13 @@ final class ForumController
 
     public function lastTopics(Request $request): JsonResponse
     {
-        $limit = (int)($request->get('limit') ?? 5);
-        $topics = $this->threadRepo->findLast($limit);
-        return new JsonResponse($topics);
+        $cache = new FilesystemAdapter('widget_forum', 0, ROOT_DIR . '/var/cache');
+        $topics = $cache->get('last_topics', function (ItemInterface $item) use ($request) {
+            $item->expiresAfter(60);
+            $limit = ($request->getInt('limit'));
+            return $this->threadRepo->findLast($limit);
+        });
+
+        return $this->json($topics);
     }
 }

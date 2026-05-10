@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace GreyPanel\Service;
 
 use GreyPanel\Integration\Statistics\CsStatsMysqlIntegration;
-use GreyPanel\Integration\Statistics\RankMeIntegration;
 use GreyPanel\Integration\Statistics\LevelsRanksIntegration;
+use GreyPanel\Integration\Statistics\RankMeIntegration;
 use GreyPanel\Integration\Statistics\StatisticsIntegration;
-use GreyPanel\Model\Statistic;
 use GreyPanel\Interface\Repository\MonitorServerRepositoryInterface;
 use GreyPanel\Interface\Service\EncryptionServiceInterface;
+use GreyPanel\Model\Statistic;
 
 class StatisticsService
 {
@@ -21,24 +21,25 @@ class StatisticsService
     public const ENGINE_LEVELS_RANKS = 5;
 
     private ?StatisticsIntegration $integration = null;
-    private array $config;
 
     public function __construct(
         private MonitorServerRepositoryInterface $serverRepo,
         private EncryptionServiceInterface $encryption
-    ) {}
+    ) {
+    }
 
     private function getIntegration(): ?StatisticsIntegration
     {
-        if ($this->integration !== null) return $this->integration;
+        if ($this->integration !== null) {
+            return $this->integration;
+        }
 
         $servers = $this->serverRepo->findAll();
         foreach ($servers as $server) {
             $engine = (int)($server['stats_engine'] ?? 0);
-            if ($engine === 0) continue;
-
-            // Сохраняем конфигурацию сервера
-            $this->config = $server;
+            if ($engine === 0) {
+                continue;
+            }
 
             switch ($engine) {
                 case self::ENGINE_CSSTATS:
@@ -69,35 +70,45 @@ class StatisticsService
     public function getRanking(int $page = 1, int $perPage = 20, int $sortType = 0, ?string $search = null): array
     {
         $integration = $this->getIntegration();
-        if (!$integration) return [];
+        if (!$integration) {
+            return [];
+        }
         return $integration->getRanking($page, $perPage, $sortType, $search);
     }
 
     public function getTotalPlayers(?string $search = null): int
     {
         $integration = $this->getIntegration();
-        if (!$integration) return 0;
+        if (!$integration) {
+            return 0;
+        }
         return $integration->getTotalPlayers($search);
     }
 
     public function getPlayerById(int $id): ?Statistic
     {
         $integration = $this->getIntegration();
-        if (!$integration) return null;
+        if (!$integration) {
+            return null;
+        }
         return $integration->getPlayerById($id);
     }
 
     public function getPlayerBySteamId(string $steamId): ?Statistic
     {
         $integration = $this->getIntegration();
-        if (!$integration) return null;
+        if (!$integration) {
+            return null;
+        }
         return $integration->getPlayerBySteamId($steamId);
     }
 
     public function getSortTypes(): array
     {
         $integration = $this->getIntegration();
-        if (!$integration) return [];
+        if (!$integration) {
+            return [];
+        }
         return $integration->getSortTypes();
     }
 }

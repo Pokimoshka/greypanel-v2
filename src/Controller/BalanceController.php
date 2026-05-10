@@ -8,20 +8,27 @@ use GreyPanel\Core\Request;
 use GreyPanel\Core\Response;
 use GreyPanel\Core\View;
 use GreyPanel\Interface\Repository\MoneyLogRepositoryInterface;
+use GreyPanel\Interface\Repository\UserRepositoryInterface;
+use GreyPanel\Interface\Service\SessionServiceInterface;
 
 class BalanceController
 {
-    public function __construct(private MoneyLogRepositoryInterface $moneyLogRepo)
-    {
+    public function __construct(
+        private MoneyLogRepositoryInterface $moneyLogRepo,
+        private UserRepositoryInterface $userRepo,
+        private SessionServiceInterface $session
+    ) {
     }
 
     public function index(Request $request): Response
     {
-        $userId = $_SESSION['user_id'];
+        $userId = $this->session->getUser()?->getId();
         $logs = $this->moneyLogRepo->findByUserId($userId, 20);
         $totalRecharge = $this->moneyLogRepo->getTotalRecharge($userId);
+        $user = $this->userRepo->findById($userId);
 
         $html = View::render('balance/index.tpl', [
+            'user' => $user,
             'logs' => $logs,
             'total_recharge' => $totalRecharge,
         ]);
@@ -30,7 +37,7 @@ class BalanceController
 
     public function history(Request $request): Response
     {
-        $userId = $_SESSION['user_id'];
+        $userId = $this->session->getUser()?->getId();
         $page = (int)$request->get('page', 1);
         $perPage = 20;
         $logs = $this->moneyLogRepo->findPaginatedByUserId($userId, $page, $perPage);

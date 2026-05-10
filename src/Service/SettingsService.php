@@ -24,9 +24,8 @@ final class SettingsService implements SettingsServiceInterface
 
     public function get(string $key, ?string $default = null): ?string
     {
-        // Пытаемся получить из кэша
         $cached = $this->cache->get($key, function (ItemInterface $item) use ($key, $default) {
-            $item->expiresAfter(3600); // на 1 час
+            $item->expiresAfter(3600);
             $row = $this->db->fetchOne("SELECT `value` FROM {$this->table} WHERE `key` = ?", [$key]);
             return $row ? $row['value'] : $default;
         });
@@ -39,7 +38,6 @@ final class SettingsService implements SettingsServiceInterface
             "INSERT INTO {$this->table} (`key`, `value`) VALUES (?, ?) ON DUPLICATE KEY UPDATE `value` = ?",
             [$key, $value, $value]
         );
-        // Сбрасываем кэш для этого ключа
         $this->cache->delete($key);
     }
 

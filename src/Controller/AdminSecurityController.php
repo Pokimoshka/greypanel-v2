@@ -35,9 +35,9 @@ class AdminSecurityController
 
     public function save(Request $request): Response
     {
-        $recaptchaEnabled = (bool)$request->post('recaptcha_enabled');
-        $recaptchaSiteKey = trim($request->post('recaptcha_site_key'));
-        $recaptchaSecretKey = trim($request->post('recaptcha_secret_key'));
+        $recaptchaEnabled = $request->postBool('recaptcha_enabled');
+        $recaptchaSiteKey = trim($request->postString('recaptcha_site_key'));
+        $recaptchaSecretKey = trim($request->postString('recaptcha_secret_key'));
 
         $this->settings->set('recaptcha_enabled', $recaptchaEnabled ? '1' : '0');
         $this->settings->set('recaptcha_site_key', $recaptchaSiteKey);

@@ -8,4 +8,5 @@ interface OnlineRepositoryInterface
 {
     public function findOnlineUsers(): array;
     public function updateActivity(int $userId): void;
+    public function deleteExpired(int $seconds = 300): int;
 }

@@ -14,6 +14,7 @@ use GreyPanel\Interface\Repository\ForumThreadRepositoryInterface;
 use GreyPanel\Interface\Repository\UserRepositoryInterface;
 use GreyPanel\Interface\Service\ForumServiceInterface;
 use GreyPanel\Interface\Service\MarkdownServiceInterface;
+use GreyPanel\Interface\Service\SessionServiceInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Contracts\Cache\ItemInterface;
 
@@ -30,6 +31,7 @@ final class ForumService implements ForumServiceInterface
         private ForumReadRepositoryInterface $readRepo,
         private UserRepositoryInterface $userRepo,
         private MarkdownServiceInterface $markdown,
+        private SessionServiceInterface $session,
         private Database $db,
         private LoggerInterface $logger,
     ) {
@@ -39,7 +41,7 @@ final class ForumService implements ForumServiceInterface
     public function getCategoriesWithForums(): array
     {
         return $this->cache->get('categories_with_forums', function (ItemInterface $item) {
-            $item->expiresAfter(600); // 10 минут
+            $item->expiresAfter(300);
             $categories = $this->categoryRepo->findAll();
             foreach ($categories as &$cat) {
                 $cat['forums'] = $this->forumRepo->findByCategoryId($cat['id']);
@@ -80,8 +82,17 @@ final class ForumService implements ForumServiceInterface
         }
         $thread['author'] = $this->userRepo->findById($thread['user_id']);
         $thread['posts'] = $this->postRepo->findByThreadId($threadId, $page, $perPage);
+
+        if ($this->session->isLoggedIn()) {
+            $currentUserId = $this->session->getUser()->getId();
+            foreach ($thread['posts'] as &$post) {
+                $post['user_liked'] = $this->likeRepo->hasLiked($currentUserId, 'post', $post['id']);
+            }
+        }
+
         foreach ($thread['posts'] as &$post) {
-            $post['author'] = $this->userRepo->findById($post['user_id']);
+            $author = $this->userRepo->findById($post['user_id']);
+            $post['author'] = $author ? $author->toArray() : null;
             $post['content_html'] = $this->markdown->parse($post['content']);
         }
         $thread['posts_count'] = $this->postRepo->countByThreadId($threadId);
@@ -102,7 +113,6 @@ final class ForumService implements ForumServiceInterface
 
             $this->db->getPdo()->commit();
 
-            // Сбрасываем кэш главной страницы
             $homeCache = new CacheService('home');
             $homeCache->delete('last_topics');
             $homeCache->delete('top_donators');
@@ -135,25 +145,26 @@ final class ForumService implements ForumServiceInterface
             return false;
         }
         $this->likeRepo->addLike($userId, $type, $targetId);
-        if ($type === 'thread') {
-            $thread = $this->threadRepo->findById($targetId);
-            if ($thread) {
-                $author = $this->userRepo->findById($thread['user_id']);
-                if ($author) {
-                    $author->setCountLike($author->getCountLike() + 1);
-                    $this->userRepo->update($author);
-                }
-            }
-        } elseif ($type === 'post') {
-            $post = $this->postRepo->findById($targetId);
-            if ($post) {
-                $author = $this->userRepo->findById($post['user_id']);
-                if ($author) {
-                    $author->setCountLike($author->getCountLike() + 1);
-                    $this->userRepo->update($author);
-                }
+
+        $table = $type === 'thread' ? 'forum_threads' : 'forum_posts';
+        $this->db->query(
+            "UPDATE " . $this->db->table($table) . " SET likes_count = likes_count + 1 WHERE id = ?",
+            [$targetId]
+        );
+
+        $column = $type === 'thread' ? 'thread_id' : 'id';
+        $target = $type === 'thread'
+            ? $this->threadRepo->findById($targetId)
+            : $this->postRepo->findById($targetId);
+
+        if ($target) {
+            $author = $this->userRepo->findById((int)$target['user_id']);
+            if ($author) {
+                $author->setCountLike($author->getCountLike() + 1);
+                $this->userRepo->update($author);
             }
         }
+
         return true;
     }
 

@@ -16,7 +16,7 @@ class Ban
     public string $adminNick;
     public string $reason;
     public int $created;
-    public int $length; // в секундах, 0 = навсегда
+    public int $length;
     public int $expired;
     public ?int $endTime = null;
     public string $serverName;
@@ -35,22 +35,22 @@ class Ban
         $this->expired = (int)($data['expired'] ?? 0);
         $this->serverName = $data['server_name'] ?? '';
 
-        // Определяем статус
-        if ($data['unban_type'] == -2) {
-            $this->status = self::STATUS_BOUGHT_UNBAN;
-        } elseif ($this->expired == 1 || ($data['unban_type'] ?? 0) == -1) {
-            $this->status = self::STATUS_UNBANNED;
+        if ($this->expired == 1) {
+            if (strpos($this->reason, '[PAID]') !== false) {
+                $this->status = self::STATUS_BOUGHT_UNBAN;
+            } else {
+                $this->status = self::STATUS_UNBANNED;
+            }
         } elseif ($this->length > 0 && ($this->created + $this->length) < time()) {
             $this->status = self::STATUS_EXPIRED;
-        } elseif ($this->length == 0) {
-            $this->status = self::STATUS_ACTIVE; // навсегда
         } else {
-            $this->endTime = $this->created + $this->length;
             $this->status = self::STATUS_ACTIVE;
+            if ($this->length > 0) {
+                $this->endTime = $this->created + $this->length;
+            }
         }
 
         $this->adminUserId = isset($data['admin_user_id']) ? (int)$data['admin_user_id'] : null;
-        $this->unbanType = isset($data['unban_type']) ? (int)$data['unban_type'] : null;
     }
 
     public function isActive(): bool

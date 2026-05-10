@@ -23,6 +23,7 @@ final class User
     private int $countPost = 0;
     private int $countLike = 0;
     private ?UserGroup $group = null;
+    private string $lang = 'ru';
 
     public function __construct(array $data = [])
     {
@@ -31,7 +32,7 @@ final class User
         $this->email = $data['email'] ?? '';
         $this->money = (int)($data['money'] ?? 0);
         $this->allMoney = (int)($data['all_money'] ?? 0);
-        $this->avatar = $data['avatar'] ?? 'public/assets/img/avatar_default.png';
+        $this->avatar = $data['avatar'] ?? '/assets/img/avatar_default.png';
         $this->regData = (int)($data['reg_data'] ?? 0);
         $this->regIp = $data['reg_ip'] ?? '';
         $this->referral = (int)($data['referral'] ?? 0);
@@ -42,9 +43,9 @@ final class User
         $this->countThread = (int)($data['count_thread'] ?? 0);
         $this->countPost = (int)($data['count_post'] ?? 0);
         $this->countLike = (int)($data['count_like'] ?? 0);
+        $this->lang = $data['lang'] ?? 'ru';
     }
 
-    // Геттеры
     public function getId(): ?int
     {
         return $this->id;
@@ -124,7 +125,6 @@ final class User
         return $this->group !== null && $this->group->hasPermission($permission);
     }
 
-    // Сеттеры
     public function setUsername(string $username): self
     {
         $this->username = $username;
@@ -185,5 +185,33 @@ final class User
     {
         $this->group = $group;
         return $this;
+    }
+
+    public function getLang(): string
+    {
+        return $this->lang;
+    }
+
+    public function setLang(string $lang): void
+    {
+        $this->lang = $lang;
+    }
+
+    public function toArray(): array
+    {
+        return [
+            'id' => $this->id,
+            'username' => $this->username,
+            'email' => $this->email,
+            'group_id' => $this->group?->getId(),
+            'group' => $this->group?->getName(),
+            'group_flags' => $this->group?->getFlags(),
+            'avatar' => $this->avatar,
+            'count_thread' => $this->countThread,
+            'count_post' => $this->countPost,
+            'count_like' => $this->countLike,
+            'money' => $this->money,
+            'all_money' => $this->allMoney,
+        ];
     }
 }

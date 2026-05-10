@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace GreyPanel\Service;
 
+use GreyPanel\Helper\StringHelper;
 use GreyPanel\Interface\Repository\NewsRepositoryInterface;
 use GreyPanel\Interface\Service\MarkdownServiceInterface;
 use GreyPanel\Interface\Service\NewsServiceInterface;
@@ -51,7 +52,7 @@ final class NewsService implements NewsServiceInterface
     public function create(array $data): int
     {
         if (empty($data['slug'])) {
-            $data['slug'] = $this->slugify($data['title']);
+            $data['slug'] = StringHelper::slugify($data['title']);
         }
         return $this->newsRepo->create($data);
     }
@@ -59,7 +60,7 @@ final class NewsService implements NewsServiceInterface
     public function update(int $id, array $data): void
     {
         if (empty($data['slug'])) {
-            $data['slug'] = $this->slugify($data['title']);
+            $data['slug'] = StringHelper::slugify($data['title']);
         }
         $this->newsRepo->update($id, $data);
     }
@@ -74,14 +75,8 @@ final class NewsService implements NewsServiceInterface
         $this->newsRepo->incrementViews($id);
     }
 
-    private function slugify(string $text): string
+    public function getByIdRaw(int $id): ?array
     {
-        $text = preg_replace('~[^\pL\d]+~u', '-', $text);
-        $text = iconv('utf-8', 'us-ascii//TRANSLIT', $text);
-        $text = preg_replace('~[^-\w]+~', '', $text);
-        $text = trim($text, '-');
-        $text = preg_replace('~-+~', '-', $text);
-        $text = strtolower($text);
-        return $text ?: 'n-a';
+        return $this->newsRepo->findById($id);
     }
 }

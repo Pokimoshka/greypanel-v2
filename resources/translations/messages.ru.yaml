@@ -1,0 +1,703 @@
+language:
+  name: 'Русский'
+
+# Общие
+site:
+  title: 'GreyPanel'
+  description: 'Современная панель управления игровыми серверами'
+  welcome: 'Добро пожаловать на %site_name%!'
+
+# Навигация
+nav:
+  navigation: 'Навигация'
+  home: 'Главная'
+  forum: 'Форум'
+  news: 'Новости'
+  monitor: 'Мониторинг'
+  stats: 'Статистика'
+  bans: 'Бан-лист'
+  vip: 'VIP'
+  login: 'Войти'
+  register: 'Регистрация'
+  logout: 'Выход'
+  profile: 'Профиль'
+  balance: 'Баланс'
+  settings: 'Настройки'
+  admin: 'Админка'
+  create_thread: 'Создать тему'
+  top_up: 'Пополнить баланс'
+  site: 'На сайт'
+  language: 'Язык'
+
+# Главная страница
+home:
+  chat:
+    title: 'Общий чат'
+    placeholder: 'Напишите сообщение...'
+    send: 'Отправить'
+    empty: 'Нет сообщений. Будьте первым!'
+    login_required: 'Войдите, чтобы писать в чат.'
+  monitor:
+    title: 'Мониторинг серверов'
+    offline: 'Нет активных серверов'
+    players: 'Игроки'
+    map: 'Карта'
+    connect: 'Подключиться'
+    details: 'Подробнее'
+    loading: 'Загрузка...'
+  welcome_block:
+    guest_buttons:
+      login: 'Войти'
+      register: 'Регистрация'
+
+# Форум
+forum:
+  title: 'Форум'
+  search: 'Поиск'
+  back: 'К разделам'
+  back_to_list: 'К списку тем'
+  create_thread: 'Создать тему'
+  replies: 'Ответов'
+  views: 'Просмотров'
+  last_post: 'Последнее'
+  no_threads: 'В этом разделе ещё нет тем. Будьте первым!'
+  no_forums: 'В этой категории нет разделов'
+  empty: 'Форум пока пуст'
+  closed: 'Тема закрыта'
+  reply:
+    title: 'Ответить'
+    send: 'Отправить'
+    login_required: 'Войдите, чтобы ответить'
+  thread:
+    author: 'Автор'
+    created: 'Создано'
+    edited: 'отредактировано'
+    quote: 'Цитировать'
+    edit: 'Редактировать'
+    delete: 'Удалить'
+  create:
+    title_label: 'Заголовок'
+    content_label: 'Сообщение'
+    submit: 'Создать тему'
+  edit:
+    title: 'Редактировать тему'
+    submit: 'Сохранить'
+  section: "Раздел"
+  topics: "Темы"
+  last_message: "Последнее сообщение"
+  no_messages: "Нет сообщений"
+  empty_hint: "Загляните позже или станьте первым автором!"
+  topic: "Тема"
+  no_replies: "Нет ответов"
+  reply_placeholder: "Ваше сообщение..."
+  reply_empty: "Введите сообщение"
+  search_placeholder: "Введите поисковый запрос (мин. 3 символа)"
+  search_min: "Введите минимум 3 символа."
+  found: "Найдено"
+  not_found: "Ничего не найдено."
+  create_thread_in: "Создать тему в разделе"
+  markdown_hint: "Поддерживается Markdown."
+  edit_thread: "Редактировать тему"
+  edit_post: "Редактировать сообщение"
+  content_empty: 'Сообщение не может быть пустым'
+  delete_thread_confirm: 'Вы уверены, что хотите удалить эту тему?'
+  delete: 'Удалить'
+
+# Новости
+news:
+  title: 'Новости'
+  read_more: 'Читать далее'
+  published: 'Опубликовано'
+  no_news: 'Новостей пока нет'
+  back: 'Все новости'
+  edit: 'Редактировать'
+  no_news_hint: "Загляните позже!"
+
+# Мониторинг
+monitor:
+  title: 'Мониторинг серверов'
+  no_servers: 'Нет активных серверов'
+  loading: 'Загрузка данных...'
+  status: 'Статус'
+  server: 'Сервер'
+  players: 'Игроки'
+  map: 'Карта'
+  connect: 'Подключиться'
+  offline: 'Оффлайн'
+  online: 'Онлайн'
+  unavailable: "Мониторинг временно недоступен."
+
+# Статистика
+stats:
+  title: 'Рейтинг игроков'
+  unavailable: 'Статистика временно недоступна'
+  rank: 'Ранг'
+  player: 'Игрок'
+  steam_id: 'Steam ID'
+  kills: 'Убийств'
+  deaths: 'Смертей'
+  kd: 'K/D'
+  hs: 'HS%'
+  time: 'Время'
+  search: 'Поиск по нику или Steam ID'
+  apply: 'Применить'
+  sort: 'Сортировка'
+  no_data: 'Нет данных'
+  back: "К рейтингу"
+  main: "Основное"
+  additional: "Дополнительно"
+  game_time: "Время игры"
+  last_seen: "Последний вход"
+  shots: "Выстрелов"
+  hits: "Попаданий"
+  defuses: "Разминирований"
+  plants: "Установок бомбы"
+  explosions: "Подрывов"
+  skill: "Скилл"
+  rank_pos: "Позиция в рейтинге"
+  unavailable_hint: "На серверах не настроена интеграция со статистикой."
+  contact_admin: "Свяжитесь с администратором."
+
+# Бан-лист
+bans:
+  title: 'Бан-лист'
+  search_placeholder: 'Поиск по нику, IP или причине'
+  status_all: 'Все статусы'
+  status_active: 'Активные'
+  status_expired: 'Истекшие'
+  status_unbanned: 'Разбаненные'
+  status_paid: 'Куплен разбан'
+  apply: 'Применить'
+  player: 'Игрок'
+  admin: 'Админ'
+  reason: 'Причина'
+  date: 'Дата'
+  expires: 'Истекает'
+  server: 'Сервер'
+  status: 'Статус'
+  actions: 'Действия'
+  request_unban: 'Подать заявку на разбан'
+  paid_unban: 'Купить разбан'
+  no_bans: 'Банов не найдено'
+  no_reason: "Причина не указана"
+  demo_prompt: "Введите ссылку на демо (если есть):"
+  request_created: "Заявка создана! Перейти к теме?"
+  paid_confirm_prefix: "Списать"
+  paid_success: "Бан успешно снят! Страница будет обновлена."
+  unauthorized: 'Необходимо авторизоваться'
+  not_found: 'Бан не найден'
+  forum_not_set: 'Форум для заявок не настроен'
+  create_thread_failed: 'Ошибка создания темы'
+  paid_disabled: 'Платный разбан отключён'
+  insufficient_funds: 'Недостаточно средств'
+  delete_failed: 'Не удалось удалить бан'
+
+# Платежи/Баланс
+balance:
+  title: 'Баланс'
+  your_balance: 'Ваш баланс'
+  total_recharge: 'Всего пополнено'
+  history: 'История операций'
+  top_up: 'Пополнение счёта'
+  yoomoney: 'ЮMoney'
+  other_methods: 'Другие способы в разработке'
+  history_empty: 'Нет операций'
+  amount: 'Сумма'
+  type: 'Тип'
+  description: 'Описание'
+  date: 'Дата'
+  replenishment: "Пополнение"
+  write_off: "Списание"
+  recent: "Последние операции"
+  choose_method: "Выберите способ пополнения:"
+  go_to_balance: "Перейти к балансу"
+
+# Аутентификация
+auth:
+  login: 'Вход'
+  register: 'Регистрация'
+  username_email: 'Ник или Email'
+  username: 'Игровой ник'
+  email: 'Email'
+  password: 'Пароль'
+  password_confirm: 'Повторите пароль'
+  remember_me: 'Запомнить меня'
+  login_button: 'Войти'
+  register_button: 'Зарегистрироваться'
+  no_account: 'Нет аккаунта?'
+  has_account: 'Уже есть аккаунт?'
+  login_link: 'Зарегистрироваться'
+  register_link: 'Войти'
+  captcha_required: 'Пожалуйста, подтвердите, что вы не робот.'
+  logged_in: 'Пользователь вошёл'
+  registered: 'Пользователь зарегистрировался'
+  email_invalid: 'Некорректный email'
+  email_taken: 'Пользователь с таким email уже существует'
+  password_mismatch: 'Пароли не совпадают'
+
+# Профиль
+profile:
+  title: 'Профиль'
+  stats: 'Статистика'
+  threads: 'Тем на форуме'
+  posts: 'Сообщений'
+  likes: 'Лайков'
+  referral: 'Реферальная программа'
+  referral_desc: 'Приглашайте друзей и получайте 10% от их пополнений.'
+  referral_link: 'Ваша реферальная ссылка'
+  copy: 'Копировать'
+  referrals: 'Приглашённые'
+  no_referrals: 'Нет приглашённых'
+  earnings: 'Заработано'
+  copy_success: "Ссылка скопирована!"
+  copy_error: "Не удалось скопировать. Скопируйте вручную."
+  registration_date: "Дата регистрации"
+
+# Настройки
+settings:
+  title: 'Настройки аккаунта'
+  email: 'Email'
+  new_password: 'Новый пароль'
+  password_confirm: 'Повторите пароль'
+  avatar: 'Аватар'
+  save: 'Сохранить'
+  password_placeholder: "Оставьте пустым, чтобы не менять"
+  email_invalid: 'Некорректный email'
+  email_taken: 'Этот email уже используется'
+  password_short: 'Пароль должен быть не менее 8 символов'
+  password_weak: 'Пароль должен содержать строчные, прописные буквы и цифры'
+  password_mismatch: 'Пароли не совпадают'
+  password_changed: 'Пароль успешно изменён'
+  avatar_updated: 'Аватар обновлён.'
+  avatar_error: 'Не удалось сохранить аватар: %message%'
+  language_changed: 'Язык изменён'
+  settings_saved: 'Настройки сохранены'
+
+avatar:
+  upload_error: 'File upload error.'
+  too_big: 'File too large (max 2 MB).'
+  invalid_type: 'Only JPEG, PNG, GIF, WEBP are allowed.'
+
+# Ошибки
+errors:
+  404: 'Страница не найдена'
+  405: 'Метод не поддерживается'
+  429: 'Слишком много запросов'
+  500: 'Внутренняя ошибка сервера'
+  try_again: 'Попробуйте позже'
+  back: 'Вернуться назад'
+  unknown: "Неизвестная ошибка"
+  network: "Ошибка соединения"
+
+# Платежи
+payment:
+  success: "Платёж успешно выполнен!"
+  success_text: "Деньги зачислены на ваш баланс."
+  redirecting: "Перенаправление на платёжную систему..."
+  redirect_manual: "Если переход не произошёл, нажмите кнопку ниже."
+  go_to_pay: "Перейти к оплате"
+  invalid_amount: 'Некорректная сумма'
+
+# Админка
+admin:
+  title: 'Панель управления'
+  dashboard: 'Дашборд'
+  users: 'Пользователи'
+  groups: 'Группы'
+  services: 'Услуги'
+  tariffs: 'Тарифы'
+  servers: 'Серверы'
+  forum: 'Форум'
+  news: 'Новости'
+  themes: 'Темы'
+  modules: 'Модули'
+  seo: 'SEO'
+  payments: 'Платежи'
+  logs: 'Логи'
+  settings: 'Настройки сайта'
+  security: 'Безопасность'
+  editor: 'Редактор темы'
+  menu: 'Меню'
+  pages: 'Страницы'
+  quick_actions: 'Быстрые действия'
+  save: 'Сохранить'
+  cancel: 'Отмена'
+  delete: 'Удалить'
+  edit: 'Редактировать'
+  add: 'Добавить'
+  search: 'Искать'
+  forum_categories: 'Категории форума'
+  forum_sections: 'Разделы категории'
+  add_category: 'Добавить категорию'
+  add_section: 'Добавить раздел'
+  edit_category: 'Редактировать категорию'
+  edit_section: 'Редактировать раздел'
+  sort_order: 'Порядок сортировки'
+  actions: 'Действия'
+  move_hint: 'Перетаскивайте строки для изменения порядка'
+  no_categories: 'Нет созданных категорий'
+  no_sections: 'Нет разделов в категории'
+  group_name: 'Название группы'
+  flags: 'Флаги (права)'
+  flags_hint: 'Буквы от a до z. Каждая буква даёт определённые права.'
+  is_default: 'Группа по умолчанию'
+  is_default_hint: 'Назначается новым пользователям'
+  add_group: 'Добавить группу'
+  edit_group: 'Редактировать группу'
+  no_groups: 'Нет созданных групп'
+  server_settings: 'Настройки сервера'
+  main_params: 'Основные параметры'
+  type: 'Тип сервера'
+  ip: 'IP адрес'
+  port: 'Порт (игровой)'
+  query_port: 'Query порт'
+  rcon_port: 'RCON порт'
+  disable: 'Отключить (не показывать)'
+  privilege_integration: 'Куда записывать купленные услуги'
+  banlist_connection: 'Подключение к AmxBans'
+  ftp_connection: 'FTP подключение (users.ini)'
+  stats_integration: 'Статистика'
+  stats_engine: 'Движок статистики'
+  db_host: 'Хост БД'
+  db_user: 'Пользователь БД'
+  db_password: 'Пароль БД'
+  db_name: 'Имя БД'
+  db_prefix: 'Префикс таблиц'
+  leave_empty: 'Оставьте пустым, чтобы не менять'
+  test_connection: 'Проверить подключение'
+  service_name: 'Название услуги'
+  service_description: 'Описание услуги'
+  rights: 'Права (флаги)'
+  servers_available: 'Серверы, на которых доступна услуга'
+  group_restriction: 'Ограничение по группе'
+  all_groups: 'Все группы'
+  create_service: 'Создать услугу'
+  add_tariff: 'Добавить тариф'
+  tariff_duration: 'Длительность (дней)'
+  tariff_price: 'Цена (₽)'
+  tariff_active: 'Активен'
+  select_service: 'Сначала выберите услугу'
+  no_services: 'Нет услуг'
+  no_tariffs: 'Нет тарифов'
+  user_list: 'Список пользователей'
+  search_placeholder: 'Поиск по нику или email'
+  group: 'Группа'
+  balance: 'Баланс'
+  banned: 'Забанен'
+  edit_user: 'Редактировать'
+  yoomoney_settings: 'Настройки ЮMoney'
+  wallet: 'Номер кошелька'
+  secret_key: 'Секретный ключ'
+  url_notifications: 'URL для уведомлений'
+  copy: 'Скопировать'
+  recaptcha_settings: 'Google reCAPTCHA'
+  enable: 'Включить reCAPTCHA'
+  site_key: 'Site Key'
+  secret_key_field: 'Secret Key'
+  meta_tags: 'Мета-теги'
+  description: 'Описание'
+  keywords: 'Keywords'
+  sitemap: 'Sitemap'
+  robots: 'robots.txt'
+  regenerate: 'Сгенерировать сейчас'
+  seo_settings: 'SEO настройки'
+  modules_list: 'Управление модулями'
+  enabled: 'Включён'
+  news_list: 'Список новостей'
+  heading: 'Заголовок'
+  slug: 'Slug (URL)'
+  content: 'Содержание'
+  published: 'Опубликовать'
+  author: 'Автор'
+  views: 'Просмотров'
+  add_news: 'Добавить новость'
+  edit_news: 'Редактировать новость'
+  delete_news: 'Удалить'
+  file_tree: 'Файлы темы'
+  new_file: 'Новый файл'
+  new_folder: 'Новая папка'
+  preview: 'Предпросмотр'
+  insert_block: 'Вставить блок'
+  blocks_modal: 'Выберите блок'
+  current_file: 'Не выбран файл'
+  file_saved: 'Файл сохранён'
+  themes_list: 'Темы оформления'
+  active_theme: 'Активна'
+  activate: 'Активировать'
+  edit_theme: 'Редактировать'
+  site_name_field: 'Название сайта'
+  protocol: 'Протокол сайта'
+  manual_url: 'Полный URL (опционально)'
+  current_url: 'Текущий URL'
+  debug_mode: 'Режим отладки'
+  session_lifetime: 'Время жизни сессии'
+  session_name: 'Имя cookie сессии'
+  save_settings: 'Сохранить все настройки'
+  theme_editor: 'Редактор темы'
+  loading: 'Загрузка'
+  close: 'Закрыть'
+  current_folder: 'Текущая папка'
+  name: 'Имя'
+  size: 'Размер'
+  modified: 'Изменён'
+  enter_file_name: 'Имя файла (с расширением, например header.tpl):'
+  enter_folder_name: 'Имя папки:'
+  delete_item_confirm: 'Удалить {path}?'
+  error_occurred: 'Произошла ошибка'
+  no_preview: 'Нет превью'
+  version: 'Версия'
+  username: 'Ник'
+  email: 'Email'
+  new_password: 'Новый пароль'
+  issue_service: 'Выдача услуги'
+  back_to_services: 'К услугам'
+  service: 'Услуга'
+  tariff: 'Тариф'
+  select_service_first: 'Сначала выберите услугу'
+  bind_type: 'Тип привязки'
+  nick_password: 'Ник + пароль'
+  password: 'Пароль'
+  nick: 'Ник'
+  activate_on_servers: 'Серверы для активации'
+  issue: 'Выдать'
+  days: 'дн.'
+  load_error: 'Ошибка загрузки'
+  of_user: 'пользователя'
+  expiry_date: 'Дата окончания'
+  expiry_hint: 'Оставьте пустым для бессрочной услуги'
+  user_services: 'Услуги пользователя'
+  back_to_users: 'К пользователям'
+  tariff_days: 'Дней'
+  forever: 'Навсегда'
+  expired: 'Истекла'
+  confirm_delete_service: 'Удалить услугу?'
+  group_on_purchase: 'Группа при покупке'
+  no_change: 'Не менять'
+  services_list: 'Список услуг'
+  tariffs_of_service: 'Тарифы услуги'
+  network_error: 'Ошибка соединения'
+  tariff_updated: 'Тариф обновлён'
+  confirm_delete_tariff: 'Удалить тариф?'
+  edit_tariff: 'Редактировать тариф'
+  for_service: 'для услуги'
+  install_warning: 'Внимание!'
+  install_warning_text: 'Папка /install всё ещё существует. Удалите её для безопасности.'
+  confirm_delete: 'Вы уверены, что хотите удалить?'
+  edit_service: 'Редактирование услуги'
+  main_settings: "Основные настройки"
+  extended_settings: "Расширенные настройки"
+  site_name_hint: "Отображается в заголовке страниц, мета-тегах, подвале."
+  protocol_auto: "Авто (определяется по запросу)"
+  protocol_hint: "Если выбран режим «Авто», будет использоваться протокол текущего запроса."
+  manual_url_hint: "Если указано, этот URL будет использоваться вместо автоматически определённого."
+  current_url_display: "Текущий URL"
+  debug_mode_hint: "Включайте только при поиске проблем!"
+  session_lifetime_hint: "По умолчанию 7200 (2 часа). После изменения нужно выйти и зайти заново."
+  session_name_hint: "Только латинские буквы, цифры, знак подчёркивания."
+  in_category: "в категории"
+  save_order: "Сохранить порядок"
+  all_time: "За всё время"
+  forum_threads: "Темы форума"
+  total_threads: "Всего тем"
+  now_online: "Сейчас на сайте"
+  registrations_7_days: "Регистрации за 7 дней"
+  recent_activity: "Последние действия"
+  all_logs: "Все логи"
+  action: "Действие"
+  guest: "Гость"
+  no_records: "Нет записей"
+  recent_users: "Последние пользователи"
+  no_users: "Нет пользователей"
+  all_users: "Все пользователи"
+  registrations: "Регистрации"
+  module: "Модуль"
+  status: "Состояние"
+  chat: "Чат"
+  bans: "Бан-лист"
+  edit_server: "Редактирование сервера"
+  add_server: "Добавление сервера"
+  none: "Нет"
+  ban_list_auto: "Бан-лист будет автоматически подключаться с этого сервера."
+  ftp_password: "Пароль FTP"
+  stats_db_connection: "Подключение к базе статистики"
+  table_name: "Имя таблицы"
+  privileges: "Привилегии"
+  no_servers: "Нет серверов"
+  rights_hint: "Строка флагов, которые будут выдаваться на сервере (AMX/SourceMod)."
+  group_restriction_hint: "Оставьте пустым, чтобы услуга была доступна всем."
+  active: "Активна"
+  select_forum: "Выберите форум"
+  enable_ban_list: "Включить бан-лист"
+  unban_forum: "ID форума для заявок на разбан"
+  paid_unban_price: "Стоимость платного разбана (руб.)"
+  ban_settings: "Настройки AMXBans"
+  yoomoney: "ЮMoney"
+  secret_key_hint: "Текущий ключ скрыт. Введите новый, только если хотите изменить."
+  url_notifications_hint: "В личном кабинете ЮMoney укажите следующий адрес для HTTP-уведомлений:"
+  yoomoney_notify_hint: "Этот адрес нужно вставить в поле «URL для уведомлений» в настройках вашего приложения на"
+  enable_recaptcha: "Включить reCAPTCHA на формах входа и регистрации"
+  get_keys_hint: "Получите ключи на"
+  enable_sitemap: "Включить sitemap.xml"
+  done: "Готово"
+  error: "Ошибка"
+  offline: "Оффлайн"
+  online: "Онлайн"
+  monitor: "Мониторинг"
+  tariffs_for: "Тарифы услуги"
+  stats: "Статистика"
+  back_to_categories: "Назад к категориям"
+  icon: "Иконка"
+  group_not_found: 'Группа не найдена'
+  cannot_assign_higher_group: 'Вы не можете назначить группу с правами выше ваших.'
+  user_edited: 'Редактирован пользователь ID: %id%'
+  balance_change: 'Изменение баланса администратором'
+  payment_settings_saved: 'Настройки платежей сохранены'
+  ban_settings_saved: 'Настройки бан-листа сохранены'
+  upload_no_file: 'Файл не загружен'
+  upload_invalid_extension: 'Разрешены только изображения (JPG, PNG, GIF, WEBP)'
+  upload_dir_failed: 'Не удалось создать директорию для загрузок'
+  upload_server_error: 'Ошибка сервера: %message%'
+  category_saved: 'Категория сохранена'
+  category_deleted: 'Категория удалена'
+  forum_saved: 'Форум сохранён'
+  forum_deleted: 'Форум удалён'
+  news_created: 'Новость создана'
+  news_updated: 'Новость обновлена'
+  news_deleted: 'Новость удалена'
+  news_create_failed: 'Ошибка создания новости'
+  server_saved: 'Сервер сохранён'
+  service_name_required: 'Название услуги обязательно'
+  service_created: 'Услуга создана'
+  service_updated: 'Услуга обновлена'
+  service_deleted: 'Услуга удалена'
+  service_update_error: 'Ошибка обновления услуги'
+  tariff_update_error: 'Ошибка обновления тарифа'
+  tariff_invalid: 'Длительность и цена должны быть положительными'
+  tariff_created: 'Тариф добавлен'
+  tariff_deleted: 'Тариф удалён'
+  site_settings_saved: 'Настройки сохранены. Для применения изменений сессии выйдете и зайдите заново.'
+  service_or_tariff_not_found: 'Услуга или тариф не найдены'
+  password_required: 'Укажите пароль'
+  service_issued: 'Услуга успешно выдана'
+  service_activation_failed: 'Ошибка активации услуги'
+  user_service_deleted: 'Услуга пользователя удалена'
+  service_expiry_updated: 'Срок услуги обновлён.'
+  service_made_permanent: 'Услуга сделана бессрочной.'
+  default_language: 'Язык по умолчанию'
+  default_language_hint: 'Используется, если язык не определён другим способом.'
+  chart_registrations: 'Регистрации'
+  seo_regenerated: 'Sitemap успешно сгенерирован'
+  seo_regenerate_error: 'Ошибка генерации sitemap'
+  sort_order_saved: 'Порядок сохранён'
+  module_toggle_error: 'Ошибка изменения статуса модуля'
+  user: 'Пользователь'
+  details: 'Подробности'
+  date: 'Дата'
+
+# Виджеты
+widgets:
+  online: 'Сейчас на сайте'
+  top_donators: 'Топ донатеров'
+  last_topics: 'Последние темы'
+  last_bans: 'Последние баны'
+  all_topics: 'Все темы'
+  all_bans: 'Все баны'
+  collapse: 'Свернуть/Развернуть'
+  no_users: "Нет активных пользователей"
+  no_data: "Нет данных"
+  no_topics: "Нет тем"
+  no_bans: "Нет банов"
+
+chat:
+  unauthorized: 'Необходимо авторизоваться'
+  message_empty: 'Сообщение не может быть пустым'
+  forbidden: 'Доступ запрещён'
+  send_error: 'Ошибка отправки сообщения'
+
+online:
+  just_now: 'только что'
+  min_ago: '%count% мин. назад'
+  hour_ago: '%count% ч. назад'
+
+editor:
+  link_title: 'Вставить ссылку'
+  image_title: 'Вставить изображение'
+  emoji_title: 'Эмодзи'
+  image_error: 'Ошибка загрузки изображения'
+
+theme_editor:
+  file_saved: 'Файл сохранён'
+  error_occurred: 'Произошла ошибка'
+  confirm_delete: 'Удалить {path}?'
+
+# Футер
+footer:
+  navigation: 'Навигация'
+  contacts: 'Контакты'
+  copyright: '© %year% %site_name%. Все права защищены.'
+
+# Общие
+common:
+  yes: 'Да'
+  no: 'Нет'
+sidebar:
+  collapse: 'Свернуть'
+  expand: 'Развернуть'
+theme:
+  light: 'Светлая'
+  dark: 'Тёмная'
+  auto: 'Авто'
+
+install:
+  title: 'Установка GreyPanel'
+  step1_title: 'Шаг 1: Проверка окружения'
+  step2_title: 'Шаг 2: База данных'
+  step3_title: 'Шаг 3: Администратор'
+  step4_title: 'Шаг 4: Завершение'
+  requirement: 'Требование'
+  status: 'Статус'
+  all_ok: 'Все требования выполнены'
+  not_ok: 'Некоторые требования не выполнены'
+  continue: 'Продолжить'
+  check_again: 'Проверить ещё раз'
+  db_host: 'Хост'
+  db_name: 'Имя БД'
+  db_user: 'Пользователь'
+  db_pass: 'Пароль'
+  db_prefix: 'Префикс таблиц'
+  test_connection: 'Проверить подключение'
+  db_success: 'Подключение успешно'
+  change: 'Изменить'
+  connect_error: 'Ошибка подключения'
+  admin_username: 'Логин администратора'
+  admin_email: 'Email'
+  admin_password: 'Пароль'
+  admin_password2: 'Повторите пароль'
+  admin_required: 'Заполните все поля'
+  password_mismatch: 'Пароли не совпадают'
+  password_length: 'Пароль должен быть не менее 12 символов'
+  password_complexity: 'Пароль должен содержать строчные, прописные буквы, цифры и спецсимволы'
+  email_invalid: 'Некорректный email'
+  state_lost: 'Данные установки утеряны, начните заново'
+  tables_exist: 'Таблицы уже существуют, установка невозможна'
+  migration_missing: 'Файл миграций не найден'
+  install_error: 'Ошибка установки'
+  env_write_error: 'Не удалось записать .env файл'
+  install_text: 'Нажмите «Установить» для завершения'
+  install_button: 'Установить'
+  prefix_invalid: 'Недопустимый префикс (только латинские буквы, цифры, _)'
+  writable: 'Доступность для записи'
+  menu:
+    forum: 'Форум'
+    forum_desc: 'Раздел форума'
+    vip: 'VIP'
+    vip_desc: 'VIP привилегии'
+    bans: 'Баны'
+    bans_desc: 'Бан-лист'
+    stats: 'Статистика'
+    stats_desc: 'Рейтинг игроков'
+    auth: 'Авторизация'
+    auth_desc: 'Вход/регистрация'
+  default_group_user: 'Пользователь'
+  default_group_admin: 'Администратор'
+  error_occurred: 'Произошла ошибка'

@@ -23,7 +23,6 @@ class UserGroup
         $this->updatedAt = $data['updated_at'] ?? time();
     }
 
-    // Getters
     public function getId(): ?int
     {
         return $this->id;
@@ -49,7 +48,6 @@ class UserGroup
         return $this->updatedAt;
     }
 
-    // Setters
     public function setName(string $name): self
     {
         $this->name = $name;
@@ -71,7 +69,6 @@ class UserGroup
         return $this;
     }
 
-    // Проверка наличия права
     public function hasPermission(string $permission): bool
     {
         return str_contains($this->flags, $permission);

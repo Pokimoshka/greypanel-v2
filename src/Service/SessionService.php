@@ -4,23 +4,35 @@ declare(strict_types=1);
 
 namespace GreyPanel\Service;
 
+use GreyPanel\Interface\Repository\UserRepositoryInterface;
 use GreyPanel\Interface\Service\SessionServiceInterface;
+use GreyPanel\Interface\Service\SettingsServiceInterface;
+use GreyPanel\Model\User;
 
 final class SessionService implements SessionServiceInterface
 {
+    public function __construct(
+        private UserRepositoryInterface $userRepo,
+        private ?SettingsServiceInterface $settings = null
+    ) {
+    }
+
     public function start(): void
     {
         if (session_status() === PHP_SESSION_NONE) {
-            session_name($_ENV['SESSION_NAME'] ?? 'greysession');
-            $cookieParams = [
-                'lifetime' => (int)($_ENV['SESSION_LIFETIME'] ?? 7200),
-                'path' => '/',
-                'domain' => '',
-                'secure' => (!empty($_ENV['APP_ENV']) && $_ENV['APP_ENV'] === 'prod'),
+            $sessionName    = $this->settings?->get('session_name')    ?? 'greysession';
+            $sessionLifetime = $this->settings?->getInt('session_lifetime') ?? 7200;
+            $secure         = ($this->settings?->get('APP_ENV') === 'prod');
+
+            session_name($sessionName);
+            session_set_cookie_params([
+                'lifetime' => $sessionLifetime,
+                'path'     => '/',
+                'domain'   => '',
+                'secure'   => $secure,
                 'httponly' => true,
                 'samesite' => 'Lax',
-            ];
-            session_set_cookie_params($cookieParams);
+            ]);
             session_start();
         }
         if (!isset($_SESSION['_initiated'])) {
@@ -34,38 +46,23 @@ final class SessionService implements SessionServiceInterface
         return isset($_SESSION['user_id']);
     }
 
-    public function getUserId(): ?int
+    public function getUser(): ?User
     {
-        return $_SESSION['user_id'] ?? null;
+        if (!isset($_SESSION['user_id'])) {
+            return null;
+        }
+        $user = $this->userRepo->findById((int)$_SESSION['user_id']);
+        if (!$user) {
+            $this->clear();
+            return null;
+        }
+        return $user;
     }
 
-    public function getUserGroup(): int
+    public function setUser(User $user): void
     {
-        return $_SESSION['user_group'] ?? 0;
-    }
-
-    public function getUser(): ?array
-    {
-        return $_SESSION['user'] ?? null;
-    }
-
-    public function setUser($user): void
-    {
+        session_regenerate_id(true);
         $_SESSION['user_id'] = $user->getId();
-        $_SESSION['user_group'] = $user->getGroupId();
-        $_SESSION['user'] = [
-            'id' => $user->getId(),
-            'username' => $user->getUsername(),
-            'email' => $user->getEmail(),
-            'group_id' => $user->getGroupId(),
-            'group_flags' => $user->getGroup() ? $user->getGroup()->getFlags() : '',
-            'avatar' => $user->getAvatar(),
-            'count_thread' => $user->getCountThread(),
-            'count_post' => $user->getCountPost(),
-            'count_like' => $user->getCountLike(),
-            'money' => $user->getMoney(),
-            'all_money' => $user->getAllMoney(),
-        ];
     }
 
     public function clear(): void
@@ -88,5 +85,47 @@ final class SessionService implements SessionServiceInterface
     public function validateCsrfToken(?string $token): bool
     {
         return $token !== null && hash_equals($this->getCsrfToken(), $token);
+    }
+
+    public function setFlash(string $key, string $message): void
+    {
+        $_SESSION['_flash'][$key] = $message;
+    }
+
+    public function getFlash(string $key): ?string
+    {
+        $msg = $_SESSION['_flash'][$key] ?? null;
+        unset($_SESSION['_flash'][$key]);
+        return $msg;
+    }
+
+    public function hasFlash(string $key): bool
+    {
+        return isset($_SESSION['_flash'][$key]);
+    }
+
+    public function setReferralId(int $id): void
+    {
+        $_SESSION['referral'] = $id;
+    }
+
+    public function getReferralId(): ?int
+    {
+        return $_SESSION['referral'] ?? null;
+    }
+
+    public function clearReferralId(): void
+    {
+        unset($_SESSION['referral']);
+    }
+
+    public function setLocale(string $locale): void
+    {
+        $_SESSION['locale'] = $locale;
+    }
+
+    public function getLocale(): ?string
+    {
+        return $_SESSION['locale'] ?? null;
     }
 }

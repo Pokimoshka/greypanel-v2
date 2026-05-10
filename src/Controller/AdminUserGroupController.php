@@ -9,19 +9,20 @@ use GreyPanel\Core\Request;
 use GreyPanel\Core\Response;
 use GreyPanel\Core\View;
 use GreyPanel\Helper\FlagsHelper;
+use GreyPanel\Interface\Service\SessionServiceInterface;
 use GreyPanel\Model\UserGroup;
 use GreyPanel\Repository\UserGroupRepository;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 final class AdminUserGroupController
 {
     public function __construct(
-        private UserGroupRepository $groupRepo
+        private SessionServiceInterface $session,
+        private UserGroupRepository $groupRepo,
+        private TranslatorInterface $translator
     ) {
     }
 
-    /**
-     * Список групп
-     */
     public function index(Request $request): Response
     {
         $groups = $this->groupRepo->findAll();
@@ -30,9 +31,6 @@ final class AdminUserGroupController
         ]));
     }
 
-    /**
-     * Форма создания/редактирования
-     */
     public function form(Request $request, ?int $id = null): Response
     {
         $group = null;
@@ -44,34 +42,35 @@ final class AdminUserGroupController
         }
 
         if ($request->isPost()) {
-            $name = trim($request->post('name', ''));
-            $flags = FlagsHelper::normalize(trim($request->post('flags', '')));
-            $isDefault = (bool)$request->post('is_default', false);
+            $name = trim($request->postString('name', ''));
+            $flags = FlagsHelper::normalize(trim($request->postString('flags', '')));
+            $isDefault = $request->postBool('is_default', false);
 
             if ($name === '') {
                 return new Response(View::render('groups/form.tpl', [
                     'group' => $group,
-                    'error' => 'Название группы обязательно',
+                    'error' => $this->translator->trans('admin.group_name_required'),
                 ]));
             }
 
             if ($id === null) {
-                // Создание
                 $newGroup = new UserGroup([
                     'name' => $name,
                     'flags' => $flags,
                     'is_default' => $isDefault,
                 ]);
                 $this->groupRepo->create($newGroup);
+                $msg = $this->translator->trans('admin.group_created');
             } else {
-                // Обновление
                 $group->setName($name);
                 $group->setFlags($flags);
                 $group->setIsDefault($isDefault);
                 $group->setUpdatedAt(time());
                 $this->groupRepo->update($group);
+                $msg = $this->translator->trans('admin.group_updated');
             }
 
+            $this->session->setFlash('success', $msg);
             return new RedirectResponse('/admin/groups');
         }
 
@@ -80,16 +79,13 @@ final class AdminUserGroupController
         ]));
     }
 
-    /**
-     * Удаление группы
-     */
     public function delete(Request $request, int $id): Response
     {
         try {
             $this->groupRepo->delete($id);
+            $this->session->setFlash('success', $this->translator->trans('admin.group_deleted'));
         } catch (\RuntimeException $e) {
-            // Ошибка при удалении (например, есть пользователи)
-            $_SESSION['flash_error'] = $e->getMessage();
+            $this->session->setFlash('error', $e->getMessage());
         }
         return new RedirectResponse('/admin/groups');
     }

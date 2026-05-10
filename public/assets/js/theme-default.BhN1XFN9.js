@@ -1,0 +1,1 @@
+import{m as e}from"./module.esm.DzxqslC9.js";import{c as n}from"./themeManager.DMHIPVGs.js";document.addEventListener("alpine:init",()=>{e.data("app",()=>({...n(),mobileMenuOpen:!1,toggleMobileMenu(){this.mobileMenuOpen=!this.mobileMenuOpen}}))});

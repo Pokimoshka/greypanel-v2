@@ -27,7 +27,6 @@ class Tariff
         $this->updatedAt = $data['updated_at'] ?? time();
     }
 
-    // Getters
     public function getId(): ?int
     {
         return $this->id;
@@ -61,7 +60,6 @@ class Tariff
         return $this->updatedAt;
     }
 
-    // Setters
     public function setServiceId(int $id): self
     {
         $this->serviceId = $id;

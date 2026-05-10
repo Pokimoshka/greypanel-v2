@@ -10,6 +10,7 @@ use GreyPanel\Core\Request;
 use GreyPanel\Core\Response;
 use GreyPanel\Core\View;
 use GreyPanel\Helper\FlagsHelper;
+use GreyPanel\Interface\Service\SessionServiceInterface;
 use GreyPanel\Model\Service;
 use GreyPanel\Model\Tariff;
 use GreyPanel\Repository\MonitorServerRepository;
@@ -18,8 +19,11 @@ use GreyPanel\Repository\ServiceServerRepository;
 use GreyPanel\Repository\TariffRepository;
 use GreyPanel\Repository\UserGroupRepository;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
-final class AdminServiceController
+final class AdminServiceController extends AbstractController
 {
     public function __construct(
         private ServiceRepository $serviceRepo,
@@ -27,13 +31,15 @@ final class AdminServiceController
         private ServiceServerRepository $serviceServerRepo,
         private MonitorServerRepository $serverRepo,
         private UserGroupRepository $groupRepo,
-        private ?LoggerInterface $logger = null
+        private SessionServiceInterface $session,
+        SerializerInterface $serializer,
+        ValidatorInterface $validator,
+        TranslatorInterface $translator,
+        ?LoggerInterface $logger = null,
     ) {
+        parent::__construct($serializer, $validator, $translator);
     }
 
-    /**
-     * Список всех услуг с количеством тарифов
-     */
     public function index(Request $request): Response
     {
         $services = $this->serviceRepo->findAll();
@@ -41,9 +47,10 @@ final class AdminServiceController
         foreach ($services as $service) {
             $tariffs = $this->tariffRepo->findByServiceId($service->getId(), false);
             $data[] = [
-                'service' => $service->toArray(),          // теперь массив
+                'service' => $service->toArray(),
                 'tariffs' => array_map(fn ($t) => $t->toArray(), $tariffs),
                 'tariffs_count' => count($tariffs),
+                'selected_service_id' => $request->get('service_id'),
             ];
         }
         $allServers = $this->serverRepo->findEnabled();
@@ -55,9 +62,6 @@ final class AdminServiceController
         ]));
     }
 
-    /**
-     * Форма создания / редактирования услуги
-     */
     public function form(Request $request, ?int $id = null): Response
     {
         $service = null;
@@ -71,25 +75,24 @@ final class AdminServiceController
         }
 
         if ($request->isPost()) {
-            $name = trim($request->post('name', ''));
-            $description = trim($request->post('description', ''));
-            $rights = FlagsHelper::normalize(trim($request->post('rights', '')));
-            $isActive = (bool)$request->post('is_active', false);
-            $sortOrder = (int)$request->post('sort_order', 0);
+            $name = $request->postString('name');
+            $description = $request->postString('description');
+            $rights = FlagsHelper::normalize($request->postString('rights'));
+            $isActive = $request->postBool('is_active');
+            $sortOrder = $request->postInt('sort_order', 0);
             $serverIds = array_map('intval', $request->postArray('servers', []));
-            $groupId = $request->post('group_id') ? (int)$request->post('group_id') : null;
+            $groupId = $request->postInt('group_id') ? $request->postInt('group_id') : null;
 
             if ($name === '') {
                 return new Response(View::render('services/form.tpl', [
                     'service' => $service,
                     'selected_server_ids' => $selectedServerIds,
                     'all_servers' => $this->serverRepo->findEnabled(),
-                    'error' => 'Название услуги обязательно',
+                    'error' => $this->translator->trans('admin.service_name_required'),
                 ]));
             }
 
             if ($id === null) {
-                // Создание
                 $newService = new Service([
                     'name' => $name,
                     'description' => $description,
@@ -100,8 +103,8 @@ final class AdminServiceController
                 ]);
                 $newId = $this->serviceRepo->create($newService);
                 $this->serviceServerRepo->setServersForService($newId, $serverIds);
+                $msg = $this->translator->trans('admin.service_created');
             } else {
-                // Обновление
                 $service->setName($name);
                 $service->setDescription($description);
                 $service->setRights($rights);
@@ -111,8 +114,10 @@ final class AdminServiceController
                 $service->setGroupId($groupId);
                 $this->serviceRepo->update($service);
                 $this->serviceServerRepo->setServersForService($id, $serverIds);
+                $msg = $this->translator->trans('admin.service_updated');
             }
 
+            $this->session->setFlash('success', $msg);
             return new RedirectResponse('/admin/services');
         }
 
@@ -124,12 +129,10 @@ final class AdminServiceController
         ]));
     }
 
-    /**
-     * Удаление услуги
-     */
     public function delete(Request $request, int $id): Response
     {
         $this->serviceRepo->delete($id);
+        $this->session->setFlash('success', $this->translator->trans('admin.service_deleted'));
         return new RedirectResponse('/admin/services');
     }
 
@@ -137,24 +140,23 @@ final class AdminServiceController
     {
         $service = $this->serviceRepo->findById($id);
         if (!$service) {
-            return new JsonResponse(['error' => 'Услуга не найдена'], 404);
+            return $this->json(['error' => 'Услуга не найдена'], 404);
         }
 
         $raw = $request->getRequest()->getContent();
         $data = json_decode($raw, true);
         if (!is_array($data)) {
-            return new JsonResponse(['error' => 'Неверный формат данных'], 400);
+            return $this->json(['error' => 'Неверный формат данных'], 400);
         }
 
         try {
-            $service->setName($data['name'] ?? $service->getName());
-            $service->setDescription($data['description'] ?? $service->getDescription());
+            $service->setName((string)$data['name'] ?? $service->getName());
+            $service->setDescription((string)$data['description'] ?? $service->getDescription());
             $rights = isset($data['rights']) ? FlagsHelper::normalize($data['rights']) : $service->getRights();
             $service->setRights($rights);
             $service->setIsActive(isset($data['isActive']) ? (bool)$data['isActive'] : $service->isActive());
             $service->setSortOrder(isset($data['sortOrder']) ? (int)$data['sortOrder'] : $service->getSortOrder());
 
-            // groupId: null или число
             $groupId = $data['groupId'] ?? null;
             if ($groupId === '' || $groupId === 0) {
                 $groupId = null;
@@ -170,10 +172,10 @@ final class AdminServiceController
                 $this->serviceServerRepo->setServersForService($id, $serverIds);
             }
 
-            return new JsonResponse(['success' => true]);
+            return $this->json(['success' => true]);
         } catch (\Throwable $e) {
             $this->logger?->error('apiUpdateService error: ' . $e->getMessage());
-            return new JsonResponse(['error' => 'Ошибка сервера: ' . $e->getMessage()], 500);
+            return $this->json(['error' => $this->translator->trans('admin.service_update_error')], 500);
         }
     }
 
@@ -181,13 +183,13 @@ final class AdminServiceController
     {
         $tariff = $this->tariffRepo->findById($id);
         if (!$tariff || $tariff->getServiceId() !== $serviceId) {
-            return new JsonResponse(['error' => 'Тариф не найден'], 404);
+            return $this->json(['error' => 'Тариф не найден'], 404);
         }
 
         $raw = $request->getRequest()->getContent();
         $data = json_decode($raw, true);
         if (!is_array($data)) {
-            return new JsonResponse(['error' => 'Неверный формат данных'], 400);
+            return $this->json(['error' => 'Неверный формат данных'], 400);
         }
 
         try {
@@ -198,23 +200,23 @@ final class AdminServiceController
             $tariff->setUpdatedAt(time());
             $this->tariffRepo->update($tariff);
 
-            return new JsonResponse(['success' => true]);
+            return $this->json(['success' => true]);
         } catch (\Throwable $e) {
             $this->logger?->error('apiUpdateTariff error: ' . $e->getMessage());
-            return new JsonResponse(['error' => 'Ошибка сервера'], 500);
+            return $this->json(['error' => $this->translator->trans('admin.tariff_update_error')], 500);
         }
     }
 
     public function createTariff(Request $request, int $serviceId): RedirectResponse
     {
-        $durationDays = (int)$request->post('duration_days', 0);
-        $price = (int)$request->post('price', 0);
-        $isActive = (bool)$request->post('is_active', false);
-        $sortOrder = (int)$request->post('sort_order', 0);
+        $durationDays = $request->postInt('duration_days', 0);
+        $price = $request->postInt('price', 0);
+        $isActive = $request->postBool('is_active', false);
+        $sortOrder = $request->postInt('sort_order', 0);
 
         if ($durationDays <= 0 || $price <= 0) {
-            $_SESSION['flash_error'] = 'Длительность и цена должны быть положительными';
-            return new RedirectResponse('/admin/services');
+            $this->session->setFlash('error', $this->translator->trans('admin.tariff_invalid'));
+            return new RedirectResponse('/admin/services?service_id=' . $serviceId);
         }
 
         $newTariff = new Tariff([
@@ -225,12 +227,14 @@ final class AdminServiceController
             'sort_order' => $sortOrder,
         ]);
         $this->tariffRepo->create($newTariff);
-        return new RedirectResponse('/admin/services');
+        $this->session->setFlash('success', $this->translator->trans('admin.tariff_created'));
+        return new RedirectResponse('/admin/services?service_id=' . $serviceId);
     }
 
     public function deleteTariff(Request $request, int $serviceId, int $id): RedirectResponse
     {
         $this->tariffRepo->delete($id);
+        $this->session->setFlash('success', $this->translator->trans('admin.tariff_deleted'));
         return new RedirectResponse('/admin/services');
     }
 }

@@ -5,13 +5,23 @@
 {% block content %}
     <div class="mb-4">
         <a href="{{ url('/forum/forum/' ~ thread.forum_id) }}" class="link-accent small">
-            <i class="fas fa-arrow-left me-1"></i>К списку тем
+            <i class="fas fa-arrow-left me-1"></i>{{ trans('forum.back_to_list') }}
         </a>
-        <h2 class="mt-2 mb-0" style="color: var(--accent-bright);">{{ thread.title }}</h2>
+        <div class="d-flex justify-content-between align-items-center mt-2">
+            <h2 class="mb-0" style="color: var(--accent-bright);">{{ thread.title }}</h2>
+            {% if app.user and (thread.user_id == app.user.id or has_permission('c')) %}
+                <form method="post" action="/forum/thread/delete/{{ thread.id }}" onsubmit="return confirm('{{ trans('forum.delete_thread_confirm') }}');">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                        <i class="fas fa-trash"></i> {{ trans('forum.delete') }}
+                    </button>
+                </form>
+            {% endif %}
+        </div>
         <div class="d-flex justify-content-between align-items-center">
             <span class="text-secondary small">
                 <i class="fas fa-user me-1"></i>{{ thread.author.username }} · 
-                <i class="fas fa-calendar me-1"></i>{{ thread.created_at|date('d.m.Y H:i') }}
+                <i class="fas fa-calendar me-1"></i>{{ thread.created_at|format_datetime('medium', 'short', locale=locale) }}
             </span>
             <span class="text-secondary small">
                 <i class="fas fa-eye me-1"></i>{{ thread.views }} · 
@@ -20,27 +30,26 @@
         </div>
     </div>
 
-    {# Сообщения темы #}
     {% for post in thread.posts %}
         <div class="widget-card p-3 mb-4" id="post-{{ post.id }}">
             <div class="d-flex">
                 <div class="text-center me-3" style="min-width: 60px;">
-                    <img src="{{ post.author.avatar }}" width="48" height="48" class="rounded-circle mb-1">
-                    <div class="fw-bold small">{{ post.author.username }}</div>
+                    <img src="{{ post.author.avatar|e('html_attr') }}" width="48" height="48" class="rounded-circle mb-1">
+                    <div class="fw-bold small"><a href="{{ url('/profile/' ~ post.author.id) }}">{{ post.author.username }}</a></div>
                     <span class="badge mt-1" style="background: var(--accent); font-size: 0.7rem;">{{ post.author.group_name }}</span>
                 </div>
                 <div class="flex-grow-1">
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <span class="text-secondary small">
-                            <i class="fas fa-clock me-1"></i>{{ post.created_at|date('d.m.Y H:i') }}
+                            <i class="fas fa-clock me-1"></i>{{ post.created_at|format_datetime('medium', 'short', locale=locale) }}
                             {% if post.updated_at != post.created_at %}
-                                <span class="ms-2">(отредактировано)</span>
+                                <span class="ms-2">({{ trans('forum.edited') }})</span>
                             {% endif %}
                         </span>
                         <div>
                             <span class="text-secondary me-2">#{{ loop.index }}</span>
-                            {% if app.user and (post.author.id == app.user.id or app.user.group >= 3) %}
-                                <a href="{{ url('/forum/post/edit/' ~ post.id) }}" class="btn btn-sm btn-link text-secondary" title="Редактировать">
+                            {% if app.user and (post.author.id == app.user.id or has_permission('c')) %}
+                                <a href="{{ url('/forum/post/edit/' ~ post.id) }}" ...>
                                     <i class="fas fa-edit"></i>
                                 </a>
                             {% endif %}
@@ -57,8 +66,8 @@
                             </button>
                         </div>
                         <div x-data="quote">
-                            <button @click="insertQuote('{{ post.author.username|escape('js') }}', '{{ post.content|escape('js') }}')" class="btn btn-sm btn-outline-secondary">
-                                <i class="fas fa-quote-right me-1"></i>Цитировать
+                            <button @click="insertQuote('{{ post.author.username|escape('js') }}', '{{ post.content|escape('js') }}', {{ post.id }})" class="btn btn-sm btn-outline-secondary">
+                                <i class="fas fa-quote-right me-1"></i>{{ trans('forum.quote') }}
                             </button>
                         </div>
                     </div>
@@ -67,7 +76,6 @@
         </div>
     {% endfor %}
 
-    {# Пагинация #}
     {% include 'partials/pagination.tpl' with {
         'current': page,
         'total': thread.posts_count,
@@ -75,58 +83,28 @@
         'url': '/forum/thread/' ~ thread.id
     } %}
 
-    {# Форма ответа #}
     {% if not thread.is_closed and app.user %}
-        <div class="widget-card p-3 mt-4">
-            <h5 class="mb-3">Ответить</h5>
-            <textarea id="reply-content" class="form-control editor" rows="6" placeholder="Ваше сообщение..."></textarea>
-            <div class="mt-3">
-                <button id="submit-reply" class="btn btn-primary">
-                    <i class="fas fa-paper-plane me-1"></i>Отправить
-                </button>
-            </div>
+    <div class="widget-card p-3 mt-4">
+        <h5 class="mb-3">{{ trans('forum.reply.title') }}</h5>
+        <textarea id="reply-editor" x-data="markdownEditor" class="form-control editor" rows="6"
+                  placeholder="{{ trans('forum.reply_placeholder') }}"></textarea>
+        <div class="mt-3">
+            <button class="btn btn-primary" x-data="replyForm({{ thread.id }})" @click="submit">
+                <i class="fas fa-paper-plane me-1"></i>{{ trans('forum.reply.send') }}
+            </button>
         </div>
+    </div>
     {% elseif thread.is_closed %}
         <div class="alert alert-warning mt-4">
-            <i class="fas fa-lock me-1"></i>Тема закрыта.
+            <i class="fas fa-lock me-1"></i>{{ trans('forum.closed') }}
         </div>
     {% else %}
         <div class="alert alert-info mt-4">
-            <a href="{{ url('/login') }}">Войдите</a>, чтобы ответить.
+            <a href="{{ url('/login') }}">{{ trans('forum.reply.login_required') }}</a>.
         </div>
     {% endif %}
 {% endblock %}
 
 {% block scripts %}
     {{ parent() }}
-    <script>
-        const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
-
-        document.addEventListener('alpine:init', () => {
-            const submitBtn = document.getElementById('submit-reply');
-            if (submitBtn) {
-                submitBtn.addEventListener('click', async () => {
-                    const textarea = document.getElementById('reply-content');
-                    const easyMDE = textarea.easyMDE;
-                    if (easyMDE) easyMDE.toTextArea();
-                    const content = textarea.value.trim();
-                    if (!content) return window.dispatchEvent(new CustomEvent('toast:error', { detail: 'Введите сообщение' }));
-                    
-                    const formData = new FormData();
-                    formData.append('thread_id', {{ thread.id }});
-                    formData.append('content', content);
-                    formData.append('csrf_token', csrfToken);
-                    
-                    try {
-                        const res = await fetch('/forum/post/create', { method: 'POST', body: formData });
-                        const data = await res.json();
-                        if (data.success) location.reload();
-                        window.dispatchEvent(new CustomEvent('toast:error', { detail: data.error || 'Ошибка' }));
-                    } catch (e) {
-                        window.dispatchEvent(new CustomEvent('toast:error', { detail: 'Ошибка соединения' }));
-                    }
-                });
-            }
-        });
-    </script>
 {% endblock %}

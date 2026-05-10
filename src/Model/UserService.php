@@ -25,7 +25,6 @@ class UserService
         $this->updatedAt = $data['updated_at'] ?? time();
     }
 
-    // Getters
     public function getId(): ?int
     {
         return $this->id;
@@ -55,7 +54,6 @@ class UserService
         return $this->updatedAt;
     }
 
-    // Setters
     public function setUserId(int $id): self
     {
         $this->userId = $id;

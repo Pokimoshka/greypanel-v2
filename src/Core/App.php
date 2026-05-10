@@ -4,34 +4,43 @@ declare(strict_types=1);
 
 namespace GreyPanel\Core;
 
-use FastRoute\Dispatcher;
 use GreyPanel\Interface\Repository\OnlineRepositoryInterface;
 use GreyPanel\Interface\Service\ModuleServiceInterface;
+use GreyPanel\Interface\Service\PermissionServiceInterface;
 use GreyPanel\Interface\Service\SessionServiceInterface;
 use GreyPanel\Interface\Service\SettingsServiceInterface;
 use GreyPanel\Interface\Service\ThemeServiceInterface;
+use GreyPanel\Middleware\PermissionMiddleware;
 use GreyPanel\Service\PermissionService;
+use GreyPanel\Service\SiteService;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\Routing\Exception\MethodNotAllowedException;
+use Symfony\Component\Routing\Exception\ResourceNotFoundException;
+use Symfony\Component\Routing\Matcher\UrlMatcher;
+use Symfony\Component\Routing\RequestContext;
+use Symfony\Component\Routing\RouteCollection;
+use Symfony\Contracts\Translation\TranslatorInterface;
 use Throwable;
 use Twig\Environment;
 use Twig\TwigFunction;
 
 final class App
 {
-    private Router $router;
     private Container $container;
     private OnlineRepositoryInterface $onlineRepo;
     private SessionServiceInterface $sessionService;
     private ?LoggerInterface $logger;
+    private RouteCollection $routeCollection;
+    private array $middlewareMap = [];
 
     public function __construct(
-        Router $router,
+        RouteCollection $routeCollection,
         Container $container,
         OnlineRepositoryInterface $onlineRepo,
         SessionServiceInterface $sessionService,
         ?LoggerInterface $logger = null
     ) {
-        $this->router = $router;
+        $this->routeCollection = $routeCollection;
         $this->container = $container;
         $this->onlineRepo = $onlineRepo;
         $this->sessionService = $sessionService;
@@ -40,29 +49,28 @@ final class App
 
     public function run(): void
     {
-        $this->boot();
         $request = new Request();
         $this->initView($request);
 
+        $user = $this->sessionService->getUser();
         View::addGlobal('app', [
-            'user' => $this->sessionService->getUser(),
+            'user' => $user ? $user->toArray() : null,
             'env' => APP_DEBUG ? 'dev' : 'prod'
         ]);
 
-        if ($this->sessionService->isLoggedIn()) {
-            $this->onlineRepo->updateActivity($this->sessionService->getUserId());
+        if ($this->sessionService->isLoggedIn() && $this->sessionService->getUser() !== null) {
+            $this->onlineRepo->updateActivity($this->sessionService->getUser()->getId());
         }
+
+        $this->loadMiddlewareMap(require ROOT_DIR . '/config/middleware.php');
 
         $response = $this->handleRequest($request);
         $response->send();
     }
 
-    private function boot(): void
+    public function loadMiddlewareMap(array $map): void
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_name($_ENV['SESSION_NAME'] ?? 'greysession');
-            $this->sessionService->start();
-        }
+        $this->middlewareMap = $map;
     }
 
     private function initView(Request $request): void
@@ -88,7 +96,7 @@ final class App
         ThemeServiceInterface $themeService,
         bool $isAdmin
     ): void {
-        $siteService = $this->container->get(\GreyPanel\Service\SiteService::class);
+        $siteService = $this->container->get(SiteService::class);
         $twig->addFunction(new TwigFunction('url', function (string $path = '') use ($siteService) {
             return rtrim($siteService->getSiteUrl(), '/') . '/' . ltrim($path, '/');
         }));
@@ -100,35 +108,52 @@ final class App
         $moduleService = $this->container->get(ModuleServiceInterface::class);
         $twig->addFunction(new TwigFunction('module_enabled', [$moduleService, 'isEnabled']));
         $twig->addGlobal('csrf_token', $this->sessionService->getCsrfToken());
-        $twig->addGlobal('site_url', $this->container->get(\GreyPanel\Service\SiteService::class)->getSiteUrl());
+        $twig->addGlobal('site_url', $this->container->get(SiteService::class)->getSiteUrl());
         $twig->addFunction(new TwigFunction('has_permission', [$this->container->get(PermissionService::class), 'hasPermission']));
+        $twig->addGlobal('flash', [
+            'error' => $this->sessionService->getFlash('error'),
+            'success' => $this->sessionService->getFlash('success'),
+        ]);
+
+        $localeManager = $this->container->get(\GreyPanel\Service\LocaleManager::class);
+        $translator = $this->container->get(TranslatorInterface::class);
+        $twig->addGlobal('available_languages', $localeManager->getLanguageNames($translator));
+
+        $twig->addFunction(new TwigFunction('trans', function (string $key, array $params = []) use ($translator) {
+            return $translator->trans($key, $params);
+        }));
     }
 
     private function handleRequest(Request $request): Response
     {
         try {
-            $routeInfo = $this->router->dispatch($request);
-            $status = $routeInfo[0];
+            $localeMiddleware = $this->container->get(\GreyPanel\Middleware\LocaleMiddleware::class);
 
-            switch ($status) {
-                case Dispatcher::NOT_FOUND:
-                    return $this->renderError(404);
-                case Dispatcher::METHOD_NOT_ALLOWED:
-                    return $this->renderError(405);
-                case Dispatcher::FOUND:
-                    $handler = $routeInfo[1];
-                    $vars = $routeInfo[2];
-                    $middlewares = $routeInfo[3] ?? [];
+            $response = $localeMiddleware->handle($request, function (Request $request): Response {
+                $context = new RequestContext();
+                $context->fromRequest($request->getRequest());
+                $matcher = new UrlMatcher($this->routeCollection, $context);
 
-                    $finalHandler = function (Request $request) use ($handler, $vars) {
-                        return $this->executeHandler($request, $handler, $vars);
+                try {
+                    $parameters = $matcher->match($request->getPath());
+                    $handler = $parameters['_controller'];
+                    $middlewares = $parameters['_middleware'] ?? [];
+                    unset($parameters['_controller'], $parameters['_middleware'], $parameters['_route']);
+
+                    $finalHandler = function (Request $request) use ($handler, $parameters) {
+                        return $this->executeHandler($request, $handler, $parameters);
                     };
 
                     $pipeline = $this->buildMiddlewarePipeline($middlewares, $finalHandler);
                     return $pipeline($request);
-                default:
-                    return $this->renderError(500);
-            }
+                } catch (ResourceNotFoundException $e) {
+                    return $this->renderError(404);
+                } catch (MethodNotAllowedException $e) {
+                    return $this->renderError(405);
+                }
+            });
+
+            return $response;
         } catch (Throwable $e) {
             $this->logger?->error('Unhandled exception: ' . $e->getMessage(), [
                 'exception' => $e,
@@ -138,7 +163,6 @@ final class App
             return $this->renderError(500, $e);
         }
     }
-
     private function buildMiddlewarePipeline(array $middlewares, callable $finalHandler): callable
     {
         $next = $finalHandler;
@@ -154,47 +178,30 @@ final class App
         $name = $parts[0];
         $param = $parts[1] ?? null;
 
-        // Специальная обработка для rate_limit
         if ($name === 'rate_limit') {
-            $rateLimitKey = $param;
-            $middleware = $this->container->get('rate_limit.' . $rateLimitKey);
+            $middleware = $this->container->get('rate_limit.' . $param);
             return function (Request $request) use ($middleware, $next) {
                 return $middleware->handle($request, $next);
             };
         }
 
-        // Определяем класс middleware
-        $className = str_replace('_', '', ucwords($name, '_'));
-        $middlewareClass = 'GreyPanel\\Middleware\\' . $className . 'Middleware';
-
-        // Для permission – используем контейнер с передачей параметра
         if ($name === 'permission') {
-            // Получаем PermissionService из контейнера
-            $permissionService = $this->container->get(\GreyPanel\Service\PermissionService::class);
-            $middleware = new $middlewareClass($permissionService, $param);
+            $permissionService = $this->container->get(PermissionServiceInterface::class);
+            $middleware = new PermissionMiddleware($permissionService, $param);
             return function (Request $request) use ($middleware, $next) {
                 return $middleware->handle($request, $next);
             };
         }
 
-        // Для role (если ещё остались старые маршруты, лучше заменить на permission)
-        if ($name === 'role') {
-            $param = (int)$param;
-            $middleware = new $middlewareClass($param);
-            return function (Request $request) use ($middleware, $next) {
-                return $middleware->handle($request, $next);
-            };
+        $middlewareClass = $this->middlewareMap[$name] ?? null;
+        if (!$middlewareClass) {
+            throw new \RuntimeException("Unknown middleware alias: {$name}");
         }
 
-        // Для остальных middleware – пытаемся взять из контейнера
         if ($this->container->has($middlewareClass)) {
             $middleware = $this->container->get($middlewareClass);
         } else {
-            if ($param !== null) {
-                $middleware = new $middlewareClass($param);
-            } else {
-                $middleware = new $middlewareClass();
-            }
+            $middleware = new $middlewareClass();
         }
 
         return function (Request $request) use ($middleware, $next) {
@@ -202,7 +209,7 @@ final class App
         };
     }
 
-    private function executeHandler(Request $request, $handler, array $vars): Response
+    private function executeHandler(Request $request, callable|string $handler, array $vars): Response
     {
         if (is_string($handler)) {
             return $this->callController($request, $handler, $vars);
@@ -245,31 +252,26 @@ final class App
         $reflectionMethod = new \ReflectionMethod($controllerClass, $method);
         $parameters = $reflectionMethod->getParameters();
         $args = [];
-        $routeValues = array_values($routeVars);
-        $routeIndex = 0;
 
         foreach ($parameters as $param) {
             $paramType = $param->getType();
             $paramName = $param->getName();
 
-            if ($paramType && $paramType->getName() === Request::class) {
+            if ($paramType instanceof \ReflectionNamedType && $paramType->getName() === Request::class) {
                 $args[] = $request;
                 continue;
             }
 
-            if ($routeIndex < count($routeValues)) {
-                $value = $routeValues[$routeIndex++];
+            if (array_key_exists($paramName, $routeVars)) {
+                $value = $routeVars[$paramName];
                 if ($paramType instanceof \ReflectionNamedType) {
-                    $typeName = $paramType->getName();
-                    if ($typeName === 'int') {
-                        $value = (int)$value;
-                    } elseif ($typeName === 'float') {
-                        $value = (float)$value;
-                    } elseif ($typeName === 'bool') {
-                        $value = (bool)$value;
-                    } elseif ($typeName === 'string') {
-                        $value = (string)$value;
-                    }
+                    $value = match ($paramType->getName()) {
+                        'int' => (int)$value,
+                        'float' => (float)$value,
+                        'bool' => (bool)$value,
+                        'string' => (string)$value,
+                        default => $value,
+                    };
                 }
                 $args[] = $value;
             } elseif ($param->isDefaultValueAvailable()) {

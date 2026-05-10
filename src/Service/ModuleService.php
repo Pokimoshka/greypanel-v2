@@ -11,6 +11,7 @@ final class ModuleService implements ModuleServiceInterface
 {
     private Database $db;
     private string $table;
+    /** @var array<string, bool> */
     private array $cache = [];
 
     public function __construct(Database $db)
